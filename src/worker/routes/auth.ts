@@ -47,7 +47,7 @@ authRoutes.post("/login", async (c) => {
 
   const { token } = await createSession(c.env.SESSIONS, userRow.id);
 
-  // `npm run dev`（Vite dev server）はHTTPで配信されるため、`Secure`属性付きCookieだと
+  // `pnpm dev`（Vite dev server）はHTTPで配信されるため、`Secure`属性付きCookieだと
   // ブラウザに保存されずログインE2E確認ができない。本番(Cloudflare)は常にHTTPSで配信される
   // ため、リクエストURLのプロトコルに応じて`secure`を切り替えても本番動作に影響はない。
   const isHttps = new URL(c.req.url).protocol === "https:";

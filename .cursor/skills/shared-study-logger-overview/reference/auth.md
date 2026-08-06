@@ -21,7 +21,7 @@
   `null`を返す（`App.tsx`がこれで`LoginPage`/`Layout`を出し分け）。
 - **注意点・既知の制約**:
   - Cookieの`secure`属性は`new URL(c.req.url).protocol === "https:"`で動的判定している
-    （`src/worker/routes/auth.ts`）。`npm run dev`（HTTP配信）でもブラウザにログインCookieが
+    （`src/worker/routes/auth.ts`）。`pnpm dev`（HTTP配信）でもブラウザにログインCookieが
     保存されるようにするための開発体験目的の変更で、本番(Cloudflare、常にHTTPS)の挙動には
     影響しない。Cookie属性を触る変更をする際はこの判定式を壊さないよう注意。
   - パスワードハッシュのロジックは`src/worker/lib/auth.ts`と`scripts/seed-users.mjs`で

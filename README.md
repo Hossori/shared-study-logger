@@ -62,7 +62,7 @@ shared-study-logger/
 ### 1. 依存関係のインストール
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Cloudflareリソースの準備
@@ -73,17 +73,17 @@ npm install
 別環境で作り直す場合は以下を参考にしてください。
 
 ```bash
-npx wrangler d1 create shared-study-logger-db
-npx wrangler kv namespace create SESSIONS
-npx wrangler queues create push-notifications
-npx wrangler queues create push-notifications-dlq
+pnpm exec wrangler d1 create shared-study-logger-db
+pnpm exec wrangler kv namespace create SESSIONS
+pnpm exec wrangler queues create push-notifications
+pnpm exec wrangler queues create push-notifications-dlq
 # wrangler.jsonc の database_id / kv id を出力内容に置き換える
 ```
 
 ### 3. ローカルD1へのマイグレーション適用
 
 ```bash
-npx wrangler d1 migrations apply shared-study-logger-db --local
+pnpm exec wrangler d1 migrations apply shared-study-logger-db --local
 ```
 
 ### 4. 環境変数（`.dev.vars`）の設定
@@ -100,7 +100,7 @@ VAPID_ADMIN_CONTACT=mailto:admin@example.com
 VAPID鍵ペアは `@pushforge/builder` のCLIで生成できます。
 
 ```bash
-npx @pushforge/builder vapid
+pnpm exec pushforge vapid
 ```
 
 > 環境変数についての詳細は「環境変数・シークレット一覧」を参照してください。
@@ -108,7 +108,7 @@ npx @pushforge/builder vapid
 ### 5. サンプルユーザー・グループの投入
 
 ```bash
-npm run seed
+pnpm seed
 ```
 
 `admin@example.com` / `ChangeMe123!` のサンプル管理者ユーザーと、それが所属する
@@ -118,7 +118,7 @@ UNIQUE制約でエラーになるため、再投入したい場合はローカ�
 ### 6. 開発サーバーの起動
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 `http://localhost:5173`（ポートが使用中の場合は`5174`等に自動変更）でアクセスできます。
@@ -142,14 +142,14 @@ D1・KV・Queueのバインディング（`DB` / `SESSIONS` / `PUSH_QUEUE`）は
 ## ビルド・検証コマンド
 
 ```bash
-npx tsc -b       # 型チェック（フロント・バックエンド両方、noEmit）
-npm run build    # tsc -b && vite build（本番ビルド。dist/client にService Worker含む静的アセット、
+pnpm exec tsc -b # 型チェック（フロント・バックエンド両方、noEmit）
+pnpm build       # tsc -b && vite build（本番ビルド。dist/client にService Worker含む静的アセット、
                  #   dist/shared_study_logger にWorkerバンドルを出力）
-npm run lint     # ESLint
-npm run dev      # ローカル開発サーバー（Vite）
+pnpm lint        # ESLint
+pnpm dev         # ローカル開発サーバー（Vite）
 ```
 
-`npm run build` では `vite-plugin-pwa`（`injectManifest`戦略）により `public/sw.ts` が
+`pnpm build` では `vite-plugin-pwa`（`injectManifest`戦略）により `public/sw.ts` が
 コンパイルされ、`self.__WB_MANIFEST` にプリキャッシュ対象が注入された `dist/client/sw.js` が
 生成されます。ビルド時に `sw.mjs`（コンパイル後の生ソース）と `sw.js`（マニフェスト注入後の最終版）の
 両方が出力されますが、実際に登録されるのは `sw.js` です（`src/react-app/main.tsx`参照）。
@@ -173,9 +173,9 @@ npm run dev      # ローカル開発サーバー（Vite）
 `.dev.vars` と同じ値（または本番用に新規生成した値）を対話プロンプトで入力します。
 
 ```bash
-npx wrangler secret put VAPID_PRIVATE_KEY
-npx wrangler secret put VAPID_PUBLIC_KEY
-npx wrangler secret put VAPID_ADMIN_CONTACT
+pnpm exec wrangler secret put VAPID_PRIVATE_KEY
+pnpm exec wrangler secret put VAPID_PUBLIC_KEY
+pnpm exec wrangler secret put VAPID_ADMIN_CONTACT
 ```
 
 ローカルとは別に本番用のVAPID鍵ペアを新規生成する場合は、フロント側で参照している
@@ -185,7 +185,7 @@ npx wrangler secret put VAPID_ADMIN_CONTACT
 ### 2. 本番D1マイグレーションの適用
 
 ```bash
-npx wrangler d1 migrations apply shared-study-logger-db --remote
+pnpm exec wrangler d1 migrations apply shared-study-logger-db --remote
 ```
 
 ### 3. 本番シードの投入（任意）
@@ -200,7 +200,7 @@ node scripts/seed-users.mjs --remote
 ### 4. デプロイ
 
 ```bash
-npm run deploy
+pnpm deploy
 ```
 
 内部的に `wrangler deploy` を実行し、Workerと静的アセット（`dist/client`）をまとめて

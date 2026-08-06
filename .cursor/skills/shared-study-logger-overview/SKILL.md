@@ -161,11 +161,11 @@ erDiagram
 ## ビルド・検証コマンド
 
 ```bash
-npx tsc -b       # 型チェック（フロント/バックエンド両方、noEmit）
-npm run build    # tsc -b && vite build（dist/client に静的アセット+SW、dist/shared_study_logger にWorkerバンドル）
-npm run lint     # ESLint
-npm run dev      # ローカル開発サーバー(Vite、ポート5173/使用中なら5174等に自動変更)
-npm run seed     # scripts/seed-users.mjs（サンプルユーザー・グループ投入、ローカルD1向け）
+pnpm exec tsc -b # 型チェック（フロント/バックエンド両方、noEmit）
+pnpm build       # tsc -b && vite build（dist/client に静的アセット+SW、dist/shared_study_logger にWorkerバンドル）
+pnpm lint        # ESLint
+pnpm dev         # ローカル開発サーバー(Vite、ポート5173/使用中なら5174等に自動変更)
+pnpm seed        # scripts/seed-users.mjs（サンプルユーザー・グループ投入、ローカルD1向け）
 ```
 
 - ローカルD1へのマイグレーション適用: `npx wrangler d1 migrations apply shared-study-logger-db --local`
