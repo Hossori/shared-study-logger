@@ -16,9 +16,6 @@ description: >-
 より詳細な経緯や検証ログは以下を参照してください（本スキルはこれらの要点をまとめたもの）。
 
 - [`README.md`](../../../README.md): セットアップ・デプロイ手順、環境変数一覧
-- [`HANDOFF.md`](../../../HANDOFF.md): 実装の引き継ぎ経緯、動作確認結果、残課題の詳細
-- 設計の正本: `学習記録共有アプリ設計_0796bd7b.plan.md`（Cursorの`plans`フォルダ。ローカル環境に
-  存在しない場合があるため、コード変更時は本スキルとHANDOFF.md/README.mdを優先すること）
 
 ## 全体アーキテクチャ
 
@@ -146,9 +143,6 @@ vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(inj
   - 記録の編集・削除APIは実装されていない（投稿のみ）。
   - `RecordsList.tsx`のレスポンシブ対応はTailwindの`sm:`ブレークポイントで単一コンポーネント
     内に両レイアウトを表現する方針（デバイス別の別実装は作らない、`Layout.tsx`も同様）。
-  - HANDOFF.md記載の残課題: 投稿モーダルの「投稿する」ボタンを**実際にブラウザでクリックして**
-    一覧に反映されることの確認は、ブラウザ自動化ツールの制約でこれまで未完了（API直接呼び出し
-    での動作確認は完了済み）。UIやフォーム周りを変更する際は特に注意して手動確認すること。
 
 ### 4. Push通知機能
 
@@ -194,8 +188,6 @@ vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(inj
   - `web-push`（Node製）はWorkers上で動作しないため使えない。VAPID実装は
     Web Crypto APIのみで完結する`@pushforge/builder`を採用している。代替ライブラリへの
     変更を検討する場合はWorkers対応（Node crypto非依存）であることを必ず確認すること。
-  - 本番でのE2E送信確認（実際に2ユーザー・2端末で購読→投稿→通知受信）は未実施
-    （HANDOFF.md参照）。Push関連ロジックを変更した際は特に注意して検証すること。
 
 ### 5. PWA対応
 
@@ -322,7 +314,7 @@ npm run seed     # scripts/seed-users.mjs（サンプルユーザー・グルー
 - ローカルD1へのマイグレーション適用: `npx wrangler d1 migrations apply shared-study-logger-db --local`
 - サンプルログイン: `admin@example.com` / `ChangeMe123!`
 
-## 既知の制約・未完了事項（詳細はHANDOFF.mdの「残っている作業」参照）
+## 既知の制約・未完了事項
 
 - **本番デプロイ未実施**: 本番シークレット(`VAPID_*`)の`wrangler secret put`設定、
   本番D1マイグレーション適用(`--remote`)、本番シード投入、`wrangler deploy`はすべて
