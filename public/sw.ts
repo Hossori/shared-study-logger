@@ -34,7 +34,10 @@ self.addEventListener("push", (event) => {
   let payload: PushNotificationPayload = { title: "学習記録シェア" };
   try {
     if (event.data) {
-      payload = { ...payload, ...event.data.json<PushNotificationPayload>() };
+      payload = {
+        ...payload,
+        ...(event.data.json() as PushNotificationPayload),
+      };
     }
   } catch {
     if (event.data) payload.body = event.data.text();
@@ -78,7 +81,7 @@ self.addEventListener("notificationclick", (event) => {
 });
 
 /** base64url文字列をVAPID公開鍵として`applicationServerKey`に渡せる`Uint8Array`に変換する。 */
-function urlBase64ToUint8Array(base64Url: string): Uint8Array {
+function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
   const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
