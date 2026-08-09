@@ -4,7 +4,9 @@
 知らせる学習記録共有アプリです。Cloudflare Workers 上に単一の Worker（API + 静的アセット配信）
 としてデプロイされ、PWA としてスマートフォンのホーム画面にも追加できます。
 
-設計ドキュメントの正本: `学習記録共有アプリ設計_0796bd7b.plan.md`（Cursor の plans フォルダ）。
+このプロジェクトの正本ドキュメントは、この `README.md`・
+[`.cursor/skills/shared-study-logger-overview/SKILL.md`](.cursor/skills/shared-study-logger-overview/SKILL.md)・
+`migrations/` 配下のマイグレーションファイル（gitで管理されているもの）です。
 
 ## 主な機能
 
@@ -29,6 +31,63 @@
 | Push通知 | Web Push（VAPID）、`@pushforge/builder` |
 | PWA | `vite-plugin-pwa`（`injectManifest`戦略）、Workbox |
 | バリデーション | Zod（`shared/schemas.ts`でフロント・バックエンド共通定義） |
+
+## データモデル（D1 / SQLite、`migrations/0001_init.sql`）
+
+```mermaid
+erDiagram
+  users ||--o{ group_members : "belongs to"
+  groups ||--o{ group_members : "has"
+  groups ||--o{ study_records : "contains"
+  users ||--o{ study_records : "authors"
+  users ||--o{ push_subscriptions : "registers"
+
+  users {
+    text id PK
+    text email "UNIQUE"
+    text password_hash
+    text password_salt
+    text display_name
+    text created_at
+  }
+  groups {
+    text id PK
+    text name
+    text created_at
+  }
+  group_members {
+    text group_id FK
+    text user_id FK
+    text joined_at
+  }
+  study_records {
+    text id PK
+    text group_id FK
+    text user_id FK
+    text study_date
+    text title
+    integer duration_minutes
+    text memo "nullable"
+    text created_at
+    text updated_at
+  }
+  push_subscriptions {
+    text id PK
+    text user_id FK
+    text endpoint "UNIQUE"
+    text p256dh
+    text auth_key
+    text user_agent "nullable"
+    text created_at
+  }
+```
+
+- セッションはD1ではなく **Cloudflare Workers KV**（`SESSIONS`バインディング）に保存する
+  （`session:{token}` → `{ userId, expiresAt }`）。
+- インデックス: `group_members(user_id)`、`study_records(group_id, created_at DESC)`
+  （カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`。
+- スキーマを変更する場合は`migrations/`に新しい番号のマイグレーションファイルを追加すること
+  （既存の`0001_init.sql`は本番適用済みの可能性があるため直接編集しない）。
 
 ## ディレクトリ構成（概要）
 

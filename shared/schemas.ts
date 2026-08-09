@@ -1,8 +1,8 @@
 /**
  * Worker（API）とフロントエンドの両方から import される Zod スキーマ定義。
  *
- * 設計ドキュメント「学習記録共有アプリ設計」のデータモデル（ER図）・API設計に基づく
- * 最小限の骨格。詳細なバリデーションルール・レスポンス型は各APIエンドポイントを
+ * `migrations/0001_init.sql`のデータモデル（ER図はREADME.mdの「データモデル」節参照）
+ * に基づく最小限の骨格。詳細なバリデーションルール・レスポンス型は各APIエンドポイントを
  * 実装する後続エージェント（backend-auth / backend-records / push-notifications /
  * frontend-store 等）が拡張する。
  */

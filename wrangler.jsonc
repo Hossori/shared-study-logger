@@ -29,7 +29,8 @@
 		}
 	],
 	// Cloudflare Queues: 投稿成功時にメンバー1人につき1メッセージをenqueueし、
-	// queue()ハンドラでWeb Push送信を行う（設計ドキュメント「Push通知の設計」参照）。
+	// queue()ハンドラ（src/worker/index.ts）でWeb Push送信を行う。
+	// 詳細は .cursor/skills/shared-study-logger-overview/reference/push.md を参照。
 	"queues": {
 		"producers": [
 			{

@@ -16,7 +16,8 @@ import {
 
 /**
  * 認証API（POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me）
- * 設計ドキュメント「認証・セッションフロー」参照。
+ * 認証・セッションフローの詳細は
+ * `.cursor/skills/shared-study-logger-overview/reference/auth.md` を参照。
  */
 export const authRoutes = new Hono<{
   Bindings: Env;
