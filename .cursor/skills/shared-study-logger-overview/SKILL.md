@@ -171,6 +171,14 @@ pnpm seed        # scripts/seed-users.mjs（サンプルユーザー・グルー
 - ローカルD1へのマイグレーション適用: `npx wrangler d1 migrations apply shared-study-logger-db --local`
 - サンプルログイン: `admin@example.com` / `ChangeMe123!`
 
+## エディタ警告・コード品質
+
+`tsc -b`やESLintでは検出されず、エディタ(Cursor/VSCode)上にだけ表示される型エラーや、
+非推奨API・Tailwindのアービトラリバリューの扱いなど、コードレビュー・実装時に気を付けるべき
+チェックリストは [reference/code-quality.md](reference/code-quality.md) にまとめている。
+新しいディレクトリ/エントリーポイントの追加、Base64変換等のユーティリティ実装、
+Tailwindのクラス指定を行う際は事前に確認すること。
+
 ## 既知の制約・未完了事項
 
 - **本番デプロイ未実施**: 本番シークレット(`VAPID_*`)の`wrangler secret put`設定、
@@ -195,4 +203,7 @@ Hono/D1の維持、Zustand+TanStack Queryの併用、`injectManifest`戦略、Pu
 
 新しい機能追加（例: 記録の編集/削除、グループ管理UI、コメント機能等）、APIエンドポイントの
 追加・変更、データモデルの変更、状態管理方針の変更、主要ライブラリの入れ替えを行った際は、
-このSKILL.mdおよび対応する`reference/*.md`の該当箇所をあわせて更新すること。
+このSKILL.mdおよび対応する`reference/*.md`の該当箇所をあわせて更新すること。同様に、
+今回の`tsconfig.sw.json`新設のような「機能追加ではないがエディタ警告・コード品質に関する
+知見」が得られた場合も、[reference/code-quality.md](reference/code-quality.md)に
+チェックリストとして追記し、将来同種の問題が再発しないようにすること。
