@@ -11,14 +11,14 @@ import { z } from "zod";
 // ---- 認証 -----------------------------------------------------------------
 
 export const LoginRequestSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(1),
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 export const UserSchema = z.object({
   id: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   displayName: z.string(),
   createdAt: z.string(),
 });
@@ -72,7 +72,7 @@ export type ListStudyRecordsQuery = z.infer<
 
 // ブラウザの `PushSubscription.toJSON()` の形に合わせたスキーマ
 export const PushSubscriptionSchema = z.object({
-  endpoint: z.string().url(),
+  endpoint: z.url(),
   keys: z.object({
     p256dh: z.string(),
     auth: z.string(),
