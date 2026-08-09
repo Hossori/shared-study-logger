@@ -122,12 +122,19 @@ export interface CursorPage<T> {
 }
 
 function encodeCursor(createdAt: string, id: string): string {
-  return btoa(unescape(encodeURIComponent(`${createdAt}|${id}`)));
+  const bytes = new TextEncoder().encode(`${createdAt}|${id}`);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
 }
 
 function decodeCursor(cursor: string): { createdAt: string; id: string } | null {
   try {
-    const decoded = decodeURIComponent(escape(atob(cursor)));
+    const binary = atob(cursor);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    const decoded = new TextDecoder().decode(bytes);
     const separatorIndex = decoded.lastIndexOf("|");
     if (separatorIndex === -1) return null;
     return {
