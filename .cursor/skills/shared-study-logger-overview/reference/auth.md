@@ -18,7 +18,9 @@
   TTL 30日で保存 → `Set-Cookie: session=...; HttpOnly; SameSite=Lax`。以降のリクエストは
   `requireAuth`ミドルウェアがCookieのトークンをKVで検証し`c.get("user")`にユーザー情報を載せる。
   フロントは起動時に`useMeQuery`(`GET /api/auth/me`)でログイン状態を判定し、401は例外にせず
-  `null`を返す（`App.tsx`がこれで`LoginPage`/`Layout`を出し分け）。
+  `null`を返す（`src/react-app/routes/ProtectedRoute.tsx`/`GuestRoute.tsx`がこれを使い
+  `/login`⇔`/`のリダイレクトを行う。ルーティングの詳細は
+  [state-management.md](state-management.md)参照）。
 - **注意点・既知の制約**:
   - Cookieの`secure`属性は`new URL(c.req.url).protocol === "https:"`で動的判定している
     （`src/worker/routes/auth.ts`）。`pnpm dev`（HTTP配信）でもブラウザにログインCookieが

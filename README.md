@@ -105,8 +105,11 @@ shared-study-logger/
     react-app/         # Reactフロントエンド
       stores/            # Zustand
       queries/           # TanStack Queryフック
-      features/          # 認証・グループ切替・記録一覧/投稿・通知UI
-      components/        # レイアウト
+      features/          # 認証・グループ切替・記録一覧/投稿・通知UI（ドメイン固有ロジック）
+      routes/            # react-router定義・認証ガード(ProtectedRoute/GuestRoute)・404/HomePage
+      components/        # 横断的なUI（Layout, LoadingScreen）
+      components/ui/     # ドメイン非依存の汎用UI部品（Button, FormField, ErrorMessage）
+      lib/               # api.ts(axios) / push.ts / cn.ts(clsxラッパー)
   shared/
     schemas.ts         # Zodスキーマ（Worker/フロント共通）
   migrations/           # D1マイグレーション
