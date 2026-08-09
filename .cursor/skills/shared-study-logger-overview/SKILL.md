@@ -87,53 +87,9 @@ vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(inj
 
 ## データモデル（D1 / SQLite、`migrations/0001_init.sql`）
 
-```mermaid
-erDiagram
-  users ||--o{ group_members : "belongs to"
-  groups ||--o{ group_members : "has"
-  groups ||--o{ study_records : "contains"
-  users ||--o{ study_records : "authors"
-  users ||--o{ push_subscriptions : "registers"
-
-  users {
-    text id PK
-    text email "UNIQUE"
-    text password_hash
-    text password_salt
-    text display_name
-    text created_at
-  }
-  groups {
-    text id PK
-    text name
-    text created_at
-  }
-  group_members {
-    text group_id FK
-    text user_id FK
-    text joined_at
-  }
-  study_records {
-    text id PK
-    text group_id FK
-    text user_id FK
-    text study_date
-    text title
-    integer duration_minutes
-    text memo "nullable"
-    text created_at
-    text updated_at
-  }
-  push_subscriptions {
-    text id PK
-    text user_id FK
-    text endpoint "UNIQUE"
-    text p256dh
-    text auth_key
-    text user_agent "nullable"
-    text created_at
-  }
-```
+ER図・テーブル定義・インデックス・マイグレーション運用の詳細は [docs/data-model.md](/docs/data-model.md) を参照。
+テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ
+（セッションは D1 ではなく Workers KV の `SESSIONS` バインディング）。
 
 - セッションはD1ではなく**Workers KV**（`SESSIONS`バインディング）に保存する
   （`session:{token}` → `{ userId, expiresAt }`）。

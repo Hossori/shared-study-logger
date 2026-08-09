@@ -1,6 +1,6 @@
 -- Migration number: 0001 	 2026-08-03T00:00:00.000Z
 -- 学習記録共有アプリ 初期スキーマ
--- スキーマ全体のER図とテーブルの関係はREADME.mdの「データモデル」節を参照。
+-- スキーマ全体のER図とテーブルの関係は docs/data-model.md を参照。
 
 PRAGMA foreign_keys = ON;
 

@@ -1,7 +1,7 @@
 /**
  * Worker（API）とフロントエンドの両方から import される Zod スキーマ定義。
  *
- * `migrations/0001_init.sql`のデータモデル（ER図はREADME.mdの「データモデル」節参照）
+ * `migrations/0001_init.sql`のデータモデル（ER図は`docs/data-model.md`参照）
  * に基づく最小限の骨格。詳細なバリデーションルール・レスポンス型は各APIエンドポイントを
  * 実装する後続エージェント（backend-auth / backend-records / push-notifications /
  * frontend-store 等）が拡張する。
