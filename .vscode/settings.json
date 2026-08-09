@@ -61,5 +61,15 @@
 	},
 	"[sql]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	}
+	},
+
+	"sqltools.useNodeRuntime": true,
+	"sqltools.connections": [
+		{
+			"name": "shared-study-logger-db (local D1)",
+			"driver": "SQLite",
+			"previewLimit": 50,
+			"database": "./.wrangler/state/v3/d1/miniflare-D1DatabaseObject/389ba5cf95e49ecaa8799c735edbd951dad3998bea383b3e1f76b44b2806c806.sqlite"
+		}
+	]
 }
