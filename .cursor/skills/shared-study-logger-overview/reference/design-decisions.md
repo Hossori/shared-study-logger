@@ -120,7 +120,7 @@
       `RecordsList`の「もっと見る」ボタンに適用。
     - `components/ui/FormField.tsx`: `TextField`（label+input）と`TextAreaField`
       （label+textarea）をexport。`LoginPage`のメール/パスワード欄、`PostRecordModal`の
-      学習日/タイトル/学習時間/メモ欄に適用。value/onChange等の状態管理は引き続き
+      勉強日時/タイトル/メモ欄に適用。value/onChange等の状態管理は引き続き
       呼び出し側（`features/`配下）が持ち、ここでは見た目のみを共通化することで
       デメリット(d)（organismへのロジック漏れ）を回避している。
     - `components/ui/ErrorMessage.tsx`: フォームエラー表示のボックスを共通化。

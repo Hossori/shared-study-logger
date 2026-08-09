@@ -80,7 +80,7 @@ vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(inj
 | --- | --- | --- | --- |
 | 1 | 認証・セッション | 固定アカウント方式、Cookie(`session`)ベースのセッション認証 | [reference/auth.md](reference/auth.md) |
 | 2 | グループ機能 | 所属グループのメンバーの記録のみ閲覧可能。作成/招待UIは無い | [reference/groups.md](reference/groups.md) |
-| 3 | 学習記録機能 | 学習日・タイトル・時間・メモを投稿、カーソルページネーションで一覧表示 | [reference/records.md](reference/records.md) |
+| 3 | 学習記録機能 | 勉強日時・タイトル・メモを投稿、カーソルページネーションで一覧表示 | [reference/records.md](reference/records.md) |
 | 4 | Push通知機能 | 記録投稿時に他メンバーへWeb Push（VAPID）を送信 | [reference/push.md](reference/push.md) |
 | 5 | PWA対応 | ホーム画面追加、Service Workerプリキャッシュ、Push受信 | [reference/pwa.md](reference/pwa.md) |
 | 6 | 状態管理方針 | Zustand(クライアント状態) + TanStack Query(サーバー状態)の分担 | [reference/state-management.md](reference/state-management.md) |

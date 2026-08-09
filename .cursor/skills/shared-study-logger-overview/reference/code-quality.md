@@ -83,9 +83,11 @@ function decodeCursor(cursor: string): { createdAt: string; id: string } | null 
   打消し線として表示されていた。このリポジトリのZod（`^4.4.3`）では、`ZodString`の文字列
   フォーマット系インスタンスメソッド（`.email()`, `.url()`, `.jwt()`, `.emoji()`, `.guid()`,
   `.uuid()`, `.uuidv4/6/7()`, `.nanoid()`, `.cuid()`, `.cuid2()`, `.ulid()`, `.base64()`,
-  `.base64url()`, `.xid()`, `.ksuid()`, `.ipv4()`, `.ipv6()`, `.cidrv4()`等）が全て
-  deprecatedになっており、代わりにトップレベル関数（`z.email()`, `z.url()`, `z.uuid()`等）を
-  使うことが推奨されている。両者は内部的に同じチェック関数（`core._email`/`core._url`等）を
+  `.base64url()`, `.xid()`, `.ksuid()`, `.ipv4()`, `.ipv6()`, `.cidrv4()`, `.datetime()`,
+  `.date()`, `.time()`等）が全て
+  deprecatedになっており、代わりにトップレベル関数（`z.email()`, `z.url()`, `z.uuid()`,
+  `z.iso.datetime()`等）を使うことが推奨されている。両者は内部的に同じチェック関数
+  （`core._email`/`core._url`/`core._datetime`等）を
   使っており、`z.infer<>`で推論される型（`string`）・実行時のバリデーション挙動（正しい
   メール/URL形式かどうかの判定）は変わらないため、単純な書き換えで安全に対応できる
   （実際に正しい/不正なメール・URL文字列の両方で新旧の`safeParse`結果が一致することを
@@ -119,12 +121,12 @@ export const LoginRequestSchema = z.object({
 grep -rn -E 'escape\(|unescape\(|\.substr\(|componentWillMount|findDOMNode' src
 ```
 
-  Zodの文字列フォーマット系deprecatedメソッドは以下のような専用コマンドで検出できる
-  （ヒットしても、前述の注意点のとおりZod以外の同名メソッド呼び出しが混じる可能性があるので、
-  1件ずつ実際にZodのstringスキーマへの呼び出しか確認すること）:
+  Zodの文字列フォーマット系deprecatedメソッドは `pnpm run check:zod-deprecated` で検査できる
+  （規約は `.cursor/skills/zod-schemas/SKILL.md`）。手動 grep する場合:
 
 ```bash
-grep -rnE '\.(email|url|jwt|emoji|guid|uuid|uuidv4|uuidv6|uuidv7|nanoid|cuid|cuid2|ulid|base64|base64url|xid|ksuid|ipv4|ipv6|cidrv4)\(' src shared
+grep -rnE '\.(email|url|jwt|emoji|guid|uuid|uuidv4|uuidv6|uuidv7|nanoid|cuid|cuid2|ulid|base64|base64url|xid|ksuid|ipv4|ipv6|cidrv4|datetime|date|time)\(' src shared
+# または: pnpm run check:zod-deprecated
 ```
 
 ## 3. Tailwindのアービトラリバリュー方針
@@ -228,7 +230,7 @@ grep -rnE '\[[0-9.]+(rem|px)\]' src
   - `features/auth/LoginPage.tsx`・`routes/NotFoundPage.tsx`: ページ全体を覆う
     コンテナ・カード風要素をそれぞれ`containerClassName`等に分割（Layout.tsxほど
     要素数が多くないため2〜3個の定数に留めている）。
-- **意図的に分割しなかった例**: `RecordsList.tsx`の`RecordCard`内の日付・学習時間・
+- **意図的に分割しなかった例**: `RecordsList.tsx`の`RecordCard`内の日時・
   メモ等の各`<p>`/`<span>`（3〜5クラス、単一の関心事＝タイポグラフィ+色のみ）は、
   既に十分短く読みやすいため、そのままインラインで維持している。全クラスを定数化する
   ような過剰な抽象化（例: 全`className`をCSS変数化する等）は行わない。
@@ -274,8 +276,8 @@ pnpm run format        # 実際に整形して上書きする
       含まれているか（属さない場合、専用tsconfigを新設し`tsconfig.json`の`references`に追加）
 - [ ] `escape`/`unescape`等の非推奨グローバル関数や、エディタ上で打消し線が付いたAPIを
       使っていないか
-- [ ] Zodの`.email()`/`.url()`/`.uuid()`等、文字列フォーマット系のdeprecatedな
-      インスタンスメソッドを使っていないか（`z.email()`/`z.url()`/`z.uuid()`等の
+- [ ] Zodの`.email()`/`.url()`/`.uuid()`/`.datetime()`等、文字列フォーマット系のdeprecatedな
+      インスタンスメソッドを使っていないか（`z.email()`/`z.url()`/`z.uuid()`/`z.iso.datetime()`等の
       トップレベル関数を使う）
 - [ ] `rem`/`px`のアービトラリバリューが、Tailwindの既定スペーシングスケールの数値クラスで
       置き換えられないか（`vh`/`vw`/`dvh`等のビューポート相対値は対象外）

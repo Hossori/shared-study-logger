@@ -50,6 +50,7 @@
 		"build": "tsc -b && vite build",
 		"cf-typegen": "wrangler types",
 		"check": "tsc && vite build && wrangler deploy --dry-run",
+		"check:zod-deprecated": "node scripts/check-zod-deprecated.mjs",
 		"deploy": "wrangler deploy",
 		"dev": "vite",
 		"format": "prettier --write \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",

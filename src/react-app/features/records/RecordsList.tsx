@@ -1,5 +1,5 @@
 /**
- * 選択中グループの学習記録一覧（日付・投稿者・タイトル・学習時間・メモを表示）。
+ * 選択中グループの学習記録一覧（勉強日時・投稿者・タイトル・メモを表示）。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  */
 import { useUiStore } from "../../stores/uiStore";
@@ -10,23 +10,17 @@ import Button from "../../components/ui/Button";
 const cardClassName =
   "rounded-xl border border-gray-200 bg-white p-4 shadow-sm";
 
-function formatStudyDate(studyDate: string): string {
-  const date = new Date(studyDate);
-  if (Number.isNaN(date.getTime())) return studyDate;
-  return date.toLocaleDateString("ja-JP", {
+function formatStudyDatetime(studyDatetime: string): string {
+  const date = new Date(studyDatetime);
+  if (Number.isNaN(date.getTime())) return studyDatetime;
+  return date.toLocaleString("ja-JP", {
     year: "numeric",
     month: "long",
     day: "numeric",
     weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-}
-
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (hours === 0) return `${rest}分`;
-  if (rest === 0) return `${hours}時間`;
-  return `${hours}時間${rest}分`;
 }
 
 function RecordCard({ record }: { record: StudyRecord }) {
@@ -34,7 +28,7 @@ function RecordCard({ record }: { record: StudyRecord }) {
     <li className={cardClassName}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="text-xs font-medium text-gray-500">
-          {formatStudyDate(record.studyDate)}
+          {formatStudyDatetime(record.studyDatetime)}
         </span>
         <span className="text-xs text-gray-400">
           {record.authorDisplayName ?? "不明なユーザー"}
@@ -43,15 +37,25 @@ function RecordCard({ record }: { record: StudyRecord }) {
       <h3 className="mt-1.5 text-base font-semibold text-gray-900 sm:text-lg">
         {record.title}
       </h3>
-      <p className="mt-1 text-sm font-medium text-indigo-600">
-        ⏱ {formatDuration(record.durationMinutes)}
-      </p>
       {record.memo && (
         <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">
           {record.memo}
         </p>
       )}
     </li>
+  );
+}
+
+function EmptyRecordsMessage() {
+  return (
+    <div className="py-12 text-center text-sm text-gray-400">
+      <p className="sm:hidden">
+        まだ学習記録がありません。右下の「＋」ボタンから最初の記録を投稿しましょう。
+      </p>
+      <p className="hidden sm:block">
+        まだ学習記録がありません。ヘッダーの「＋ 記録を追加」ボタンから最初の記録を投稿しましょう。
+      </p>
+    </div>
   );
 }
 
@@ -91,11 +95,7 @@ export default function RecordsList() {
   const records = data?.pages.flatMap((page) => page.records) ?? [];
 
   if (records.length === 0) {
-    return (
-      <p className="py-12 text-center text-sm text-gray-400">
-        まだ学習記録がありません。右下の「＋」ボタンから最初の記録を投稿しましょう。
-      </p>
-    );
+    return <EmptyRecordsMessage />;
   }
 
   return (

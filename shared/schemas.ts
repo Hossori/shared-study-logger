@@ -5,6 +5,8 @@
  * に基づく最小限の骨格。詳細なバリデーションルール・レスポンス型は各APIエンドポイントを
  * 実装する後続エージェント（backend-auth / backend-records / push-notifications /
  * frontend-store 等）が拡張する。
+ *
+ * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.cursor/skills/zod-schemas/SKILL.md`）。
  */
 import { z } from "zod";
 
@@ -40,9 +42,8 @@ export const StudyRecordSchema = z.object({
   groupId: z.string(),
   userId: z.string(),
   authorDisplayName: z.string().optional(),
-  studyDate: z.string(),
+  studyDatetime: z.string(),
   title: z.string().min(1),
-  durationMinutes: z.number().int().positive(),
   memo: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -50,13 +51,8 @@ export const StudyRecordSchema = z.object({
 export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 
 export const CreateStudyRecordRequestSchema = z.object({
-  studyDate: z.string(),
+  studyDatetime: z.iso.datetime(),
   title: z.string().min(1).max(200),
-  durationMinutes: z
-    .number()
-    .int()
-    .positive()
-    .max(24 * 60),
   memo: z.string().max(2000).optional(),
 });
 export type CreateStudyRecordRequest = z.infer<

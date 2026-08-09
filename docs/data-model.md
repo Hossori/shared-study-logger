@@ -34,9 +34,8 @@ erDiagram
     string id PK
     string group_id FK
     string user_id FK
-    string study_date
+    string study_datetime
     string title
-    int duration_minutes
     string memo
     string created_at
     string updated_at
@@ -56,5 +55,5 @@ erDiagram
 
 - `users.email`・`push_subscriptions.endpoint` は UNIQUE 制約あり。`study_records.memo`・`push_subscriptions.user_agent` は NULL 許可。
 - セッションは D1 ではなく **Cloudflare Workers KV**（`SESSIONS` バインディング）に保存する（`session:{token}` → `{ userId, expiresAt }`）。
-- インデックス: `group_members(user_id)`、`study_records(group_id, created_at DESC)`（カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`。
+- インデックス: `group_members(user_id)`、`study_records(group_id, study_datetime DESC, updated_at DESC, id DESC)`（カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`。
 - スキーマを変更する場合は `migrations/` に新しい番号のマイグレーションファイルを追加すること（既存の `0001_init.sql` は本番適用済みの可能性があるため直接編集しない）。

@@ -8,6 +8,7 @@ import {
   getOtherGroupMemberUserIds,
   isUserInGroup,
   listStudyRecords,
+  parseStudyRecordsCursor,
 } from "../lib/db";
 import type { PushQueueMessage } from "../lib/push";
 import type { AuthVariables } from "../middleware/requireAuth";
@@ -43,6 +44,13 @@ recordsRoutes.get("/:groupId/records", async (c) => {
     );
   }
 
+  if (
+    parsedQuery.data.cursor &&
+    !parseStudyRecordsCursor(parsedQuery.data.cursor)
+  ) {
+    return c.json({ error: "invalid_request", message: "Invalid cursor" }, 400);
+  }
+
   const page = await listStudyRecords(c.env.DB, groupId, parsedQuery.data);
   return c.json({ records: page.items, nextCursor: page.nextCursor });
 });
@@ -66,9 +74,8 @@ recordsRoutes.post("/:groupId/records", async (c) => {
     id: crypto.randomUUID(),
     groupId,
     userId: user.id,
-    studyDate: parsed.data.studyDate,
+    studyDatetime: parsed.data.studyDatetime,
     title: parsed.data.title,
-    durationMinutes: parsed.data.durationMinutes,
     memo: parsed.data.memo,
   });
 

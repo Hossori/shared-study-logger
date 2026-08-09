@@ -1,5 +1,5 @@
 /**
- * 学習記録の投稿モーダル（学習日・タイトル・学習時間(分)・メモ(任意)）。
+ * 学習記録の投稿モーダル（勉強日時・タイトル・メモ(任意)）。
  * モバイルでは下からのボトムシート風、PCでは中央配置ダイアログ。
  */
 import { useEffect, useState, type FormEvent } from "react";
@@ -20,11 +20,11 @@ const panelClassName =
 const closeButtonClassName =
   "rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600";
 
-function todayDateString(): string {
+function nowDatetimeLocalString(): string {
   const now = new Date();
   const offset = now.getTimezoneOffset();
   const local = new Date(now.getTime() - offset * 60 * 1000);
-  return local.toISOString().slice(0, 10);
+  return local.toISOString().slice(0, 16);
 }
 
 export default function PostRecordModal() {
@@ -33,16 +33,14 @@ export default function PostRecordModal() {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
   const createRecordMutation = useCreateRecordMutation(selectedGroupId);
 
-  const [studyDate, setStudyDate] = useState(todayDateString());
+  const [studyDatetime, setStudyDatetime] = useState(nowDatetimeLocalString());
   const [title, setTitle] = useState("");
-  const [durationMinutes, setDurationMinutes] = useState("30");
   const [memo, setMemo] = useState("");
 
   useEffect(() => {
     if (isOpen) {
-      setStudyDate(todayDateString());
+      setStudyDatetime(nowDatetimeLocalString());
       setTitle("");
-      setDurationMinutes("30");
       setMemo("");
       createRecordMutation.reset();
     }
@@ -53,14 +51,15 @@ export default function PostRecordModal() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsedDuration = Number.parseInt(durationMinutes, 10);
-    if (!studyDate || !title.trim() || !Number.isFinite(parsedDuration)) return;
+    if (!studyDatetime || !title.trim()) return;
+
+    const parsedDatetime = new Date(studyDatetime);
+    if (Number.isNaN(parsedDatetime.getTime())) return;
 
     try {
       await createRecordMutation.mutateAsync({
-        studyDate,
+        studyDatetime: parsedDatetime.toISOString(),
         title: title.trim(),
-        durationMinutes: parsedDuration,
         memo: memo.trim() ? memo.trim() : undefined,
       });
       closePostModal();
@@ -86,12 +85,12 @@ export default function PostRecordModal() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField
-            id="studyDate"
-            label="学習日"
-            type="date"
+            id="studyDatetime"
+            label="勉強日時"
+            type="datetime-local"
             required
-            value={studyDate}
-            onChange={(e) => setStudyDate(e.target.value)}
+            value={studyDatetime}
+            onChange={(e) => setStudyDatetime(e.target.value)}
           />
 
           <TextField
@@ -103,17 +102,6 @@ export default function PostRecordModal() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="例: 応用情報技術者試験 過去問"
-          />
-
-          <TextField
-            id="durationMinutes"
-            label="学習時間（分）"
-            type="number"
-            required
-            min={1}
-            max={24 * 60}
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(e.target.value)}
           />
 
           <TextAreaField

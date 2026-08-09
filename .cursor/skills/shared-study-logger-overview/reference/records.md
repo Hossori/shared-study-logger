@@ -2,7 +2,7 @@
 
 [← SKILL.md](../SKILL.md)
 
-- **概要**: 学習日・タイトル・学習時間（分）・メモ（任意）を投稿し、グループ内で新しい順に
+- **概要**: 勉強日時・タイトル・メモ（任意）を投稿し、グループ内で勉強日時の新しい順に
   一覧表示する。一覧はカーソルページネーション。
 - **関連ファイル**:
   - Worker: `src/worker/routes/records.ts`（`GET`/`POST /:groupId/records`）、
@@ -15,8 +15,8 @@
     `ListStudyRecordsQuerySchema`
 - **データフロー**:
   - 一覧取得: `GET /:groupId/records?cursor=...&limit=...` → 所属チェック →
-    zodでクエリ検証 → `listStudyRecords`が`created_at`+`id`を複合キーとした
-    base64エンコードカーソル（`(created_at, id) < (cursor.created_at, cursor.id)`の比較）で
+    zodでクエリ検証 → `listStudyRecords`が`study_datetime`+`updated_at`+`id`を複合キーとした
+    base64エンコードカーソル（`(study_datetime, updated_at, id)`の辞書順比較）で
     `limit+1`件取得し、`limit`件を超えていれば`nextCursor`を返す。フロントは
     `useInfiniteQuery`の`getNextPageParam`で`nextCursor`をそのままページパラメータに使う。
   - 投稿: `POST /:groupId/records` → 所属チェック → zod検証 → `createStudyRecord`でD1へINSERT

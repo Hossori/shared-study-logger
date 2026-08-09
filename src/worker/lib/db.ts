@@ -25,9 +25,8 @@ export interface StudyRecordRow {
   group_id: string;
   user_id: string;
   author_display_name: string;
-  study_date: string;
+  study_datetime: string;
   title: string;
-  duration_minutes: number;
   memo: string | null;
   created_at: string;
   updated_at: string;
@@ -121,8 +120,14 @@ export interface CursorPage<T> {
   nextCursor: string | null;
 }
 
-function encodeCursor(createdAt: string, id: string): string {
-  const bytes = new TextEncoder().encode(`${createdAt}|${id}`);
+function encodeCursor(
+  studyDatetime: string,
+  updatedAt: string,
+  id: string,
+): string {
+  const bytes = new TextEncoder().encode(
+    `${studyDatetime}|${updatedAt}|${id}`,
+  );
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
@@ -130,20 +135,28 @@ function encodeCursor(createdAt: string, id: string): string {
   return btoa(binary);
 }
 
-function decodeCursor(cursor: string): { createdAt: string; id: string } | null {
+function decodeCursor(
+  cursor: string,
+): { studyDatetime: string; updatedAt: string; id: string } | null {
   try {
     const binary = atob(cursor);
     const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
     const decoded = new TextDecoder().decode(bytes);
-    const separatorIndex = decoded.lastIndexOf("|");
-    if (separatorIndex === -1) return null;
-    return {
-      createdAt: decoded.slice(0, separatorIndex),
-      id: decoded.slice(separatorIndex + 1),
-    };
+    const parts = decoded.split("|");
+    if (parts.length !== 3) return null;
+    const [studyDatetime, updatedAt, id] = parts;
+    if (!studyDatetime || !updatedAt || !id) return null;
+    return { studyDatetime, updatedAt, id };
   } catch {
     return null;
   }
+}
+
+/** カーソル文字列をパースする。不正な場合は null を返す。 */
+export function parseStudyRecordsCursor(
+  cursor: string,
+): { studyDatetime: string; updatedAt: string; id: string } | null {
+  return decodeCursor(cursor);
 }
 
 function toStudyRecord(row: StudyRecordRow): StudyRecord {
@@ -152,9 +165,8 @@ function toStudyRecord(row: StudyRecordRow): StudyRecord {
     groupId: row.group_id,
     userId: row.user_id,
     authorDisplayName: row.author_display_name,
-    studyDate: row.study_date,
+    studyDatetime: row.study_datetime,
     title: row.title,
-    durationMinutes: row.duration_minutes,
     memo: row.memo,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -169,10 +181,13 @@ export async function listStudyRecords(
 ): Promise<CursorPage<StudyRecord>> {
   const { limit } = options;
   const cursorParts = options.cursor ? decodeCursor(options.cursor) : null;
+  if (options.cursor && !cursorParts) {
+    throw new Error("invalid_cursor");
+  }
 
   const baseQuery = `
     SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
-           sr.study_date, sr.title, sr.duration_minutes, sr.memo,
+           sr.study_datetime, sr.title, sr.memo,
            sr.created_at, sr.updated_at
     FROM study_records sr
     INNER JOIN users u ON u.id = sr.user_id
@@ -183,21 +198,28 @@ export async function listStudyRecords(
     ? db
         .prepare(
           `${baseQuery}
-           AND (sr.created_at < ? OR (sr.created_at = ? AND sr.id < ?))
-           ORDER BY sr.created_at DESC, sr.id DESC
+           AND (
+             sr.study_datetime < ?
+             OR (sr.study_datetime = ? AND sr.updated_at < ?)
+             OR (sr.study_datetime = ? AND sr.updated_at = ? AND sr.id < ?)
+           )
+           ORDER BY sr.study_datetime DESC, sr.updated_at DESC, sr.id DESC
            LIMIT ?`,
         )
         .bind(
           groupId,
-          cursorParts.createdAt,
-          cursorParts.createdAt,
+          cursorParts.studyDatetime,
+          cursorParts.studyDatetime,
+          cursorParts.updatedAt,
+          cursorParts.studyDatetime,
+          cursorParts.updatedAt,
           cursorParts.id,
           limit + 1,
         )
     : db
         .prepare(
           `${baseQuery}
-           ORDER BY sr.created_at DESC, sr.id DESC
+           ORDER BY sr.study_datetime DESC, sr.updated_at DESC, sr.id DESC
            LIMIT ?`,
         )
         .bind(groupId, limit + 1);
@@ -209,7 +231,9 @@ export async function listStudyRecords(
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
   const lastRow = pageRows[pageRows.length - 1];
   const nextCursor =
-    hasMore && lastRow ? encodeCursor(lastRow.created_at, lastRow.id) : null;
+    hasMore && lastRow
+      ? encodeCursor(lastRow.study_datetime, lastRow.updated_at, lastRow.id)
+      : null;
 
   return {
     items: pageRows.map(toStudyRecord),
@@ -221,9 +245,8 @@ export interface CreateStudyRecordInput {
   id: string;
   groupId: string;
   userId: string;
-  studyDate: string;
+  studyDatetime: string;
   title: string;
-  durationMinutes: number;
   memo?: string | null;
 }
 
@@ -235,16 +258,15 @@ export async function createStudyRecord(
   await db
     .prepare(
       `INSERT INTO study_records
-        (id, group_id, user_id, study_date, title, duration_minutes, memo, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, group_id, user_id, study_datetime, title, memo, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       input.id,
       input.groupId,
       input.userId,
-      input.studyDate,
+      input.studyDatetime,
       input.title,
-      input.durationMinutes,
       input.memo ?? null,
       now,
       now,
@@ -258,9 +280,8 @@ export async function createStudyRecord(
     groupId: input.groupId,
     userId: input.userId,
     authorDisplayName: author?.display_name,
-    studyDate: input.studyDate,
+    studyDatetime: input.studyDatetime,
     title: input.title,
-    durationMinutes: input.durationMinutes,
     memo: input.memo ?? null,
     createdAt: now,
     updatedAt: now,
