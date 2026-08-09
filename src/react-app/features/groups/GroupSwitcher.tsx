@@ -5,6 +5,10 @@ import { useEffect } from "react";
 import { useGroupsQuery } from "../../queries/useGroups";
 import { useUiStore } from "../../stores/uiStore";
 
+// モバイルでは幅を狭めて折り返しを防ぎ、PC(sm:)では幅制限を解除する。
+const selectClassName =
+  "max-w-40 truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:max-w-none sm:text-base";
+
 export default function GroupSwitcher() {
   const { data: groups, isLoading } = useGroupsQuery();
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
@@ -38,7 +42,7 @@ export default function GroupSwitcher() {
     <select
       value={selectedGroupId ?? ""}
       onChange={(e) => setSelectedGroupId(e.target.value)}
-      className="max-w-40 truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:max-w-none sm:text-base"
+      className={selectClassName}
       aria-label="グループ切替"
     >
       {groups.map((group) => (

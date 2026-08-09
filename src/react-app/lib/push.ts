@@ -3,7 +3,9 @@
  */
 
 /** base64url文字列をVAPID公開鍵として`applicationServerKey`に渡せる`Uint8Array`に変換する。 */
-export function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
+export function urlBase64ToUint8Array(
+  base64Url: string,
+): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
   const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);

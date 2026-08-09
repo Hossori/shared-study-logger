@@ -23,7 +23,8 @@
 | フロントエンド | React 19 + Vite 7、TypeScript |
 | 状態管理 | Zustand（UI状態）、TanStack Query（サーバー状態・キャッシュ） |
 | API通信 | axios（`src/react-app/lib/api.ts`でinterceptorを使い共通エラーハンドリング） |
-| スタイリング | Tailwind CSS v4（`@tailwindcss/vite`） |
+| スタイリング | Tailwind CSS v4（`@tailwindcss/vite`）、`clsx`（条件分岐によるクラス名組み立て。`src/react-app/lib/cn.ts`の`cn()`ヘルパー経由で使用） |
+| コード整形 | Prettier + `prettier-plugin-tailwindcss`（Tailwindクラスの並び順を自動統一。`pnpm run format` / `pnpm run format:check`） |
 | バックエンド | Hono（Cloudflare Workers 上で動作するAPIフレームワーク） |
 | インフラ | Cloudflare Workers（単一Worker + Static Assets） |
 | データベース | Cloudflare D1（SQLite互換） |
@@ -202,11 +203,14 @@ D1・KV・Queueのバインディング（`DB` / `SESSIONS` / `PUSH_QUEUE`）は
 ## ビルド・検証コマンド
 
 ```bash
-pnpm exec tsc -b # 型チェック（フロント・バックエンド両方、noEmit）
-pnpm build       # tsc -b && vite build（本番ビルド。dist/client にService Worker含む静的アセット、
-                 #   dist/shared_study_logger にWorkerバンドルを出力）
-pnpm lint        # ESLint
-pnpm dev         # ローカル開発サーバー（Vite）
+pnpm exec tsc -b     # 型チェック（フロント・バックエンド両方、noEmit）
+pnpm build           # tsc -b && vite build（本番ビルド。dist/client にService Worker含む静的アセット、
+                     #   dist/shared_study_logger にWorkerバンドルを出力）
+pnpm lint            # ESLint
+pnpm dev             # ローカル開発サーバー（Vite）
+pnpm run format:check # Prettier（+ prettier-plugin-tailwindcssによるTailwindクラス並び順）の整形チェック
+                       # 対象は src/react-app/**/*.{ts,tsx} と shared/**/*.ts
+pnpm run format        # 上記を実際に整形して上書きする
 ```
 
 `pnpm build` では `vite-plugin-pwa`（`injectManifest`戦略）により `public/sw.ts` が

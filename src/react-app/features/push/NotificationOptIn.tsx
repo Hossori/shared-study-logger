@@ -7,10 +7,32 @@ import {
   useUnsubscribePushMutation,
   useVapidPublicKeyQuery,
 } from "../../queries/usePushSubscription";
-import { isIosNonStandalone, isPushSupported, urlBase64ToUint8Array } from "../../lib/push";
+import {
+  isIosNonStandalone,
+  isPushSupported,
+  urlBase64ToUint8Array,
+} from "../../lib/push";
+import { cn } from "../../lib/cn";
 import type { PushSubscriptionInput } from "../../../../shared/schemas";
 
-type Status = "checking" | "unsupported" | "ios-add-to-home" | "subscribed" | "unsubscribed";
+type Status =
+  | "checking"
+  | "unsupported"
+  | "ios-add-to-home"
+  | "subscribed"
+  | "unsubscribed";
+
+const iosBannerClassName =
+  "rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:text-sm";
+
+// 全状態共通の見た目（角丸・文字サイズ・disabled時の見た目）。
+const baseToggleButtonClassName =
+  "rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm";
+// 購読状態(subscribed/unsubscribed)ごとに異なる色。
+const subscribedToggleButtonClassName =
+  "border-green-300 bg-green-50 text-green-700 hover:bg-green-100";
+const unsubscribedToggleButtonClassName =
+  "border-gray-300 bg-white text-gray-700 hover:bg-gray-50";
 
 export default function NotificationOptIn() {
   const [status, setStatus] = useState<Status>("checking");
@@ -53,11 +75,15 @@ export default function NotificationOptIn() {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setError("通知が許可されませんでした。ブラウザの設定を確認してください。");
+        setError(
+          "通知が許可されませんでした。ブラウザの設定を確認してください。",
+        );
         return;
       }
       if (!vapidPublicKey) {
-        setError("VAPID公開鍵の取得に失敗しました。時間をおいて再度お試しください。");
+        setError(
+          "VAPID公開鍵の取得に失敗しました。時間をおいて再度お試しください。",
+        );
         return;
       }
       const registration = await navigator.serviceWorker.ready;
@@ -87,7 +113,9 @@ export default function NotificationOptIn() {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
-        await unsubscribeMutation.mutateAsync({ endpoint: subscription.endpoint });
+        await unsubscribeMutation.mutateAsync({
+          endpoint: subscription.endpoint,
+        });
         await subscription.unsubscribe();
       }
       setStatus("unsubscribed");
@@ -101,7 +129,7 @@ export default function NotificationOptIn() {
 
   if (status === "ios-add-to-home") {
     return (
-      <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:text-sm">
+      <div className={iosBannerClassName}>
         通知を受け取るには、共有メニューから「ホーム画面に追加」してこのアプリを開いてください。
       </div>
     );
@@ -111,7 +139,8 @@ export default function NotificationOptIn() {
     return null;
   }
 
-  const isPending = subscribeMutation.isPending || unsubscribeMutation.isPending;
+  const isPending =
+    subscribeMutation.isPending || unsubscribeMutation.isPending;
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -119,12 +148,15 @@ export default function NotificationOptIn() {
         type="button"
         onClick={status === "subscribed" ? handleDisable : handleEnable}
         disabled={isPending}
-        title={status === "subscribed" ? "通知を無効にする" : "通知を有効にする"}
-        className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm ${
+        title={
+          status === "subscribed" ? "通知を無効にする" : "通知を有効にする"
+        }
+        className={cn(
+          baseToggleButtonClassName,
           status === "subscribed"
-            ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-        }`}
+            ? subscribedToggleButtonClassName
+            : unsubscribedToggleButtonClassName,
+        )}
       >
         {status === "subscribed" ? "🔔 通知オン" : "🔕 通知を有効にする"}
       </button>

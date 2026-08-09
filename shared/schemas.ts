@@ -52,7 +52,11 @@ export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 export const CreateStudyRecordRequestSchema = z.object({
   studyDate: z.string(),
   title: z.string().min(1).max(200),
-  durationMinutes: z.number().int().positive().max(24 * 60),
+  durationMinutes: z
+    .number()
+    .int()
+    .positive()
+    .max(24 * 60),
   memo: z.string().max(2000).optional(),
 });
 export type CreateStudyRecordRequest = z.infer<
@@ -64,9 +68,7 @@ export const ListStudyRecordsQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
-export type ListStudyRecordsQuery = z.infer<
-  typeof ListStudyRecordsQuerySchema
->;
+export type ListStudyRecordsQuery = z.infer<typeof ListStudyRecordsQuerySchema>;
 
 // ---- Push通知 ---------------------------------------------------------------
 

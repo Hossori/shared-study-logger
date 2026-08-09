@@ -156,6 +156,118 @@ rem/px等の固定長さの値をクラスに指定する際は、まずTailwind
 grep -rnE '\[[0-9.]+(rem|px)\]' src
 ```
 
+## 4. 長いTailwindクラス名の可読性改善方針
+
+1要素に10〜20個のユーティリティクラスを1行の`className`文字列として書くと、JSXの
+見通しが悪くなる。このリポジトリでは以下の3つの手法を使い分けて対応する。
+
+`class-variance-authority`(cva)のようなvariant管理ライブラリの導入も検討したが、
+`Button.tsx`のvariant数が3個（primary/secondary/ghost）と少なく、`variant`ごとの
+クラス自体も1行で十分書ける短さのため、専用ライブラリを導入するほどの複雑さが無いと
+判断し見送った（Atomic Designのフル採用を見送った際と同様の「規模に見合った選択をする」
+という判断基準。詳細は[design-decisions.md](design-decisions.md)参照）。
+
+### 使い分けの基準
+
+| 状況 | 採用する手法 |
+| --- | --- |
+| 静的な（値が変わらない）長いクラス文字列（目安: ユーティリティクラス概ね7個以上、または複数の関心事(レイアウト/色/タイポグラフィ/状態バリアント等)が1行に混在） | (c) コンポーネントファイル内のモジュールレベル定数に分割し、意味のある名前を与える |
+| 条件分岐・三項演算子でクラスを組み立てる箇所（`status === "subscribed" ? ... : ...`等） | (a) `clsx`ベースの`cn()`ヘルパー（`src/react-app/lib/cn.ts`）で組み立てる |
+| 短い（5〜6個以下）かつ単一の関心事に閉じたクラス文字列 | 無理に分割せず、そのままインラインで維持する（過剰な抽象化を避ける） |
+
+### (a) `cn()`ヘルパー（`clsx`ベース、`tailwind-merge`は不採用）
+
+`src/react-app/lib/cn.ts`が`clsx`をラップした`cn(...inputs: ClassValue[]): string`を
+提供する。`clsx`は`undefined`/`false`/空文字列を自動的に無視して結合するため、
+`` `${a} ${b}`.trim() ``のような手動の`trim()`呼び出しやテンプレートリテラル+三項演算子
+より読みやすい。
+
+- **`tailwind-merge`は導入していない**: `tailwind-merge`はクラス名の意味的な重複（例:
+  `px-2`と`px-4`が両方渡された場合に後者を勝たせる）を検出するライブラリだが、
+  このリポジトリの`variant`用クラス（`Button.tsx`の`variantClassNames`等）と呼び出し側が
+  渡す`className`は、色/ホバー系（variant側）と余白/文字サイズ系（呼び出し側）のように
+  担当するユーティリティグループが重ならないよう意図的に設計されているため、クラスの
+  重複解決自体が発生しない。無い機能のために依存を増やすのは過剰投資と判断し見送った。
+  同じユーティリティグループが複数箇所から重ねて渡される書き方が将来必要になった場合は
+  再検討すること。
+- **適用例**:
+  - `components/ui/Button.tsx`: `` `...${variantClassNames[variant]} ${className}`.trim() ``
+    という文字列結合を`cn(baseButtonClassName, variantClassNames[variant], className)`に
+    置き換えた。
+  - `components/ui/FormField.tsx`: `TextField`/`TextAreaField`の`className`結合を同様に
+    `cn()`に置き換えた。
+  - `features/push/NotificationOptIn.tsx`: 購読状態(`subscribed`/`unsubscribed`)に応じた
+    ボタンの色分岐が、`` `...${ 三項演算子 }`.trim() ``というテンプレートリテラル内三項演算子
+    (最も読みづらいパターン)になっていたのを、`baseToggleButtonClassName`
+    （共通の見た目）+ `subscribedToggleButtonClassName`/`unsubscribedToggleButtonClassName`
+    （状態別の色）の3定数 + `cn(base, status === "subscribed" ? a : b)`という条件式に
+    分解した。
+
+### (c) モジュールレベル定数への分割
+
+コンポーネントファイルの先頭（`export default function ...`の前）に、意味のある名前を
+付けた`const xxxClassName = "..."`を定義する（`FormField.tsx`の`fieldLabelClassName`/
+`fieldControlClassName`が既存の先例）。関数コンポーネント内のローカル変数ではなく
+モジュールレベル定数にするのは、値が`props`/`state`に依存しない静的な文字列であり、
+再レンダリングのたびに再生成する必要が無いため。
+
+- **適用例**:
+  - `components/Layout.tsx`: ヘッダー全体を`headerClassName`/`headerRowClassName`/
+    `titleClassName`/`desktopActionsClassName`/`userSectionClassName`/
+    `desktopUserNameClassName`/`mobileBarClassName`/`mobileUserNameClassName`/
+    `mainClassName`/`fabClassName`という10個の名前付き定数に分割した。特に
+    `headerRowClassName`（`mx-auto flex max-w-4xl flex-wrap items-center gap-2 px-3
+    py-2.5 sm:gap-3 sm:px-6 sm:py-3`、11クラス）と`fabClassName`（15クラス）が対象。
+    これによりJSX側は`<header className={headerClassName}>`のように、各要素の役割が
+    名前から読み取れるようになった。
+  - `features/groups/GroupSwitcher.tsx`: `<select>`の12クラスを`selectClassName`に分割。
+  - `features/records/PostRecordModal.tsx`: モーダル外枠を`overlayClassName`
+    （背景オーバーレイ）・`panelClassName`（本体パネル）・`closeButtonClassName`
+    （閉じるボタン）の3定数に分割。
+  - `features/records/RecordsList.tsx`: カードの外枠を`cardClassName`に分割。
+  - `features/auth/LoginPage.tsx`・`routes/NotFoundPage.tsx`: ページ全体を覆う
+    コンテナ・カード風要素をそれぞれ`containerClassName`等に分割（Layout.tsxほど
+    要素数が多くないため2〜3個の定数に留めている）。
+- **意図的に分割しなかった例**: `RecordsList.tsx`の`RecordCard`内の日付・学習時間・
+  メモ等の各`<p>`/`<span>`（3〜5クラス、単一の関心事＝タイポグラフィ+色のみ）は、
+  既に十分短く読みやすいため、そのままインラインで維持している。全クラスを定数化する
+  ような過剰な抽象化（例: 全`className`をCSS変数化する等）は行わない。
+
+### (b) `prettier-plugin-tailwindcss`（クラスの並び順の自動統一）
+
+このリポジトリには元々Prettierの設定が存在しなかった（エディタのフォーマッタが
+デフォルト設定で整形していたと推測され、`pnpm exec prettier --check`でも大半のファイルは
+既定設定のままで整形済みだった）。今回、`prettier`と`prettier-plugin-tailwindcss`を
+`devDependencies`に追加し、`.prettierrc.json`でプラグインを有効化した。
+
+```json
+{
+  "plugins": ["prettier-plugin-tailwindcss"]
+}
+```
+
+- **効果**: クラスの並び順が自動的に統一される（例: レイアウト→サイズ→余白→色→状態
+  バリアントの順）ため、同じ意味のクラス集合でも書き手によって順序がバラバラになる
+  ことがなくなり、レビュー時の差分ノイズが減る。クラス名自体の短縮にはならないため、
+  (a)(c)の対策と併用する。
+- **適用範囲**: `src/react-app/**/*.{ts,tsx}`と`shared/**/*.ts`に限定している
+  （`package.json`の`format`/`format:check`スクリプト参照）。`src/worker/`配下は
+  Tailwindクラスを含まずこのタスクのスコープ外のため、意図的に対象外にしている
+  （将来的に対象を広げる場合は追加のフォーマット差分が出ることに注意）。
+- **チェックコマンド**:
+
+```bash
+pnpm run format:check # 対象ファイルがPrettier(+クラス順序)に従っているか確認のみ
+pnpm run format        # 実際に整形して上書きする
+```
+
+- **見た目が変わっていないことの確認方法**: クラスの並び順を変えても生成されるCSS自体
+  （Tailwindが実際に出力するスタイル）は変わらない（CSSのカスケードはクラスの並び順
+  ではなく、生成されたスタイルシート内の定義順で決まるため）。今回の変更では、
+  リファクタリング前後で`pnpm build`が出力する`dist/client/assets/index-*.css`の
+  ファイル名（コンテンツハッシュ）が完全一致することを確認済み（=生成CSSがバイト単位で
+  同一）。
+
 ## まとめ: PRレビュー時のチェックリスト
 
 - [ ] 新しいディレクトリ・エントリーポイントを追加した場合、いずれかのtsconfigの`include`に
@@ -167,3 +279,7 @@ grep -rnE '\[[0-9.]+(rem|px)\]' src
       トップレベル関数を使う）
 - [ ] `rem`/`px`のアービトラリバリューが、Tailwindの既定スペーシングスケールの数値クラスで
       置き換えられないか（`vh`/`vw`/`dvh`等のビューポート相対値は対象外）
+- [ ] 長い（目安7個以上、または関心事が混在する）静的な`className`文字列をモジュール
+      レベル定数に分割したか、条件分岐によるクラス組み立ては`cn()`
+      （`src/react-app/lib/cn.ts`）を使っているか（`pnpm run format:check`で
+      クラスの並び順も統一されているか確認できる）

@@ -62,7 +62,7 @@ src/
     routes/                # react-router定義・認証ガード・404/HomePage
     components/{Layout,LoadingScreen}.tsx   # 横断的なUI（ドメインロジックを持つ）
     components/ui/{Button,FormField,ErrorMessage}.tsx  # ドメイン非依存の汎用UI部品
-    lib/{api,push}.ts
+    lib/{api,push,cn}.ts  # cn.tsはclsxベースの条件分岐クラス名ヘルパー
     main.tsx / App.tsx     # App.tsxはRouterProviderを描画するだけの薄いラッパー
 shared/schemas.ts        # Zodスキーマ（Worker/フロント共通）
 migrations/0001_init.sql # D1スキーマ
@@ -168,6 +168,8 @@ pnpm build       # tsc -b && vite build（dist/client に静的アセット+SW�
 pnpm lint        # ESLint
 pnpm dev         # ローカル開発サーバー(Vite、ポート5173/使用中なら5174等に自動変更)
 pnpm seed        # scripts/seed-users.mjs（サンプルユーザー・グループ投入、ローカルD1向け）
+pnpm run format:check # Prettier（+ prettier-plugin-tailwindcss）の整形チェック(src/react-app・shared限定)
+pnpm run format        # 上記を実際に整形して上書き
 ```
 
 - ローカルD1へのマイグレーション適用: `npx wrangler d1 migrations apply shared-study-logger-db --local`

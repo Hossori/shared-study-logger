@@ -7,6 +7,9 @@ import { useRecordsQuery } from "../../queries/useRecords";
 import type { StudyRecord } from "../../../../shared/schemas";
 import Button from "../../components/ui/Button";
 
+const cardClassName =
+  "rounded-xl border border-gray-200 bg-white p-4 shadow-sm";
+
 function formatStudyDate(studyDate: string): string {
   const date = new Date(studyDate);
   if (Number.isNaN(date.getTime())) return studyDate;
@@ -28,7 +31,7 @@ function formatDuration(minutes: number): string {
 
 function RecordCard({ record }: { record: StudyRecord }) {
   return (
-    <li className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <li className={cardClassName}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="text-xs font-medium text-gray-500">
           {formatStudyDate(record.studyDate)}
@@ -44,7 +47,7 @@ function RecordCard({ record }: { record: StudyRecord }) {
         ⏱ {formatDuration(record.durationMinutes)}
       </p>
       {record.memo && (
-        <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">
+        <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">
           {record.memo}
         </p>
       )}

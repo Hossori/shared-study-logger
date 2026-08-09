@@ -4,6 +4,7 @@
  * 呼び出し側(features/配下)が引き続き所有し、ここでは見た目のみを共通化する。
  */
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { cn } from "../../lib/cn";
 
 const fieldLabelClassName = "mb-1 block text-sm font-medium text-gray-700";
 const fieldControlClassName =
@@ -14,13 +15,22 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
 }
 
-export function TextField({ id, label, className = "", ...inputProps }: TextFieldProps) {
+export function TextField({
+  id,
+  label,
+  className,
+  ...inputProps
+}: TextFieldProps) {
   return (
     <div>
       <label htmlFor={id} className={fieldLabelClassName}>
         {label}
       </label>
-      <input id={id} className={`${fieldControlClassName} ${className}`.trim()} {...inputProps} />
+      <input
+        id={id}
+        className={cn(fieldControlClassName, className)}
+        {...inputProps}
+      />
     </div>
   );
 }
@@ -33,7 +43,7 @@ interface TextAreaFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement>
 export function TextAreaField({
   id,
   label,
-  className = "",
+  className,
   ...textareaProps
 }: TextAreaFieldProps) {
   return (
@@ -43,7 +53,7 @@ export function TextAreaField({
       </label>
       <textarea
         id={id}
-        className={`${fieldControlClassName} resize-none ${className}`.trim()}
+        className={cn(fieldControlClassName, "resize-none", className)}
         {...textareaProps}
       />
     </div>

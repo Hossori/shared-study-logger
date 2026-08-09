@@ -8,9 +8,15 @@
  * （理由は`reference/design-decisions.md`参照）。
  */
 import type { ButtonHTMLAttributes } from "react";
+import { cn } from "../../lib/cn";
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
 
+// 全variant共通の見た目（角丸・太字・トランジション・disabled時の見た目）。
+const baseButtonClassName =
+  "rounded-lg font-medium transition disabled:cursor-not-allowed disabled:opacity-60";
+
+// variantごとに異なる色・ホバー時の見た目。
 const variantClassNames: Record<ButtonVariant, string> = {
   primary: "bg-indigo-600 text-white hover:bg-indigo-700",
   secondary: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
@@ -24,13 +30,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export default function Button({
   variant = "primary",
   type = "button",
-  className = "",
+  className,
   ...props
 }: ButtonProps) {
   return (
     <button
       type={type}
-      className={`rounded-lg font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${variantClassNames[variant]} ${className}`.trim()}
+      className={cn(baseButtonClassName, variantClassNames[variant], className)}
       {...props}
     />
   );

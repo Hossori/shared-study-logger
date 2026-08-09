@@ -2,7 +2,11 @@
  * `GET /api/groups/:groupId/records`（カーソルページネーション）・
  * `POST /api/groups/:groupId/records`（投稿）をTanStack Queryで扱うフック。
  */
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type {
   CreateStudyRecordRequest,
   StudyRecord,

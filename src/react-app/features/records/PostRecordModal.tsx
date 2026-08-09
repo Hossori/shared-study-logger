@@ -9,6 +9,17 @@ import Button from "../../components/ui/Button";
 import { TextAreaField, TextField } from "../../components/ui/FormField";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 
+// モーダル背景（画面全体を覆う半透明オーバーレイ）。モバイルは下寄せ、PC(sm:)は中央寄せ。
+const overlayClassName =
+  "fixed inset-0 z-30 flex items-end justify-center bg-black/40 sm:items-center";
+// モーダル本体。モバイルは下からのボトムシート風(角丸は上のみ)、PCは中央配置の角丸ダイアログ。
+// `max-h-[90vh]`はビューポート高さに対する相対値のためアービトラリバリューのまま維持する
+// （`reference/code-quality.md`のアービトラリバリュー方針を参照）。
+const panelClassName =
+  "max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-2xl sm:p-6";
+const closeButtonClassName =
+  "rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600";
+
 function todayDateString(): string {
   const now = new Date();
   const offset = now.getTimezoneOffset();
@@ -59,21 +70,15 @@ export default function PostRecordModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 sm:items-center"
-      onClick={closePostModal}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-2xl sm:p-6"
-      >
+    <div className={overlayClassName} onClick={closePostModal}>
+      <div onClick={(e) => e.stopPropagation()} className={panelClassName}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900">学習記録を投稿</h2>
           <button
             type="button"
             onClick={closePostModal}
             aria-label="閉じる"
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className={closeButtonClassName}
           >
             ✕
           </button>

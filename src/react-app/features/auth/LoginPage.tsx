@@ -8,9 +8,14 @@ import Button from "../../components/ui/Button";
 import { TextField } from "../../components/ui/FormField";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 
+const containerClassName =
+  "flex min-h-screen items-center justify-center bg-gray-50 px-4";
+const cardClassName = "w-full max-w-sm rounded-xl bg-white p-8 shadow-sm";
+
 function loginErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 401) return "メールアドレスまたはパスワードが正しくありません。";
+    if (error.status === 401)
+      return "メールアドレスまたはパスワードが正しくありません。";
     if (error.status === 400) return "入力内容を確認してください。";
   }
   return "ログインに失敗しました。しばらくしてから再度お試しください。";
@@ -27,8 +32,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
+    <div className={containerClassName}>
+      <div className={cardClassName}>
         <h1 className="mb-1 text-center text-2xl font-bold text-gray-900">
           学習記録シェア
         </h1>
@@ -60,7 +65,9 @@ export default function LoginPage() {
           />
 
           {loginMutation.isError && (
-            <ErrorMessage>{loginErrorMessage(loginMutation.error)}</ErrorMessage>
+            <ErrorMessage>
+              {loginErrorMessage(loginMutation.error)}
+            </ErrorMessage>
           )}
 
           <Button
