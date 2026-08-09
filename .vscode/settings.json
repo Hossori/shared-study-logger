@@ -1,0 +1,65 @@
+{
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit"
+	},
+	"files.eol": "\n",
+	"files.insertFinalNewline": true,
+	"files.trimTrailingWhitespace": true,
+	"files.watcherExclude": {
+		"**/dist/**": true,
+		"**/.wrangler/**": true
+	},
+	"search.exclude": {
+		"**/dist": true,
+		"**/.wrangler": true,
+		"**/pnpm-lock.yaml": true
+	},
+
+	"js/ts.tsdk.path": "./node_modules/typescript/lib",
+	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
+
+	"eslint.useFlatConfig": true,
+	"eslint.validate": [
+		"javascript",
+		"javascriptreact",
+		"typescript",
+		"typescriptreact"
+	],
+
+	"prettier.ignorePath": ".prettierignore",
+	"prettier.documentSelectors": [
+		"src/react-app/**/*.ts",
+		"src/react-app/**/*.tsx",
+		"shared/**/*.ts"
+	],
+
+	"css.validate": false,
+	"tailwindCSS.experimental.configFile": "src/react-app/index.css",
+	"tailwindCSS.includeLanguages": {
+		"typescript": "javascript",
+		"typescriptreact": "javascript"
+	},
+	"tailwindCSS.emmetCompletions": true,
+
+	"mermaidChart.showGenerateDiagramCodeLens": false,
+
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[css]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[sql]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
+}

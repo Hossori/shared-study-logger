@@ -1,0 +1,11 @@
+{
+	"recommendations": [
+		"dbaeumer.vscode-eslint",
+		"esbenp.prettier-vscode",
+		"bradlc.vscode-tailwindcss",
+		"mermaidchart.vscode-mermaid-chart",
+		"ms-playwright.playwright",
+		"mtxr.sqltools",
+		"mtxr.sqltools-driver-sqlite"
+	]
+}
