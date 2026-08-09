@@ -77,6 +77,38 @@ function decodeCursor(cursor: string): { createdAt: string; id: string } | null 
 }
 ```
 
+- **実例2（Zod v4の文字列フォーマット系メソッド）**: `shared/schemas.ts`の
+  `LoginRequestSchema`/`UserSchema`の`email: z.string().email()`、
+  `PushSubscriptionSchema`の`endpoint: z.string().url()`が、エディタ上で`.email()`/`.url()`に
+  打消し線として表示されていた。このリポジトリのZod（`^4.4.3`）では、`ZodString`の文字列
+  フォーマット系インスタンスメソッド（`.email()`, `.url()`, `.jwt()`, `.emoji()`, `.guid()`,
+  `.uuid()`, `.uuidv4/6/7()`, `.nanoid()`, `.cuid()`, `.cuid2()`, `.ulid()`, `.base64()`,
+  `.base64url()`, `.xid()`, `.ksuid()`, `.ipv4()`, `.ipv6()`, `.cidrv4()`等）が全て
+  deprecatedになっており、代わりにトップレベル関数（`z.email()`, `z.url()`, `z.uuid()`等）を
+  使うことが推奨されている。両者は内部的に同じチェック関数（`core._email`/`core._url`等）を
+  使っており、`z.infer<>`で推論される型（`string`）・実行時のバリデーション挙動（正しい
+  メール/URL形式かどうかの判定）は変わらないため、単純な書き換えで安全に対応できる
+  （実際に正しい/不正なメール・URL文字列の両方で新旧の`safeParse`結果が一致することを
+  確認済み）:
+
+```typescript
+// Before
+export const LoginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+// After
+export const LoginRequestSchema = z.object({
+  email: z.email(),
+  password: z.string().min(1),
+});
+```
+
+  - **注意**: `.url()`のような汎用的な名前は、Zod以外のオブジェクト（例:
+    リクエスト/レスポンス系オブジェクトの`.url()`など）の同名メソッド呼び出しと衝突しうる。
+    置き換え対象が本当にZodの文字列スキーマに対する呼び出しかどうかを個別に確認してから
+    書き換えること。
 - **心構え**: エディタ上でメソッド名・関数名に打消し線（strikethrough）が表示されたら、
   それはTypeScriptが型定義の`@deprecated` JSDocタグを検出して警告しているサインである。
   無視せず、まず代替APIが無いか確認してから置き換える運用にする。
@@ -85,6 +117,14 @@ function decodeCursor(cursor: string): { createdAt: string; id: string } | null 
 
 ```bash
 grep -rn -E 'escape\(|unescape\(|\.substr\(|componentWillMount|findDOMNode' src
+```
+
+  Zodの文字列フォーマット系deprecatedメソッドは以下のような専用コマンドで検出できる
+  （ヒットしても、前述の注意点のとおりZod以外の同名メソッド呼び出しが混じる可能性があるので、
+  1件ずつ実際にZodのstringスキーマへの呼び出しか確認すること）:
+
+```bash
+grep -rnE '\.(email|url|jwt|emoji|guid|uuid|uuidv4|uuidv6|uuidv7|nanoid|cuid|cuid2|ulid|base64|base64url|xid|ksuid|ipv4|ipv6|cidrv4)\(' src shared
 ```
 
 ## 3. Tailwindのアービトラリバリュー方針
@@ -122,5 +162,8 @@ grep -rnE '\[[0-9.]+(rem|px)\]' src
       含まれているか（属さない場合、専用tsconfigを新設し`tsconfig.json`の`references`に追加）
 - [ ] `escape`/`unescape`等の非推奨グローバル関数や、エディタ上で打消し線が付いたAPIを
       使っていないか
+- [ ] Zodの`.email()`/`.url()`/`.uuid()`等、文字列フォーマット系のdeprecatedな
+      インスタンスメソッドを使っていないか（`z.email()`/`z.url()`/`z.uuid()`等の
+      トップレベル関数を使う）
 - [ ] `rem`/`px`のアービトラリバリューが、Tailwindの既定スペーシングスケールの数値クラスで
       置き換えられないか（`vh`/`vw`/`dvh`等のビューポート相対値は対象外）
