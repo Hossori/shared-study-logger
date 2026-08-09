@@ -22,6 +22,7 @@
 | --- | --- |
 | フロントエンド | React 19 + Vite 7、TypeScript |
 | 状態管理 | Zustand（UI状態）、TanStack Query（サーバー状態・キャッシュ） |
+| API通信 | axios（`src/react-app/lib/api.ts`でinterceptorを使い共通エラーハンドリング） |
 | スタイリング | Tailwind CSS v4（`@tailwindcss/vite`） |
 | バックエンド | Hono（Cloudflare Workers 上で動作するAPIフレームワーク） |
 | インフラ | Cloudflare Workers（単一Worker + Static Assets） |

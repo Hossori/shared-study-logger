@@ -24,3 +24,26 @@
 - **1人1メッセージのenqueue方式**: 1メッセージの送信失敗が他メンバーへの通知に影響しない
   設計。バッチ処理の効率化のためにこれをまとめる変更をする場合は、この独立性が失われない
   設計にすること。
+- **API呼び出しは`fetch`ではなくaxiosを採用**: フロントの`src/react-app/lib/api.ts`は
+  素の`fetch`ラッパーから`axios.create({ withCredentials: true, timeout: ... })`の
+  `instance`を使う実装に変更済み（学習目的での採用要望）。検討したメリット・デメリットは
+  以下の通り。
+  - メリット: リクエスト/レスポンスインターセプターで「非2xxレスポンスを`ApiError`に変換
+    する」処理と「ボディがある場合のみ`Content-Type: application/json`を付与する」処理を
+    一箇所に集約できる、`timeout`オプションで簡単にタイムアウトを設定できる、レスポンスの
+    JSON自動パース（`fetch`の`response.json()`手動呼び出しが不要）、`AxiosError`という
+    型付きエラーでネットワークエラー/タイムアウトとHTTPエラーを判別しやすい。
+  - デメリット: バンドルサイズが増える（フロント向けの依存であり、Workers側のCPU時間制限
+    には影響しない）、このプロジェクトの要件（同一オリジンAPI・Cookie認証・JSON専用）は
+    `fetch`だけでも十分満たせるため過剰実装になり得る、依存が1つ増える。
+  - 判断: 大きなデメリットが無く、学習目的での採用要望があったため採用した。
+    `apiGet`/`apiPost`/`apiDelete`という呼び出し側のインターフェース（関数シグネチャ）は
+    変更していないため、`src/react-app/queries/*.ts`側のコードは無変更で動作する。
+    既存の`ApiError`クラス（`status`・`body`を保持）もそのまま維持し、axiosのレスポンス
+    インターセプターで`AxiosError`（またはレスポンスが無いネットワークエラー/タイムアウト、
+    その場合は`status: 0`）を`ApiError`に変換してthrowする実装にしたため、
+    `useAuth.ts`の`error instanceof ApiError && error.status === 401`や
+    `LoginPage.tsx`の`error instanceof ApiError`によるエラーメッセージ抽出は無変更で動作する。
+    新しいAPIクライアントコードを追加する際も、`src/react-app/lib/api.ts`の
+    `apiGet`/`apiPost`/`apiDelete`経由でaxios instanceを使うこと（Worker側の実装は
+    `fetch`/Web標準APIのままで変更なし。axios導入はフロントのみに限定した変更）。
