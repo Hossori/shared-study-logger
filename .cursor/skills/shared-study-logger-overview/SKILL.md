@@ -58,9 +58,10 @@ src/
   react-app/             # フロントエンド(React)
     stores/uiStore.ts      # Zustand
     queries/*.ts           # TanStack Query hooks
-    features/{auth,groups,records,push}/**
+    features/{auth,groups,records,push}/**  # ドメイン固有ロジックを持つコンポーネント
     routes/                # react-router定義・認証ガード・404/HomePage
-    components/{Layout,LoadingScreen}.tsx
+    components/{Layout,LoadingScreen}.tsx   # 横断的なUI（ドメインロジックを持つ）
+    components/ui/{Button,FormField,ErrorMessage}.tsx  # ドメイン非依存の汎用UI部品
     lib/{api,push}.ts
     main.tsx / App.tsx     # App.tsxはRouterProviderを描画するだけの薄いラッパー
 shared/schemas.ts        # Zodスキーマ（Worker/フロント共通）

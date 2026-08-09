@@ -5,6 +5,7 @@
 import { useUiStore } from "../../stores/uiStore";
 import { useRecordsQuery } from "../../queries/useRecords";
 import type { StudyRecord } from "../../../../shared/schemas";
+import Button from "../../components/ui/Button";
 
 function formatStudyDate(studyDate: string): string {
   const date = new Date(studyDate);
@@ -104,14 +105,14 @@ export default function RecordsList() {
 
       {hasNextPage && (
         <div className="mt-4 flex justify-center">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="px-5 py-2 text-sm"
           >
             {isFetchingNextPage ? "読み込み中..." : "もっと見る"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

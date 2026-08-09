@@ -4,6 +4,9 @@
 import { useState, type FormEvent } from "react";
 import { useLoginMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
+import Button from "../../components/ui/Button";
+import { TextField } from "../../components/ui/FormField";
+import ErrorMessage from "../../components/ui/ErrorMessage";
 
 function loginErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -34,57 +37,39 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              メールアドレス
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="you@example.com"
-            />
-          </div>
+          <TextField
+            id="email"
+            label="メールアドレス"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              パスワード
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="••••••••"
-            />
-          </div>
+          <TextField
+            id="password"
+            label="パスワード"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
 
           {loginMutation.isError && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-              {loginErrorMessage(loginMutation.error)}
-            </p>
+            <ErrorMessage>{loginErrorMessage(loginMutation.error)}</ErrorMessage>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loginMutation.isPending}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full py-2.5"
           >
             {loginMutation.isPending ? "ログイン中..." : "ログイン"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

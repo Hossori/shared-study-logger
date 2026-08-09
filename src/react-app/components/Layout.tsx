@@ -9,6 +9,7 @@ import { useLogoutMutation } from "../queries/useAuth";
 import { useUiStore } from "../stores/uiStore";
 import GroupSwitcher from "../features/groups/GroupSwitcher";
 import NotificationOptIn from "../features/push/NotificationOptIn";
+import Button from "./ui/Button";
 
 interface LayoutProps {
   user: User;
@@ -33,27 +34,23 @@ export default function Layout({ user, children }: LayoutProps) {
 
           <div className="hidden items-center gap-2 sm:flex">
             <NotificationOptIn />
-            <button
-              type="button"
-              onClick={openPostModal}
-              className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-700"
-            >
+            <Button onClick={openPostModal} className="px-4 py-1.5 text-sm">
               ＋ 記録を追加
-            </button>
+            </Button>
           </div>
 
           <div className="flex items-center gap-2 border-l border-gray-200 pl-2 sm:pl-3">
             <span className="hidden max-w-32 truncate text-sm text-gray-600 sm:inline">
               {user.displayName}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
-              className="rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-60 sm:text-sm"
+              className="px-2 py-1.5 text-xs sm:text-sm"
             >
               ログアウト
-            </button>
+            </Button>
           </div>
         </div>
 

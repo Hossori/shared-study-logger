@@ -73,3 +73,71 @@
   - 対象外にしたこと: `GroupSwitcher`が管理する選択中グループ（Zustandの
     `selectedGroupId`）をURLクエリ等に同期させる変更は今回のスコープ外とし、既存の
     Zustand管理をそのまま維持した（グループ選択をURL共有可能にする場合は別途検討）。
+- **Atomic Design（5階層のUIコンポーネント分類）は見送り、`components/ui/`への部分的な
+  切り出しのみ採用**: 学習目的での採用要望があったため、フル採用(atoms/molecules/
+  organisms/templates/pages)・見送り・部分的採用(ハイブリッド)の3択で真剣に検討した。
+  - **検討したメリット**: UIの再利用性・一貫性が上がる可能性、コンポーネントの複雑度に
+    応じた明確な階層、デザインシステムとしての学習効果。
+  - **検討したデメリット（フル採用を見送った理由）**:
+    - (a) コンポーネント数が全体で10個程度（`Layout`, `LoadingScreen`, `LoginPage`,
+      `GroupSwitcher`, `NotificationOptIn`, `PostRecordModal`, `RecordsList`
+      (+内部の`RecordCard`), `HomePage`, `NotFoundPage`）と少なく、5階層への分類自体が
+      過剰設計になりやすい（他の設計判断と同じく「規模に見合った選択をする」方針に反する）。
+    - (b) 「このコンポーネントはmoleculeかorganismか」という分類の恣意性が発生しやすい。
+      例えば`GroupSwitcher`（データ取得+Zustand更新+条件分岐する`<select>`）や
+      `NotificationOptIn`（Web Push API呼び出し+複数の状態分岐を持つボタン）は、
+      見た目だけならmolecule相当だが実態はビジネスロジックを大量に抱えており、
+      明確な基準を作るのが難しい。
+    - (c) このリポジトリは`features/{auth,groups,records,push}`というドメイン単位の構成を
+      既に取っているが、Atomic Designは「UIの見た目の複雑さ」で分類するため、
+      `GroupSwitcher`（groupsドメイン）と`RecordsList`（recordsドメイン）が両方
+      organism相当になり得るなど、ドメインの一貫性を分断する。例えば「recordsドメインの
+      機能を削除する」場合、`features/records/`ディレクトリを消すだけでは済まなくなり、
+      `organisms/`・`molecules/`等複数階層をまたいで関連ファイルを探す必要が生まれる。
+    - (d) [state-management.md](state-management.md)のTanStack Query/Zustandによる
+      サーバー状態・クライアント状態の管理方針とAtomic Designの階層は直交する概念であり、
+      うまく組み合わせないと「organismにビジネスロジックが漏れる」問題が起きやすい。
+      実際、上記(b)で挙げた`GroupSwitcher`/`NotificationOptIn`/`PostRecordModal`は
+      いずれもクエリフック呼び出し・フォーム状態・副作用を内包しており、見た目の階層と
+      ロジックの所在が一致しない。
+    - (e) `react-router`導入で新設された`routes/`配下のページ相当コンポーネント
+      （`routes/HomePage.tsx`等）と、Atomic Designの`pages`層が意味的に重複・競合する。
+      `routes/`は「ルーティング（URL⇔画面の対応、認証ガード）」の関心事、Atomic Designの
+      `pages`は「テンプレートにデータを注入したもの」という別の関心事であり、無理に統合すると
+      ルート定義（`routes/router.tsx`）とpage実装の置き場所がねじれる。
+  - **判断**: フル採用(A)は上記(a)〜(e)のデメリットが小規模な本リポジトリでは明確に上回ると
+    判断し見送った。一方、実装を精査した結果、`LoginPage.tsx`と`PostRecordModal.tsx`の
+    ラベル付きinput（6箇所）・フォームエラー表示（2箇所）は完全に同一のTailwindクラスの
+    重複が**実在**していた。`LoginPage`/`PostRecordModal`/`Layout`/`RecordsList`のボタン
+    （6箇所）も、角丸・font-medium・transition等の共通の構造パターンを持ち（一部は完全一致）、
+    ドメインロジックを一切含まない見た目のみの重複だった。これを放置する見送り(B)は改善余地を
+    残すため、ドメインに依存しない汎用UI部品だけを`components/ui/`に切り出す
+    部分的採用(C)を採用した。
+    - `components/ui/Button.tsx`: `variant`（`primary`/`secondary`/`ghost`）で色・
+      ホバー・disabled時の見た目のみを共通化し、padding/text-size等のサイズは呼び出し側が
+      `className`で上書きする設計。`LoginPage`の送信ボタン、`PostRecordModal`の
+      送信/キャンセルボタン、`Layout`のヘッダー内「＋記録を追加」/ログアウトボタン、
+      `RecordsList`の「もっと見る」ボタンに適用。
+    - `components/ui/FormField.tsx`: `TextField`（label+input）と`TextAreaField`
+      （label+textarea）をexport。`LoginPage`のメール/パスワード欄、`PostRecordModal`の
+      学習日/タイトル/学習時間/メモ欄に適用。value/onChange等の状態管理は引き続き
+      呼び出し側（`features/`配下）が持ち、ここでは見た目のみを共通化することで
+      デメリット(d)（organismへのロジック漏れ）を回避している。
+    - `components/ui/ErrorMessage.tsx`: フォームエラー表示のボックスを共通化。
+      `LoginPage`・`PostRecordModal`のエラー表示に適用。
+    - **意図的に対象外にしたもの**: `Layout.tsx`のモバイル用フローティングアクションボタン
+      （円形・固定位置という一点物のスタイル）と`NotificationOptIn.tsx`の購読状態に応じた
+      2色切り替えボタンは、`Button`の`variant`に追加するとそのvariantが他で一切使われない
+      ため、無理な抽象化になると判断しあえて個別実装のまま維持した。「カード」の切り出しも
+      検討したが、`LoginPage`のカード風コンテナと`RecordCard`はpadding・borderの有無が
+      異なり実質的な重複が薄いため見送った。
+    - **命名/配置**: `atoms`/`molecules`のような抽象的な階層名ではなく、既存の
+      `components/{Layout,LoadingScreen}.tsx`と同じ`components/`配下に`ui/`
+      サブディレクトリを切っただけに留めている。これにより「ドメインに依存しない
+      横断的なUI」という役割は`components/`全体で表現されたまま、その中でも
+      「本当に汎用的な部品」であることが`ui/`のディレクトリ名から分かるようにした
+      （`atoms`/`molecules`という命名は本リポジトリの規模では情報量に見合わないと判断）。
+    - 新しいドメイン固有コンポーネントに汎用input/button/エラー表示が必要になった場合は、
+      まず`components/ui/`の既存部品を使えないか確認すること。逆に、ドメインロジックを
+      持つコンポーネント（データ取得・Zustand参照・副作用等）は今まで通り`features/`配下に
+      置き、`components/ui/`には追加しないこと（デメリット(b)(d)の再発防止）。
