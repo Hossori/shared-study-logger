@@ -43,7 +43,7 @@ export default function Layout({ user, children }: LayoutProps) {
           </div>
 
           <div className="flex items-center gap-2 border-l border-gray-200 pl-2 sm:pl-3">
-            <span className="hidden max-w-[8rem] truncate text-sm text-gray-600 sm:inline">
+            <span className="hidden max-w-32 truncate text-sm text-gray-600 sm:inline">
               {user.displayName}
             </span>
             <button
@@ -59,7 +59,7 @@ export default function Layout({ user, children }: LayoutProps) {
 
         {/* モバイル: 通知ボタンはヘッダー2段目に表示（記録追加はFABに集約） */}
         <div className="flex items-center justify-between px-3 pb-2 sm:hidden">
-          <span className="max-w-[10rem] truncate text-xs text-gray-500">
+          <span className="max-w-40 truncate text-xs text-gray-500">
             {user.displayName}
           </span>
           <NotificationOptIn />

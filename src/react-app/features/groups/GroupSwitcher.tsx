@@ -38,7 +38,7 @@ export default function GroupSwitcher() {
     <select
       value={selectedGroupId ?? ""}
       onChange={(e) => setSelectedGroupId(e.target.value)}
-      className="max-w-[10rem] truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:max-w-none sm:text-base"
+      className="max-w-40 truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:max-w-none sm:text-base"
       aria-label="グループ切替"
     >
       {groups.map((group) => (
