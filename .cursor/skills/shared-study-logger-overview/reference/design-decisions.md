@@ -47,3 +47,29 @@
     新しいAPIクライアントコードを追加する際も、`src/react-app/lib/api.ts`の
     `apiGet`/`apiPost`/`apiDelete`経由でaxios instanceを使うこと（Worker側の実装は
     `fetch`/Web標準APIのままで変更なし。axios導入はフロントのみに限定した変更）。
+- **`react-router`を採用（ルーティングライブラリ未導入という過去の判断を更新）**: 画面が
+  ログイン画面とメイン画面の2つのみだった時点では「ルーティングライブラリは過剰」と判断し
+  未導入だったが、学習目的での採用要望を受けて再検討し、v7系パッケージ（`react-router-dom`
+  ではなく統合パッケージ名の`react-router`、`createBrowserRouter`+`RouterProvider`による
+  data router API）を採用した。検討したメリット・デメリットは以下の通り。
+  - メリット: URLと画面状態が対応する（ブラウザの戻る/進む、リロード、直接アクセス、
+    ブックマークが機能する）、404ページなど今後の画面追加に対応しやすい宣言的なルート構造
+    になる、`react-router`はReactエコシステムの定番ライブラリで学習効果が高い。
+  - デメリット: 画面数が少ない現状では過剰設計になり得る、依存が1つ増える（バンドルサイズ
+    増加）、SPAをCloudflare Workers Static Assetsで配信する構成でクライアントサイド
+    ルーティング（パスベースの直接アクセス・リロード）が機能するか確認が必要だった。
+  - SPA配信の確認結果: `wrangler.jsonc`の`assets.not_found_handling: "single-page-application"`
+    により、`Sec-Fetch-Mode: navigate`ヘッダ付きのナビゲーションリクエスト
+    （実ブラウザでの直接アクセス・リロード・戻る/進む）は静的アセットに一致しない限り
+    `index.html`にフォールバックされる。このフォールバックはWorker本体（`src/worker/index.ts`
+    のHono app）を経由せず、Cloudflareのアセット配信層で行われるため
+    （`run_worker_first`未設定＝デフォルトのasset-first routing）、本番デプロイはもちろん
+    `@cloudflare/vite-plugin`を使う`pnpm dev`のローカル開発サーバーでも同様に動作することを
+    ヘッドレスブラウザでの実機確認で検証済み（`curl`単体では`Sec-Fetch-Mode: navigate`
+    ヘッダが付与されないため、Workerの通常の404レスポンスが返る点に注意。動作確認には
+    実ブラウザ、または当該ヘッダを明示的に付与したリクエストが必要）。
+  - 判断: 大きなデメリットが無く、学習目的での採用要望があったため採用した。ルート構成・
+    認証ガードの実装方針は[state-management.md](state-management.md)を参照。
+  - 対象外にしたこと: `GroupSwitcher`が管理する選択中グループ（Zustandの
+    `selectedGroupId`）をURLクエリ等に同期させる変更は今回のスコープ外とし、既存の
+    Zustand管理をそのまま維持した（グループ選択をURL共有可能にする場合は別途検討）。

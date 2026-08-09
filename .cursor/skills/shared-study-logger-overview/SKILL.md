@@ -59,9 +59,10 @@ src/
     stores/uiStore.ts      # Zustand
     queries/*.ts           # TanStack Query hooks
     features/{auth,groups,records,push}/**
-    components/Layout.tsx
+    routes/                # react-router定義・認証ガード・404/HomePage
+    components/{Layout,LoadingScreen}.tsx
     lib/{api,push}.ts
-    main.tsx / App.tsx
+    main.tsx / App.tsx     # App.tsxはRouterProviderを描画するだけの薄いラッパー
 shared/schemas.ts        # Zodスキーマ（Worker/フロント共通）
 migrations/0001_init.sql # D1スキーマ
 public/{sw.ts,manifest.webmanifest,icons/}
