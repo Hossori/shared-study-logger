@@ -69,9 +69,17 @@ grep -rnE '\[[0-9.]+(rem|px)\]' src
 - クラス並び順は`prettier-plugin-tailwindcss`で統一（`.prettierrc.json`）。対象は`src/react-app`と`shared`（`src/worker`は対象外）。並び替えだけでは生成CSSの内容は変わらない。
 
 ```bash
-pnpm run format:check   # 確認のみ
+pnpm run format:check   # 確認のみ（CI Quality でも実行）
 pnpm run format         # 整形して上書き
 ```
+
+### Prettier ゲートとコミット前整形
+
+- CI（`.github/workflows/ci.yml` の Quality）で `pnpm run format:check` が必須。ローカルでも PR 前に同じコマンドを通す。
+- `simple-git-hooks` + `lint-staged` の pre-commit が、staged な `src/react-app/**/*.{ts,tsx}` / `shared/**/*.ts` にだけ `prettier --write` する（フル `format` は走らせない）。
+- 初回 clone 後は `pnpm install`（`prepare` → `simple-git-hooks`）で hook が `.git/hooks` に入る。hook をスキップ（`--no-verify`）すると CI で再び落ちうる。
+- エディタは `.vscode/settings.json` の format on save + ワークスペース Prettier（`prettier.prettierPath`）を使う。推奨拡張は `.vscode/extensions.json`。
+- 改行は `.gitattributes` で LF 固定（`*.{cmd,bat,ps1}` のみ CRLF）。Windows の `core.autocrlf` だけでは `format:check` がローカルだけ落ちることがある。
 
 ## まとめ: PRレビュー時のチェックリスト
 
@@ -81,4 +89,4 @@ PR前に次を確認する（ZodのAPI表はここに複製しない）。
 - [ ] `escape`/`unescape`等の非推奨APIや、エディタで打消し線が付いたAPIを使っていないか
 - [ ] Zodスキーマ変更時は[zod-schemas](../../zod-schemas/SKILL.md)に従い、`pnpm run check:zod-deprecated`を実行したか
 - [ ] `rem`/`px`のアービトラリバリューが既定スペーシングの数値クラスで置き換えられないか（`vh`/`vw`/`dvh`は対象外）
-- [ ] 長い静的`className`はモジュール定数へ、条件分岐は`cn()`へ。`pnpm run format:check`でクラス順序も確認
+- [ ] 長い静的`className`はモジュール定数へ、条件分岐は`cn()`へ。`pnpm run format:check`でクラス順序も確認（コミット前は pre-commit の lint-staged でも整形）

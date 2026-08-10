@@ -37,8 +37,10 @@
 		"eslint-plugin-react-hooks": "7.0.1",
 		"eslint-plugin-react-refresh": "0.4.24",
 		"globals": "16.5.0",
+		"lint-staged": "^17.3.0",
 		"prettier": "^3.9.6",
 		"prettier-plugin-tailwindcss": "^0.8.1",
+		"simple-git-hooks": "^2.13.1",
 		"tailwindcss": "^4.3.3",
 		"typescript": "5.9.3",
 		"typescript-eslint": "8.48.0",
@@ -59,6 +61,7 @@
 		"format": "prettier --write \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",
 		"format:check": "prettier --check \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",
 		"lint": "eslint .",
+		"prepare": "simple-git-hooks",
 		"preview": "pnpm build && vite preview",
 		"seed": "node scripts/seed-users.mjs",
 		"seed:reset": "node scripts/seed-users.mjs --reset",
@@ -69,6 +72,13 @@
 		"typecheck": "tsc -b",
 		"typecheck:tests": "tsc -b tsconfig.unit.json tsconfig.tests.worker.json",
 		"playwright:install": "playwright install chromium"
+	},
+	"simple-git-hooks": {
+		"pre-commit": "pnpm exec lint-staged"
+	},
+	"lint-staged": {
+		"src/react-app/**/*.{ts,tsx}": "prettier --write",
+		"shared/**/*.ts": "prettier --write"
 	},
 	"type": "module",
 	"packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
