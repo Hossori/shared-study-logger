@@ -16,8 +16,7 @@ import {
 
 function passwordErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 401)
-      return "現在のパスワードが正しくありません。";
+    if (error.status === 401) return "現在のパスワードが正しくありません。";
     if (error.status === 400)
       return "新しいパスワードは8文字以上で入力してください。";
   }

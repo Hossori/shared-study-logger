@@ -65,11 +65,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         onClick={() => setOpen((prev) => !prev)}
         className={avatarButtonClassName}
       >
-        <img
-          src={avatarUrl}
-          alt=""
-          className="h-full w-full object-cover"
-        />
+        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
       </button>
 
       {open ? (

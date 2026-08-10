@@ -46,9 +46,7 @@ export default function ProfileSection({
   const [avatarKey, setAvatarKey] = useState<AvatarKey | null>(
     initialAvatarKey,
   );
-  const [profileFormError, setProfileFormError] = useState<string | null>(
-    null,
-  );
+  const [profileFormError, setProfileFormError] = useState<string | null>(null);
 
   const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -153,9 +151,7 @@ export default function ProfileSection({
           disabled={updateProfileMutation.isPending}
           className="px-4 py-2 text-sm"
         >
-          {updateProfileMutation.isPending
-            ? "保存中..."
-            : "プロフィールを保存"}
+          {updateProfileMutation.isPending ? "保存中..." : "プロフィールを保存"}
         </Button>
       </form>
     </section>

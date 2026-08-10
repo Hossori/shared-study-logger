@@ -29,8 +29,7 @@ const headerInnerClassName = "mx-auto max-w-4xl px-3 sm:px-6";
 const logoRowClassName =
   "flex items-center justify-between gap-2 pt-2.5 pb-1.5 sm:gap-3 sm:pt-3 sm:pb-2";
 const titleClassName = "shrink-0 text-base font-bold text-gray-900 sm:text-lg";
-const controlsRowClassName =
-  "flex items-center gap-2 pb-2.5 sm:gap-3 sm:pb-3";
+const controlsRowClassName = "flex items-center gap-2 pb-2.5 sm:gap-3 sm:pb-3";
 const desktopActionsClassName = "hidden items-center gap-2 sm:flex";
 const mobileReopenButtonClassName =
   "rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 sm:hidden";
