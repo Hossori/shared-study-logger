@@ -34,8 +34,9 @@
   - `ProtectedRoute`は認証済みの`user`（`User`型、null非許容）を`outlet`の
     `context`経由で子ルート（`routes/HomePage.tsx`・`features/auth/MyPage.tsx`）に渡す。
     子ルート側で`useMeQuery()`を呼び直して`User | null | undefined`を再度絞り込む必要が無いのが利点。
-  - `routes/HomePage.tsx`が旧`App.tsx`のメイン画面部分（`Layout` + `RecordsList` +
-    `PostRecordModal`）をそのまま引き継いでいる。マイページは`features/auth/MyPage.tsx`。
+  - `routes/HomePage.tsx`が旧`App.tsx`のメイン画面部分のうち`Layout` + `RecordsList`
+    を引き継ぎ、`PostRecordModal`はヘッダ/FABと同居するため`Layout`側で描画する。
+    マイページは`features/auth/MyPage.tsx`。
   - スコープ外: `GroupSwitcher`が管理する選択中グループ（Zustandの`selectedGroupId`）は
     URLに同期させていない（既存のZustand管理のまま）。新しい画面を追加する場合は
     `routes/router.tsx`にルートを追加し、認証要否に応じて`ProtectedRoute`/`GuestRoute`
