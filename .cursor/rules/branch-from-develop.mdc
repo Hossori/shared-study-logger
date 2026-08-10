@@ -1,0 +1,28 @@
+---
+description: develop 起点のブランチ作成と feat/chore/fix 命名規約
+alwaysApply: true
+---
+
+# ブランチ運用
+
+- 作業開始前に必ず `develop` からブランチを切る。`main` や作業ブランチからの分岐はしない。
+- ブランチ名は目的に応じて次のプレフィックスを使う。
+
+| 目的 | プレフィックス | 例 |
+|------|----------------|----|
+| 機能追加 | `feat/` | `feat/record-form-refactor` |
+| 環境・設定 | `chore/` | `chore/eslint-config` |
+| 不具合修正 | `fix/` | `fix/push-opt-in-crash` |
+
+```bash
+# ✅ GOOD
+git fetch origin
+git checkout develop
+git pull origin develop
+git checkout -b feat/notification-opt-in
+
+# ❌ BAD
+git checkout -b feat/foo          # develop 以外から切っている可能性
+git checkout -b feature/foo       # プレフィックス不一致
+git checkout -b fix-login-bug     # プレフィックス欠落
+```
