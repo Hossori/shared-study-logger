@@ -5,7 +5,17 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-	{ ignores: ["dist"] },
+	{
+		ignores: [
+			"dist",
+			"playwright-report",
+			"test-results",
+			"coverage",
+			"blob-report",
+			// wrangler types 生成物（内部の eslint-disable が unused 警告になる）
+			"worker-configuration.d.ts",
+		],
+	},
 	{
 		extends: [js.configs.recommended, ...tseslint.configs.recommended],
 		files: ["**/*.{ts,tsx}"],

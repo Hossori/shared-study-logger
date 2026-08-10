@@ -6,9 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { StudyRecord } from "../../../../shared/schemas";
 import { useUiStore } from "../../stores/uiStore";
 import { useUpdateRecordMutation } from "../../queries/useRecords";
-import RecordFormFields, {
-  type RecordFormValues,
-} from "./RecordFormFields";
+import RecordFormFields, { type RecordFormValues } from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
   buildRecordRequestPayload,
@@ -73,11 +71,7 @@ export default function EditRecordModal({
       submitLabel="保存する"
       pendingLabel="保存中..."
     >
-      <RecordFormFields
-        idPrefix="edit"
-        values={values}
-        onChange={setValues}
-      />
+      <RecordFormFields idPrefix="edit" values={values} onChange={setValues} />
     </RecordModalShell>
   );
 }

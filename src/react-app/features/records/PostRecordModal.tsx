@@ -5,9 +5,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useUiStore } from "../../stores/uiStore";
 import { useCreateRecordMutation } from "../../queries/useRecords";
-import RecordFormFields, {
-  type RecordFormValues,
-} from "./RecordFormFields";
+import RecordFormFields, { type RecordFormValues } from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
   buildRecordRequestPayload,
@@ -67,11 +65,7 @@ export default function PostRecordModal() {
       submitLabel="投稿する"
       pendingLabel="投稿中..."
     >
-      <RecordFormFields
-        idPrefix="post"
-        values={values}
-        onChange={setValues}
-      />
+      <RecordFormFields idPrefix="post" values={values} onChange={setValues} />
     </RecordModalShell>
   );
 }
