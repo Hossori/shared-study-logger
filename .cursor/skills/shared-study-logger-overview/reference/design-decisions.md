@@ -37,7 +37,7 @@
     には影響しない）、このプロジェクトの要件（同一オリジンAPI・Cookie認証・JSON専用）は
     `fetch`だけでも十分満たせるため過剰実装になり得る、依存が1つ増える。
   - 判断: 大きなデメリットが無く、学習目的での採用要望があったため採用した。
-    `apiGet`/`apiPost`/`apiDelete`という呼び出し側のインターフェース（関数シグネチャ）は
+    `apiGet`/`apiPost`/`apiPatch`/`apiDelete`という呼び出し側のインターフェース（関数シグネチャ）は
     変更していないため、`src/react-app/queries/*.ts`側のコードは無変更で動作する。
     既存の`ApiError`クラス（`status`・`body`を保持）もそのまま維持し、axiosのレスポンス
     インターセプターで`AxiosError`（またはレスポンスが無いネットワークエラー/タイムアウト、
@@ -45,7 +45,7 @@
     `useAuth.ts`の`error instanceof ApiError && error.status === 401`や
     `LoginPage.tsx`の`error instanceof ApiError`によるエラーメッセージ抽出は無変更で動作する。
     新しいAPIクライアントコードを追加する際も、`src/react-app/lib/api.ts`の
-    `apiGet`/`apiPost`/`apiDelete`経由でaxios instanceを使うこと（Worker側の実装は
+    `apiGet`/`apiPost`/`apiPatch`/`apiDelete`経由でaxios instanceを使うこと（Worker側の実装は
     `fetch`/Web標準APIのままで変更なし。axios導入はフロントのみに限定した変更）。
 - **`react-router`を採用（ルーティングライブラリ未導入という過去の判断を更新）**: 画面が
   ログイン画面とメイン画面の2つのみだった時点では「ルーティングライブラリは過剰」と判断し

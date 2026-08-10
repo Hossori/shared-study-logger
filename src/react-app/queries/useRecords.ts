@@ -1,6 +1,8 @@
 /**
  * `GET /api/groups/:groupId/records`（カーソルページネーション）・
- * `POST /api/groups/:groupId/records`（投稿）をTanStack Queryで扱うフック。
+ * `POST /api/groups/:groupId/records`（投稿）・
+ * `PATCH /api/groups/:groupId/records/:recordId`（編集）・
+ * `DELETE /api/groups/:groupId/records/:recordId`（削除）をTanStack Queryで扱うフック。
  */
 import {
   useInfiniteQuery,
@@ -10,8 +12,9 @@ import {
 import type {
   CreateStudyRecordRequest,
   StudyRecord,
+  UpdateStudyRecordRequest,
 } from "../../../shared/schemas";
-import { apiGet, apiPost } from "../lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../lib/api";
 
 interface RecordsPage {
   records: StudyRecord[];
@@ -50,6 +53,47 @@ export function useCreateRecordMutation(groupId: string | null) {
       return apiPost<{ record: StudyRecord }>(
         `/api/groups/${groupId}/records`,
         input,
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: recordsQueryKeys.list(groupId),
+      });
+    },
+  });
+}
+
+export function useUpdateRecordMutation(groupId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      recordId,
+      input,
+    }: {
+      recordId: string;
+      input: UpdateStudyRecordRequest;
+    }) => {
+      if (!groupId) throw new Error("groupId is required");
+      return apiPatch<{ record: StudyRecord }>(
+        `/api/groups/${groupId}/records/${recordId}`,
+        input,
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: recordsQueryKeys.list(groupId),
+      });
+    },
+  });
+}
+
+export function useDeleteRecordMutation(groupId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (recordId: string) => {
+      if (!groupId) throw new Error("groupId is required");
+      return apiDelete<{ ok: boolean }>(
+        `/api/groups/${groupId}/records/${recordId}`,
       );
     },
     onSuccess: async () => {
