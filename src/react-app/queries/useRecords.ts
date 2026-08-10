@@ -24,6 +24,7 @@ interface RecordsPage {
 const RECORDS_PAGE_LIMIT = 20;
 
 export const recordsQueryKeys = {
+  all: ["records"] as const,
   list: (groupId: string | null) => ["records", groupId] as const,
 };
 

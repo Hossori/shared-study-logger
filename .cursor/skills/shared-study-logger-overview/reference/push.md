@@ -11,11 +11,13 @@
     `src/worker/lib/db.ts`の`getPushSubscriptionsForUser`/`upsertPushSubscription`/
     `deletePushSubscriptionByEndpoint`/`deletePushSubscriptionById`
   - フロント: `src/react-app/features/push/NotificationOptIn.tsx`（許可リクエスト～購読UI）、
+    `src/react-app/features/push/NotificationClickRefresh.tsx`（通知タップ時の一覧取り直し）、
     `src/react-app/queries/usePushSubscription.ts`、`src/react-app/lib/push.ts`
     （`urlBase64ToUint8Array`/`isIosNonStandalone`/`isPushSupported`）
   - Service Worker側: `public/sw.ts`の`push`/`notificationclick`/`pushsubscriptionchange`
     イベントハンドラ（同名の変換関数`urlBase64ToUint8Array`をSW内にも独立実装している。
     フロント側`lib/push.ts`と重複しているが、SWは別バンドルのため意図的な重複）
+  - 共通: `shared/sw-messages.ts`（SW↔フロントの`postMessage` type。injectManifestでSWからもimport可）
   - 共通: `shared/schemas.ts`の`PushSubscriptionSchema`（ブラウザの`PushSubscription.toJSON()`
     形式に合わせている）
 - **データフロー**:
@@ -34,6 +36,10 @@
      （期限切れ購読のクリーンアップ）
   6. ブラウザのService Worker (`public/sw.ts`)が`push`イベントを受信し`showNotification()`、
      `notificationclick`で既存タブへフォーカス（`navigate`も試行）または`clients.openWindow('/')`
+  7. 既存クライアントを開く場合は `shared/sw-messages.ts`の
+     `NOTIFICATION_CLICK_MESSAGE_TYPE`で`postMessage`し、フロントの
+     `NotificationClickRefresh`が学習記録クエリを`resetQueries`して先頭から取り直す
+     （温かい復帰で古い一覧が残る対策。フォーカス復帰全般では行わない）
 - **注意点・既知の制約**:
   - **iOSの制約**: PWAをホーム画面に追加（standaloneモード）していないとPush通知を受信
     できない。`isIosNonStandalone()`でUser-Agentベースに判定し、`NotificationOptIn`が
@@ -44,3 +50,7 @@
   - `web-push`（Node製）はWorkers上で動作しないため使えない。VAPID実装は
     Web Crypto APIのみで完結する`@pushforge/builder`を採用している。代替ライブラリへの
     変更を検討する場合はWorkers対応（Node crypto非依存）であることを必ず確認すること。
+  - 通知タップ時の一覧取り直しは既存ウィンドウの`postMessage`経由（typeは
+    `shared/sw-messages.ts`）。新規起動（`openWindow`）はコールドスタートのため別途メッセージは送らない。
+  - SWを更新したあとは、端末側で新しい`sw.js`が有効になるまで（更新待ち・再起動等）
+    古い`notificationclick`のまま動く点に留意。

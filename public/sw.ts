@@ -8,6 +8,7 @@
  */
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import type { PrecacheEntry } from "workbox-precaching";
+import { NOTIFICATION_CLICK_MESSAGE_TYPE } from "../shared/sw-messages";
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;
@@ -67,6 +68,9 @@ self.addEventListener("notificationclick", (event) => {
 
       for (const client of allClients) {
         if ("focus" in client) {
+          // 既存ウィンドウは Query キャッシュが残るため、一覧の取り直しを依頼する。
+          // 新規 openWindow 時はコールドスタートで初期取得になるので不要。
+          client.postMessage({ type: NOTIFICATION_CLICK_MESSAGE_TYPE });
           await client.focus();
           if ("navigate" in client) {
             await (client as WindowClient).navigate(targetUrl).catch(() => {});
