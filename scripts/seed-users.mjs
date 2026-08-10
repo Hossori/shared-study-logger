@@ -4,8 +4,8 @@
  *
  * このアプリは固定アカウント方式（自己登録なし、管理者が事前にユーザーをDBに登録する）を
  * 採用しているため、サンプルユーザー2名（管理者・テストユーザー）・サンプルグループ3件・
- * グループメンバーシップ・学習記録（2つ目のグループに61件: 先頭30件はテストユーザー投稿、
- * 残り31件は管理者投稿）を投入する。
+ * グループメンバーシップ・学習記録（2つ目のグループに61件: 偶数indexはテストユーザー投稿、
+ * 奇数indexは管理者投稿 → test=30 / admin=31）を投入する。
  *
  * パスワードはWeb CryptoのPBKDF2（SHA-256, 100,000 iterations, 32byte導出）で
  * ハッシュ化する。これは `src/worker/lib/auth.ts`（backend-auth）で実装される
@@ -50,12 +50,12 @@ const SEED_TEST_USER_ID = SAMPLE_USERS[1].id;
 
 /**
  * 学習記録の投稿者を index（1始まり）から決定する。
- * 61件中ちょうど30件がテストユーザーになるよう、i <= 30 をテストユーザー・それ以外を管理者とする。
+ * 偶数 index → テストユーザー、奇数 index → 管理者（61件なら test=30 / admin=31）。
  * @param {number} index
  * @returns {string}
  */
 function resolveRecordAuthorId(index) {
-	return index <= 30 ? SEED_TEST_USER_ID : SEED_ADMIN_USER_ID;
+	return index % 2 === 0 ? SEED_TEST_USER_ID : SEED_ADMIN_USER_ID;
 }
 
 /** @type {{ name: string, recordCount: number }[]} */
@@ -200,8 +200,20 @@ function runWrangler(wranglerBin, projectRoot, args) {
 function resetLocalDb(projectRoot) {
 	const d1StatePath = path.join(projectRoot, ".wrangler", "state", "v3", "d1");
 	if (existsSync(d1StatePath)) {
-		rmSync(d1StatePath, { recursive: true, force: true });
-		console.log(`# ローカルD1をリセットしました: ${d1StatePath}`);
+		try {
+			rmSync(d1StatePath, { recursive: true, force: true });
+			console.log(`# ローカルD1をリセットしました: ${d1StatePath}`);
+		} catch (error) {
+			const detail =
+				error instanceof Error ? error.message : String(error);
+			const wrapped = new Error(
+				`ローカルD1の削除に失敗しました: ${detail}\n` +
+					`D1の sqlite ファイルがロックされている可能性があります。` +
+					` pnpm dev を停止してから再実行してください。`,
+			);
+			wrapped.cause = error;
+			throw wrapped;
+		}
 	} else {
 		console.log("# ローカルD1は未作成のためリセットはスキップしました。");
 	}
@@ -273,7 +285,7 @@ function main() {
 				"\n--sql-only が指定されたため wrangler d1 execute の自動実行はスキップしました。",
 			);
 			console.log(
-				`手動で実行する場合: npx wrangler d1 execute ${DB_NAME} ${remote ? "--remote" : "--local"} --file=${outputPath}`,
+				`手動で実行する場合: npx wrangler d1 execute ${DB_NAME} ${remote ? "--remote" : "--local"} --file=${outputPath} --yes`,
 			);
 			return;
 		}
@@ -295,7 +307,7 @@ function main() {
 			}
 
 			console.log(
-				`\n# wrangler d1 execute ${DB_NAME} ${target} --file=${outputPath} を実行します...`,
+				`\n# wrangler d1 execute ${DB_NAME} ${target} --file=${outputPath} --yes を実行します...`,
 			);
 			runWrangler(wranglerBin, projectRoot, [
 				"d1",
@@ -303,14 +315,18 @@ function main() {
 				DB_NAME,
 				target,
 				`--file=${outputPath}`,
+				"--yes",
 			]);
 			console.log("\n✅ シード投入が完了しました。");
-		} catch {
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : String(error);
 			console.error(
-				"\n⚠️ wrangler d1 execute の自動実行に失敗しました（未ログイン等の場合はここでエラーになります）。",
+				"\n⚠️ シード投入の自動実行に失敗しました（ローカルD1の削除失敗・ファイルロック、マイグレーション/execute の失敗、未ログインなどが考えられます）。",
 			);
+			console.error(`原因: ${message}`);
 			console.error(
-				`手動で実行してください: npx wrangler d1 execute ${DB_NAME} ${target} --file=${outputPath}`,
+				`手動で実行する場合: npx wrangler d1 execute ${DB_NAME} ${target} --file=${outputPath} --yes`,
 			);
 			process.exitCode = 1;
 		}
