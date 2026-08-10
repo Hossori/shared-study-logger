@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * 初期ユーザー・グループ投入用シードスクリプト。
+ * 初期ユーザー・グループ・学習記録投入用シードスクリプト。
  *
  * このアプリは固定アカウント方式（自己登録なし、管理者が事前にユーザーをDBに登録する）を
- * 採用しているため、サンプルの管理者ユーザー・サンプルグループ2件・
- * グループメンバーシップを投入する。
+ * 採用しているため、サンプルの管理者ユーザー・サンプルグループ3件・
+ * グループメンバーシップ・学習記録（2つ目のグループに61件）を投入する。
  *
  * パスワードはWeb CryptoのPBKDF2（SHA-256, 100,000 iterations, 32byte導出）で
  * ハッシュ化する。これは `src/worker/lib/auth.ts`（backend-auth）で実装される
@@ -33,9 +33,11 @@ const SAMPLE_ADMIN = {
 	displayName: "管理者",
 };
 
+/** @type {{ name: string, recordCount: number }[]} */
 const SAMPLE_GROUPS = [
-	{ name: "サンプル学習グループ" },
-	{ name: "テストグループ2" },
+	{ name: "サンプル学習グループ", recordCount: 0 },
+	{ name: "テストグループ2", recordCount: 61 },
+	{ name: "テストグループ3", recordCount: 0 },
 ];
 
 /** 再実行しても同じ行を指す固定ID（INSERT OR IGNORE と組み合わせて冪等にする） */
@@ -43,7 +45,11 @@ const SEED_USER_ID = "00000000-0000-4000-a000-000000000001";
 const SEED_GROUP_IDS = [
 	"00000000-0000-4000-a000-000000000002",
 	"00000000-0000-4000-a000-000000000003",
+	"00000000-0000-4000-a000-000000000004",
 ];
+
+/** 学習記録の勉強日時の基準（新しい順に1日ずつ遡る） */
+const SEED_RECORDS_BASE_DATETIME = Date.parse("2026-08-01T12:00:00.000Z");
 
 /** @returns {string} 16byteのランダムsalt(hex文字列) */
 function generateSaltHex() {
@@ -85,6 +91,43 @@ function sqlEscape(value) {
 	return value.replace(/'/g, "''");
 }
 
+/**
+ * シード学習記録の固定UUID（1始まり）。
+ * @param {number} index
+ * @returns {string}
+ */
+function seedRecordId(index) {
+	return `00000000-0000-4000-b000-${String(index).padStart(12, "0")}`;
+}
+
+/**
+ * @param {string} groupId
+ * @param {string} userId
+ * @param {number} count
+ * @returns {string[]}
+ */
+function buildStudyRecordStatements(groupId, userId, count) {
+	const dayMs = 24 * 60 * 60 * 1000;
+	const statements = [];
+
+	for (let i = 1; i <= count; i++) {
+		const studyDatetime = new Date(
+			SEED_RECORDS_BASE_DATETIME - (i - 1) * dayMs,
+		).toISOString();
+		const createdAt = studyDatetime;
+		const title = `サンプル学習記録 ${i}`;
+		const memo =
+			i % 3 === 0 ? `シード用メモ ${i}` : null;
+		const memoSql = memo === null ? "NULL" : `'${sqlEscape(memo)}'`;
+
+		statements.push(
+			`INSERT OR IGNORE INTO study_records (id, group_id, user_id, study_datetime, title, memo, created_at, updated_at) VALUES ('${seedRecordId(i)}', '${groupId}', '${userId}', '${studyDatetime}', '${sqlEscape(title)}', ${memoSql}, '${createdAt}', '${createdAt}');`,
+		);
+	}
+
+	return statements;
+}
+
 async function buildSeedSql() {
 	const now = new Date().toISOString();
 	const salt = generateSaltHex();
@@ -92,10 +135,18 @@ async function buildSeedSql() {
 
 	const statements = [
 		`INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, display_name, created_at) VALUES ('${SEED_USER_ID}', '${sqlEscape(SAMPLE_ADMIN.email)}', '${passwordHash}', '${salt}', '${sqlEscape(SAMPLE_ADMIN.displayName)}', '${now}');`,
-		...SAMPLE_GROUPS.flatMap((group, i) => [
-			`INSERT OR IGNORE INTO groups (id, name, created_at) VALUES ('${SEED_GROUP_IDS[i]}', '${sqlEscape(group.name)}', '${now}');`,
-			`INSERT OR IGNORE INTO group_members (group_id, user_id, joined_at) VALUES ('${SEED_GROUP_IDS[i]}', '${SEED_USER_ID}', '${now}');`,
-		]),
+		...SAMPLE_GROUPS.flatMap((group, i) => {
+			const groupId = SEED_GROUP_IDS[i];
+			return [
+				`INSERT OR IGNORE INTO groups (id, name, created_at) VALUES ('${groupId}', '${sqlEscape(group.name)}', '${now}');`,
+				`INSERT OR IGNORE INTO group_members (group_id, user_id, joined_at) VALUES ('${groupId}', '${SEED_USER_ID}', '${now}');`,
+				...buildStudyRecordStatements(
+					groupId,
+					SEED_USER_ID,
+					group.recordCount,
+				),
+			];
+		}),
 	];
 
 	return { sql: statements.join("\n"), userId: SEED_USER_ID, groupIds: SEED_GROUP_IDS };
@@ -154,7 +205,10 @@ function main() {
 		console.log(`\n# サンプル管理者ユーザー: ${SAMPLE_ADMIN.email} / ${SAMPLE_ADMIN.password}`);
 		console.log(`# user.id = ${userId}`);
 		groupIds.forEach((id, i) => {
-			console.log(`# group[${i}].id = ${id} (${SAMPLE_GROUPS[i].name})`);
+			const group = SAMPLE_GROUPS[i];
+			console.log(
+				`# group[${i}].id = ${id} (${group.name}, records=${group.recordCount})`,
+			);
 		});
 
 		if (skipExecute) {
