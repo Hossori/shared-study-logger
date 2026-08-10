@@ -22,6 +22,8 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.email(),
   displayName: z.string(),
+  /** アバタープリセットキー。未設定時はフロントでデフォルト表示する。 */
+  avatarKey: z.string().nullable().optional(),
   createdAt: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;

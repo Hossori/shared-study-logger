@@ -214,14 +214,11 @@ grep -rnE '\[[0-9.]+(rem|px)\]' src
 再レンダリングのたびに再生成する必要が無いため。
 
 - **適用例**:
-  - `components/Layout.tsx`: ヘッダー全体を`headerClassName`/`headerRowClassName`/
-    `titleClassName`/`desktopActionsClassName`/`userSectionClassName`/
-    `desktopUserNameClassName`/`mobileBarClassName`/`mobileUserNameClassName`/
-    `mainClassName`/`fabClassName`という10個の名前付き定数に分割した。特に
-    `headerRowClassName`（`mx-auto flex max-w-4xl flex-wrap items-center gap-2 px-3
-    py-2.5 sm:gap-3 sm:px-6 sm:py-3`、11クラス）と`fabClassName`（15クラス）が対象。
-    これによりJSX側は`<header className={headerClassName}>`のように、各要素の役割が
-    名前から読み取れるようになった。
+  - `components/Layout.tsx`: 2行ヘッダー（ロゴ行 / グループ+通知+プロフィール行）を
+    `headerClassName`/`headerInnerClassName`/`logoRowClassName`/`titleClassName`/
+    `desktopActionsClassName`/`controlsRowClassName`/`mainClassName`/`fabClassName`
+    等の名前付き定数に分割している。`fabClassName`（15クラス前後）が特に長い。
+    プロフィールメニュー本体のクラスは`ProfileMenu.tsx`側で同様に定数化している。
   - `features/groups/GroupSwitcher.tsx`: `<select>`の12クラスを`selectClassName`に分割。
   - `features/records/PostRecordModal.tsx`: モーダル外枠を`overlayClassName`
     （背景オーバーレイ）・`panelClassName`（本体パネル）・`closeButtonClassName`
