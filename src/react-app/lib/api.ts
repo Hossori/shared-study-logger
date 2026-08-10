@@ -68,6 +68,10 @@ export function apiPost<T>(path: string, data?: unknown): Promise<T> {
   return client.post<T>(path, data).then((response) => response.data);
 }
 
+export function apiPatch<T>(path: string, data?: unknown): Promise<T> {
+  return client.patch<T>(path, data).then((response) => response.data);
+}
+
 export function apiDelete<T>(path: string, data?: unknown): Promise<T> {
   return client.delete<T>(path, { data }).then((response) => response.data);
 }

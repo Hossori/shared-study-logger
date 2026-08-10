@@ -9,6 +9,16 @@
  * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.cursor/skills/zod-schemas/SKILL.md`）。
  */
 import { z } from "zod";
+import { AvatarKeySchema } from "./avatars";
+
+export {
+  AVATAR_KEYS,
+  AVATAR_PATHS,
+  AvatarKeySchema,
+  DEFAULT_AVATAR_PATH,
+  getAvatarUrl,
+  type AvatarKey,
+} from "./avatars";
 
 // ---- 認証 -----------------------------------------------------------------
 
@@ -22,9 +32,34 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.email(),
   displayName: z.string(),
+  bio: z.string().nullable(),
+  avatarKey: AvatarKeySchema.nullable(),
   createdAt: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+/** PATCH /api/auth/me — プロフィール更新（少なくとも1フィールド必須） */
+export const UpdateProfileRequestSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(50).optional(),
+    bio: z.string().max(500).nullable().optional(),
+    avatarKey: AvatarKeySchema.nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      data.displayName !== undefined ||
+      data.bio !== undefined ||
+      data.avatarKey !== undefined,
+    { message: "at_least_one_field_required" },
+  );
+export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequestSchema>;
+
+/** POST /api/auth/password — パスワード変更 */
+export const ChangePasswordRequestSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8).max(128),
+});
+export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 
 // ---- グループ ---------------------------------------------------------------
 

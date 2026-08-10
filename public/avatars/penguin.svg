@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="penguin avatar">
+  <circle cx="48" cy="48" r="48" fill="#1e3a8a"/>
+  <ellipse cx="48" cy="56" rx="22" ry="26" fill="#eff6ff"/>
+  <circle cx="36" cy="40" r="5" fill="#0f172a"/>
+  <circle cx="60" cy="40" r="5" fill="#0f172a"/>
+  <polygon points="48,46 40,54 56,54" fill="#f59e0b"/>
+  <ellipse cx="28" cy="64" rx="8" ry="14" fill="#1e40af"/>
+  <ellipse cx="68" cy="64" rx="8" ry="14" fill="#1e40af"/>
+</svg>

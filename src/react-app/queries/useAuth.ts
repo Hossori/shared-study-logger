@@ -1,10 +1,15 @@
 /**
- * 認証関連API（`GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/logout`）を
- * TanStack Queryで扱うフック。
+ * 認証関連API（`GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/logout`,
+ * `PATCH /api/auth/me`, `POST /api/auth/password`）を TanStack Queryで扱うフック。
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LoginRequest, User } from "../../../shared/schemas";
-import { apiGet, apiPost, ApiError } from "../lib/api";
+import type {
+  ChangePasswordRequest,
+  LoginRequest,
+  UpdateProfileRequest,
+  User,
+} from "../../../shared/schemas";
+import { apiGet, apiPatch, apiPost, ApiError } from "../lib/api";
 
 export const authQueryKeys = {
   me: ["auth", "me"] as const,
@@ -51,5 +56,24 @@ export function useLogoutMutation() {
       queryClient.setQueryData(authQueryKeys.me, null);
       await queryClient.invalidateQueries();
     },
+  });
+}
+
+export function useUpdateProfileMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateProfileRequest) =>
+      apiPatch<{ user: User }>("/api/auth/me", input),
+    onSuccess: async ({ user }) => {
+      queryClient.setQueryData(authQueryKeys.me, user);
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me });
+    },
+  });
+}
+
+export function useChangePasswordMutation() {
+  return useMutation({
+    mutationFn: (input: ChangePasswordRequest) =>
+      apiPost<{ ok: true }>("/api/auth/password", input),
   });
 }

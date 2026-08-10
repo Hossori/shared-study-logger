@@ -3,7 +3,8 @@
  * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録作成、
  * push_subscriptions CRUDをまとめる。
  */
-import type { StudyRecord } from "../../../shared/schemas";
+import type { AvatarKey, StudyRecord, User } from "../../../shared/schemas";
+import { AvatarKeySchema } from "../../../shared/schemas";
 
 export interface UserRow {
   id: string;
@@ -11,6 +12,8 @@ export interface UserRow {
   password_hash: string;
   password_salt: string;
   display_name: string;
+  bio: string | null;
+  avatar_key: string | null;
   created_at: string;
 }
 
@@ -64,6 +67,73 @@ export async function getUserById(
     .bind(id)
     .first<UserRow>();
   return row ?? null;
+}
+
+/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。 */
+export function toUser(row: UserRow): User {
+  const parsedAvatar = AvatarKeySchema.safeParse(row.avatar_key);
+  return {
+    id: row.id,
+    email: row.email,
+    displayName: row.display_name,
+    bio: row.bio ?? null,
+    avatarKey: parsedAvatar.success ? parsedAvatar.data : null,
+    createdAt: row.created_at,
+  };
+}
+
+export interface UpdateUserProfileInput {
+  displayName?: string;
+  bio?: string | null;
+  avatarKey?: AvatarKey | null;
+}
+
+export async function updateUserProfile(
+  db: D1Database,
+  userId: string,
+  input: UpdateUserProfileInput,
+): Promise<UserRow | null> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+
+  if (input.displayName !== undefined) {
+    sets.push("display_name = ?");
+    values.push(input.displayName);
+  }
+  if (input.bio !== undefined) {
+    sets.push("bio = ?");
+    values.push(input.bio);
+  }
+  if (input.avatarKey !== undefined) {
+    sets.push("avatar_key = ?");
+    values.push(input.avatarKey);
+  }
+
+  if (sets.length === 0) {
+    return getUserById(db, userId);
+  }
+
+  values.push(userId);
+  await db
+    .prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`)
+    .bind(...values)
+    .run();
+
+  return getUserById(db, userId);
+}
+
+export async function updateUserPassword(
+  db: D1Database,
+  userId: string,
+  passwordHash: string,
+  passwordSalt: string,
+): Promise<void> {
+  await db
+    .prepare(
+      "UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?",
+    )
+    .bind(passwordHash, passwordSalt, userId)
+    .run();
 }
 
 // ---- groups -------------------------------------------------------------
