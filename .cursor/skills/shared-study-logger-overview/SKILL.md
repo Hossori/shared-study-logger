@@ -65,8 +65,9 @@ src/
     lib/{api,push,cn}.ts  # cn.tsはclsxベースの条件分岐クラス名ヘルパー
     main.tsx / App.tsx     # App.tsxはRouterProviderを描画するだけの薄いラッパー
 shared/schemas.ts        # Zodスキーマ（Worker/フロント共通）
-migrations/0001_init.sql # D1スキーマ
-public/{sw.ts,manifest.webmanifest,icons/}
+shared/avatars.ts        # アバタープリセットキー・getAvatarUrl
+migrations/0001_init.sql # D1スキーマ（以降 0002〜 で変更）
+public/{sw.ts,manifest.webmanifest,icons/,avatars/}
 wrangler.jsonc            # D1/KV/Queueバインディング設定
 vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(injectManifest)
 ```
@@ -78,19 +79,21 @@ vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(inj
 
 | # | 機能 | 概要 | 詳細 |
 | --- | --- | --- | --- |
-| 1 | 認証・セッション | 固定アカウント方式、Cookie(`session`)ベースのセッション認証 | [reference/auth.md](reference/auth.md) |
+| 1 | 認証・セッション | 固定アカウント方式、Cookie(`session`)ベースのセッション認証。マイページでプロフィール/パスワード変更可 | [reference/auth.md](reference/auth.md) |
 | 2 | グループ機能 | 所属グループのメンバーの記録のみ閲覧可能。作成/招待UIは無い | [reference/groups.md](reference/groups.md) |
 | 3 | 学習記録機能 | 勉強日時・タイトル・メモを投稿・編集・削除、カーソルページネーションで一覧表示 | [reference/records.md](reference/records.md) |
 | 4 | Push通知機能 | 記録投稿時に他メンバーへWeb Push（VAPID）を送信 | [reference/push.md](reference/push.md) |
 | 5 | PWA対応 | ホーム画面追加、Service Workerプリキャッシュ、Push受信 | [reference/pwa.md](reference/pwa.md) |
 | 6 | 状態管理方針 | Zustand(クライアント状態) + TanStack Query(サーバー状態)の分担 | [reference/state-management.md](reference/state-management.md) |
 
-## データモデル（D1 / SQLite、`migrations/0001_init.sql`）
+## データモデル（D1 / SQLite、`migrations/`）
 
 ER図・テーブル定義・インデックス・マイグレーション運用の詳細は [docs/data-model.md](/docs/data-model.md) を参照。
 テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ
 （セッションは D1 ではなく Workers KV の `SESSIONS` バインディング）。
 
+- `users` には表示名・認証情報に加え、マイページ用の `bio`（自己紹介、NULL可）と
+  `avatar_key`（プリセット画像キー、NULL可＝デフォルト）がある（`migrations/0004_user_profile.sql`）。
 - セッションはD1ではなく**Workers KV**（`SESSIONS`バインディング）に保存する
   （`session:{token}` → `{ userId, expiresAt }`）。
 - インデックス: `group_members(user_id)`、`study_records(group_id, created_at DESC)`
@@ -104,7 +107,9 @@ ER図・テーブル定義・インデックス・マイグレーション運用
 | --- | --- | --- | --- |
 | POST | `/api/auth/login` | 不要 | ログイン（email/password検証、セッションCookie発行） |
 | POST | `/api/auth/logout` | 必要 | ログアウト（KVセッション削除、Cookieクリア） |
-| GET | `/api/auth/me` | 必要 | ログイン中ユーザー情報取得 |
+| GET | `/api/auth/me` | 必要 | ログイン中ユーザー情報取得（`bio` / `avatarKey` 含む） |
+| PATCH | `/api/auth/me` | 必要 | プロフィール更新（`displayName` / `bio` / `avatarKey`） |
+| POST | `/api/auth/password` | 必要 | パスワード変更（現在のパスワード検証 + PBKDF2再ハッシュ） |
 | GET | `/api/groups` | 必要 | 自分が所属するグループ一覧 |
 | GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順） |
 | POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue） |
@@ -115,8 +120,9 @@ ER図・テーブル定義・インデックス・マイグレーション運用
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
 
 認証必須の適用箇所: `src/worker/index.ts`で`/api/groups/*`全体に`requireAuth`を一括適用し、
-`/api/auth/logout`・`/me`と`/api/push/subscribe`は各ルートファイル内で個別に`requireAuth`を
-適用している。新しいエンドポイントを追加する際はどちらの方式にするか`index.ts`を確認すること。
+`/api/auth/logout`・`/me`・`PATCH /me`・`POST /password`と`/api/push/subscribe`は各ルートファイル内で
+個別に`requireAuth`を適用している。新しいエンドポイントを追加する際はどちらの方式にするか
+`index.ts`を確認すること。
 
 ## ビルド・検証コマンド
 

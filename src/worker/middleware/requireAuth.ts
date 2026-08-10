@@ -1,17 +1,13 @@
 import { createMiddleware } from "hono/factory";
 import { getCookie } from "hono/cookie";
+import type { User } from "../../../shared/schemas";
 import { getSession } from "../lib/session";
-import { getUserById } from "../lib/db";
+import { getUserById, toUser } from "../lib/db";
 
 export const SESSION_COOKIE_NAME = "session";
 
 /** requireAuthを通過したハンドラのcontextに載る認証済みユーザー情報。 */
-export interface AuthUser {
-  id: string;
-  email: string;
-  displayName: string;
-  createdAt: string;
-}
+export type AuthUser = User;
 
 export interface AuthVariables {
   user: AuthUser;
@@ -41,12 +37,7 @@ export const requireAuth = createMiddleware<{
     return c.json({ error: "unauthorized" }, 401);
   }
 
-  c.set("user", {
-    id: user.id,
-    email: user.email,
-    displayName: user.display_name,
-    createdAt: user.created_at,
-  });
+  c.set("user", toUser(user));
 
   await next();
 });

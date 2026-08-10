@@ -1,8 +1,23 @@
 import { Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-import { LoginRequestSchema, type User } from "../../../shared/schemas";
-import { getUserByEmail } from "../lib/db";
-import { verifyPassword } from "../lib/auth";
+import {
+  ChangePasswordRequestSchema,
+  LoginRequestSchema,
+  UpdateProfileRequestSchema,
+  type User,
+} from "../../../shared/schemas";
+import {
+  getUserByEmail,
+  getUserById,
+  toUser,
+  updateUserPassword,
+  updateUserProfile,
+} from "../lib/db";
+import {
+  generateSaltHex,
+  hashPassword,
+  verifyPassword,
+} from "../lib/auth";
 import {
   createSession,
   destroySession,
@@ -15,7 +30,7 @@ import {
 } from "../middleware/requireAuth";
 
 /**
- * 認証API（POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me）
+ * 認証API（login / logout / me / プロフィール更新 / パスワード変更）
  * 認証・セッションフローの詳細は
  * `.cursor/skills/shared-study-logger-overview/reference/auth.md` を参照。
  */
@@ -60,12 +75,7 @@ authRoutes.post("/login", async (c) => {
     maxAge: SESSION_TTL_SECONDS,
   });
 
-  const user: User = {
-    id: userRow.id,
-    email: userRow.email,
-    displayName: userRow.display_name,
-    createdAt: userRow.created_at,
-  };
+  const user: User = toUser(userRow);
   return c.json({ user });
 });
 
@@ -80,11 +90,60 @@ authRoutes.post("/logout", requireAuth, async (c) => {
 
 authRoutes.get("/me", requireAuth, async (c) => {
   const authUser = c.get("user");
-  const user: User = {
-    id: authUser.id,
-    email: authUser.email,
-    displayName: authUser.displayName,
-    createdAt: authUser.createdAt,
-  };
-  return c.json({ user });
+  // requireAuth 通過時点のスナップショットではなく、最新のプロフィールを返す
+  const userRow = await getUserById(c.env.DB, authUser.id);
+  if (!userRow) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+  return c.json({ user: toUser(userRow) });
+});
+
+authRoutes.patch("/me", requireAuth, async (c) => {
+  const json = await c.req.json().catch(() => null);
+  const parsed = UpdateProfileRequestSchema.safeParse(json);
+  if (!parsed.success) {
+    return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  }
+
+  const authUser = c.get("user");
+  const updated = await updateUserProfile(c.env.DB, authUser.id, {
+    displayName: parsed.data.displayName,
+    bio: parsed.data.bio,
+    avatarKey: parsed.data.avatarKey,
+  });
+  if (!updated) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+
+  return c.json({ user: toUser(updated) });
+});
+
+authRoutes.post("/password", requireAuth, async (c) => {
+  const json = await c.req.json().catch(() => null);
+  const parsed = ChangePasswordRequestSchema.safeParse(json);
+  if (!parsed.success) {
+    return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  }
+
+  const authUser = c.get("user");
+  const userRow = await getUserById(c.env.DB, authUser.id);
+  if (!userRow) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+
+  const { currentPassword, newPassword } = parsed.data;
+  const isValid = await verifyPassword(
+    currentPassword,
+    userRow.password_salt,
+    userRow.password_hash,
+  );
+  if (!isValid) {
+    return c.json({ error: "invalid_credentials" }, 401);
+  }
+
+  const salt = generateSaltHex();
+  const hash = await hashPassword(newPassword, salt);
+  await updateUserPassword(c.env.DB, authUser.id, hash, salt);
+
+  return c.json({ ok: true });
 });

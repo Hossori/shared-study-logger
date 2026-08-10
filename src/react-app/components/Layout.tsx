@@ -4,7 +4,9 @@
  * PCではヘッダーに全ボタンを常時表示する。
  */
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 import type { User } from "../../../shared/schemas";
+import { getAvatarUrl } from "../../../shared/schemas";
 import { useLogoutMutation } from "../queries/useAuth";
 import { useUiStore } from "../stores/uiStore";
 import GroupSwitcher from "../features/groups/GroupSwitcher";
@@ -61,7 +63,22 @@ export default function Layout({ user, children }: LayoutProps) {
           </div>
 
           <div className={userSectionClassName}>
-            <span className={desktopUserNameClassName}>{user.displayName}</span>
+            <Link
+              to="/mypage"
+              className="flex items-center gap-2 rounded-lg hover:bg-gray-50"
+              title="マイページ"
+            >
+              <img
+                src={getAvatarUrl(user.avatarKey)}
+                alt=""
+                className="h-7 w-7 rounded-full"
+                width={28}
+                height={28}
+              />
+              <span className={desktopUserNameClassName}>
+                {user.displayName}
+              </span>
+            </Link>
             <Button
               variant="ghost"
               onClick={() => logoutMutation.mutate()}
@@ -74,7 +91,20 @@ export default function Layout({ user, children }: LayoutProps) {
         </div>
 
         <div className={mobileBarClassName}>
-          <span className={mobileUserNameClassName}>{user.displayName}</span>
+          <Link
+            to="/mypage"
+            className="flex items-center gap-2"
+            title="マイページ"
+          >
+            <img
+              src={getAvatarUrl(user.avatarKey)}
+              alt=""
+              className="h-6 w-6 rounded-full"
+              width={24}
+              height={24}
+            />
+            <span className={mobileUserNameClassName}>{user.displayName}</span>
+          </Link>
           <NotificationOptIn />
         </div>
       </header>

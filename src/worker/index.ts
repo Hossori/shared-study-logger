@@ -12,8 +12,8 @@ const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 
 // 認証必須: POST /api/auth/login と GET /api/push/vapid-public-key のみ公開。
-// それ以外の /api/auth/*（logout, me）と /api/push/subscribe は各ルートファイル内で
-// requireAuth を個別に適用し、/api/groups 以下は丸ごとrequireAuth必須にする。
+// それ以外の /api/auth/*（logout, me, PATCH /me, POST /password）と /api/push/subscribe は
+// 各ルートファイル内で requireAuth を個別に適用し、/api/groups 以下は丸ごとrequireAuth必須にする。
 app.route("/api/auth", authRoutes);
 app.use("/api/groups/*", requireAuth);
 app.route("/api/groups", groupsRoutes);

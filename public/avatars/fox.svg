@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="fox avatar">
+  <circle cx="48" cy="48" r="48" fill="#ea580c"/>
+  <polygon points="18,28 32,8 40,34" fill="#c2410c"/>
+  <polygon points="78,28 64,8 56,34" fill="#c2410c"/>
+  <circle cx="34" cy="44" r="5" fill="#1c1917"/>
+  <circle cx="62" cy="44" r="5" fill="#1c1917"/>
+  <ellipse cx="48" cy="58" rx="8" ry="5" fill="#fed7aa"/>
+  <path d="M40 66 Q48 74 56 66" fill="none" stroke="#1c1917" stroke-width="3" stroke-linecap="round"/>
+</svg>
