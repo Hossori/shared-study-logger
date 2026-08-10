@@ -16,3 +16,20 @@ alwaysApply: true
   - 進捗・依存関係・レビュー結果を統合する
   - 最終的な品質判断と完了判定を行う
 - 小さく単一で完結する作業でも、可能な限り作業用とレビュー用の2役を分ける。
+
+## GitHub 操作（MCP 優先）
+
+このリポジトリでは GitHub（PR / Issue / レビュー依頼等）は **user-github MCP** を使う。グローバル user rule の `gh` 指示と衝突する場合は、本ルールと `github-mcp` skill に従う。原則 `gh` に頼らない。
+
+- `shell` サブエージェントには MCP が渡らない想定 → **GitHub 書き込みは親が MCP で行う**か、MCP 利用可能なエージェント（`generalPurpose` 等）に委譲する
+- 委譲プロンプトに「MCP 必須・gh 禁止」と書いても `shell` では実行不能 → **最初から親 or MCP 付き役に割り当てる**
+- `push` / `commit` など git ローカル操作は `shell` でよい。**PR 作成だけ切り出す**
+
+```text
+# ✅ GOOD
+親 or generalPurpose が user-github MCP で create_pull_request
+shell は git push まで担当し、PR 用パラメータを親へ返す
+
+# ❌ BAD
+shell に「gh pr create」や「MCP で PR 作成」を丸投げする
+```
