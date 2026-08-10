@@ -59,6 +59,15 @@ export type CreateStudyRecordRequest = z.infer<
   typeof CreateStudyRecordRequestSchema
 >;
 
+export const UpdateStudyRecordRequestSchema = z.object({
+  studyDatetime: z.iso.datetime(),
+  title: z.string().min(1).max(200),
+  memo: z.string().max(2000).optional(),
+});
+export type UpdateStudyRecordRequest = z.infer<
+  typeof UpdateStudyRecordRequestSchema
+>;
+
 // カーソルページネーション（`GET /api/groups/:groupId/records`）用のクエリ
 export const ListStudyRecordsQuerySchema = z.object({
   cursor: z.string().optional(),

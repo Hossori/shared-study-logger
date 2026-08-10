@@ -80,7 +80,7 @@ vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(inj
 | --- | --- | --- | --- |
 | 1 | 認証・セッション | 固定アカウント方式、Cookie(`session`)ベースのセッション認証 | [reference/auth.md](reference/auth.md) |
 | 2 | グループ機能 | 所属グループのメンバーの記録のみ閲覧可能。作成/招待UIは無い | [reference/groups.md](reference/groups.md) |
-| 3 | 学習記録機能 | 勉強日時・タイトル・メモを投稿、カーソルページネーションで一覧表示 | [reference/records.md](reference/records.md) |
+| 3 | 学習記録機能 | 勉強日時・タイトル・メモを投稿・編集・削除、カーソルページネーションで一覧表示 | [reference/records.md](reference/records.md) |
 | 4 | Push通知機能 | 記録投稿時に他メンバーへWeb Push（VAPID）を送信 | [reference/push.md](reference/push.md) |
 | 5 | PWA対応 | ホーム画面追加、Service Workerプリキャッシュ、Push受信 | [reference/pwa.md](reference/pwa.md) |
 | 6 | 状態管理方針 | Zustand(クライアント状態) + TanStack Query(サーバー状態)の分担 | [reference/state-management.md](reference/state-management.md) |
@@ -108,6 +108,8 @@ ER図・テーブル定義・インデックス・マイグレーション運用
 | GET | `/api/groups` | 必要 | 自分が所属するグループ一覧 |
 | GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順） |
 | POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue） |
+| PATCH | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の編集 |
+| DELETE | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の削除 |
 | GET | `/api/push/vapid-public-key` | 不要 | Push購読用のVAPID公開鍵取得 |
 | POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |

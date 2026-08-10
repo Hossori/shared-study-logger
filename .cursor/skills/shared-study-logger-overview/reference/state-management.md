@@ -11,7 +11,7 @@
   fetch・キャッシュ・invalidateをすべてここに集約する。ミューテーション成功時は関連する
   クエリキーを`invalidateQueries`して再取得させる方式で、キャッシュを手動で書き換える箇所は
   ログイン/ログアウト時の`authQueryKeys.me`への`setQueryData`のみ。`queryFn`/`mutationFn`は
-  実際のHTTP通信を`src/react-app/lib/api.ts`の`apiGet`/`apiPost`/`apiDelete`
+  実際のHTTP通信を`src/react-app/lib/api.ts`の`apiGet`/`apiPost`/`apiPatch`/`apiDelete`
   （axiosの`instance`をラップした薄い関数）に委譲しており、`queries/*.ts`側はaxios自体を
   意識しない（採用理由は[design-decisions.md](design-decisions.md)参照）。
 - **役割分担の指針**: 「APIから取得する/サーバーに保存されるデータ」はTanStack Query、

@@ -1,6 +1,6 @@
 /**
  * D1(`DB`バインディング)へのクエリヘルパー。
- * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録作成、
+ * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録の作成/更新/削除、
  * push_subscriptions CRUDをまとめる。
  */
 import type { StudyRecord } from "../../../shared/schemas";
@@ -286,6 +286,84 @@ export async function createStudyRecord(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** グループ内の学習記録を1件取得する。存在しなければ null。 */
+export async function getStudyRecord(
+  db: D1Database,
+  groupId: string,
+  recordId: string,
+): Promise<StudyRecord | null> {
+  const row = await db
+    .prepare(
+      `SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
+              sr.study_datetime, sr.title, sr.memo,
+              sr.created_at, sr.updated_at
+       FROM study_records sr
+       INNER JOIN users u ON u.id = sr.user_id
+       WHERE sr.group_id = ? AND sr.id = ?`,
+    )
+    .bind(groupId, recordId)
+    .first<StudyRecordRow>();
+  return row ? toStudyRecord(row) : null;
+}
+
+export interface UpdateStudyRecordInput {
+  studyDatetime: string;
+  title: string;
+  memo?: string | null;
+}
+
+/** 学習記録を更新する。updated_at を現在時刻に更新する。 */
+export async function updateStudyRecord(
+  db: D1Database,
+  groupId: string,
+  recordId: string,
+  input: UpdateStudyRecordInput,
+): Promise<StudyRecord | null> {
+  const existing = await getStudyRecord(db, groupId, recordId);
+  if (!existing) return null;
+
+  const now = new Date().toISOString();
+  const result = await db
+    .prepare(
+      `UPDATE study_records
+       SET study_datetime = ?, title = ?, memo = ?, updated_at = ?
+       WHERE group_id = ? AND id = ?`,
+    )
+    .bind(
+      input.studyDatetime,
+      input.title,
+      input.memo ?? null,
+      now,
+      groupId,
+      recordId,
+    )
+    .run();
+
+  // 取得〜更新の間に削除された場合など、実際に更新されなければ null
+  if ((result.meta.changes ?? 0) === 0) return null;
+
+  return {
+    ...existing,
+    studyDatetime: input.studyDatetime,
+    title: input.title,
+    memo: input.memo ?? null,
+    updatedAt: now,
+  };
+}
+
+/** 学習記録を削除する。削除できたら true。 */
+export async function deleteStudyRecord(
+  db: D1Database,
+  groupId: string,
+  recordId: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare("DELETE FROM study_records WHERE group_id = ? AND id = ?")
+    .bind(groupId, recordId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }
 
 // ---- push_subscriptions -----------------------------------------------

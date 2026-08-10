@@ -1,11 +1,18 @@
 /**
  * 選択中グループの学習記録一覧（勉強日時・投稿者・タイトル・メモを表示）。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
+ * 自分の記録には編集・削除操作を表示する。
  */
+import { useState } from "react";
 import { useUiStore } from "../../stores/uiStore";
-import { useRecordsQuery } from "../../queries/useRecords";
+import { useMeQuery } from "../../queries/useAuth";
+import {
+  useDeleteRecordMutation,
+  useRecordsQuery,
+} from "../../queries/useRecords";
 import type { StudyRecord } from "../../../../shared/schemas";
 import Button from "../../components/ui/Button";
+import EditRecordModal from "./EditRecordModal";
 
 const cardClassName =
   "rounded-xl border border-gray-200 bg-white p-4 shadow-sm";
@@ -23,7 +30,21 @@ function formatStudyDatetime(studyDatetime: string): string {
   });
 }
 
-function RecordCard({ record }: { record: StudyRecord }) {
+interface RecordCardProps {
+  record: StudyRecord;
+  isOwner: boolean;
+  onEdit: (record: StudyRecord) => void;
+  onDelete: (record: StudyRecord) => void;
+  isDeleting: boolean;
+}
+
+function RecordCard({
+  record,
+  isOwner,
+  onEdit,
+  onDelete,
+  isDeleting,
+}: RecordCardProps) {
   return (
     <li className={cardClassName}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -41,6 +62,25 @@ function RecordCard({ record }: { record: StudyRecord }) {
         <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">
           {record.memo}
         </p>
+      )}
+      {isOwner && (
+        <div className="mt-3 flex justify-end gap-2 border-t border-gray-100 pt-3">
+          <Button
+            variant="ghost"
+            onClick={() => onEdit(record)}
+            className="px-3 py-1.5 text-sm"
+          >
+            編集
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => onDelete(record)}
+            disabled={isDeleting}
+            className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            削除
+          </Button>
+        </div>
       )}
     </li>
   );
@@ -61,6 +101,7 @@ function EmptyRecordsMessage() {
 
 export default function RecordsList() {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+  const { data: me } = useMeQuery();
   const {
     data,
     isLoading,
@@ -69,6 +110,20 @@ export default function RecordsList() {
     fetchNextPage,
     isFetchingNextPage,
   } = useRecordsQuery(selectedGroupId);
+  const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
+  const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
+
+  const handleDelete = async (record: StudyRecord) => {
+    const confirmed = window.confirm(
+      `「${record.title}」を削除しますか？この操作は取り消せません。`,
+    );
+    if (!confirmed) return;
+    try {
+      await deleteRecordMutation.mutateAsync(record.id);
+    } catch {
+      // 一覧の invalidate は onSuccess 側。失敗時は現状維持。
+    }
+  };
 
   if (!selectedGroupId) {
     return (
@@ -102,7 +157,17 @@ export default function RecordsList() {
     <div>
       <ul className="space-y-3">
         {records.map((record) => (
-          <RecordCard key={record.id} record={record} />
+          <RecordCard
+            key={record.id}
+            record={record}
+            isOwner={me?.id === record.userId}
+            onEdit={setEditingRecord}
+            onDelete={handleDelete}
+            isDeleting={
+              deleteRecordMutation.isPending &&
+              deleteRecordMutation.variables === record.id
+            }
+          />
         ))}
       </ul>
 
@@ -117,6 +182,13 @@ export default function RecordsList() {
             {isFetchingNextPage ? "読み込み中..." : "もっと見る"}
           </Button>
         </div>
+      )}
+
+      {editingRecord && (
+        <EditRecordModal
+          record={editingRecord}
+          onClose={() => setEditingRecord(null)}
+        />
       )}
     </div>
   );
