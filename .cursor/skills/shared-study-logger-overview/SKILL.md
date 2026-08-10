@@ -1,177 +1,91 @@
 ---
 name: shared-study-logger-overview
 description: >-
-  shared-study-logger（Cloudflare Workers + Vite + React + Hono + D1 で構築された、
-  グループ単位で学習記録を共有しPush通知で知らせるPWAアプリ）の全体アーキテクチャ・機能構成・
-  データフロー・主要ファイルの場所・データモデル・APIエンドポイント一覧・設計判断の理由・既知の
-  制約をまとめる。このリポジトリでコードレビュー、保守作業、バグ調査、機能追加を行う際に、
-  認証/セッション、グループ、学習記録、Push通知、PWA対応、状態管理(Zustand/TanStack Query)の
-  実装を素早く把握したい場合に使用する。
+  shared-study-logger のアーキテクチャ地図と機能索引を提供する
+  （Workers/Hono/D1、認証・グループ・記録・Push・PWA・状態管理・ルーティングの入口）。
+  リポジトリ構成やデータフローの全体像、どの reference を読むべきかを
+  把握するときに使用する。エディタ警告・tsconfig・Tailwind 品質は
+  reference/code-quality、設計判断は reference/design-decisions。
+  個別の Zod 規約（shared/schemas.ts）には使わない。
 ---
 
 # shared-study-logger 機能ガイド
 
-このスキルは、このリポジトリ（学習記録共有アプリ）で作業するエージェントが実装を隅々まで
-読み直さなくても機能構成・データフロー・注意点を把握できるようにするためのものです。
-横断的な情報（アーキテクチャ・データモデル・API一覧）は本ファイルにまとめ、機能ごとの
-詳細（関連ファイル・データフロー・注意点）は`reference/`配下に分離しています。**作業対象の
-機能に対応するreferenceファイルのみを読めば十分**です（他機能の詳細を読む必要はありません）。
-
-より詳細な経緯や検証ログは以下を参照してください（本スキルはこれらの要点をまとめたもの）。
-
-- [`README.md`](/README.md): セットアップ・デプロイ手順、環境変数一覧
+アーキテクチャ地図と機能索引。横断情報は本ファイル、機能詳細は `reference/`。
+**作業対象の reference のみ読めば十分**。セットアップは [`README.md`](/README.md)。
 
 ## 全体アーキテクチャ
 
-1つのCloudflare Workerで以下すべてを配信する単一デプロイ構成（`wrangler.jsonc`の`main`は
-`src/worker/index.ts`）。
+単一 Worker で静的アセットと API を配信（`main`: `src/worker/index.ts`）。
 
 ```
 ブラウザ(React SPA + Service Worker)
-  │  静的アセット取得
   ├─→ Static Assets (dist/client、SPAフォールバック)
-  │  fetch /api/*
   └─→ Hono API ──→ D1 (users/groups/group_members/study_records/push_subscriptions)
-                ├─→ Workers KV (SESSIONS: session:{token} -> {userId, expiresAt})
-                └─→ Queue(PUSH_QUEUE: push-notifications) ─→ queue()ハンドラ ─→ D1で購読取得
-                                                                            └─→ Web Push送信(VAPID)
+                ├─→ KV (SESSIONS)
+                └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
 
-- フロントとAPIが同一オリジンなのでCookie認証がシンプルで、CORS設定は不要。
-- Push送信は投稿APIの中で同期実行せず、Queueへenqueueして`queue()`ハンドラ（同じWorkerスクリプト
-  内でexport）が非同期に処理する。1メンバー1メッセージにすることで1回のコンシューマ呼び出しの
-  処理量を小さく保つ設計（無料プランのCPU時間制限対策）。
+- 同一オリジンのため Cookie 認証がシンプルで CORS 不要。
+- Push は Queue 経由で非同期（投稿 API 内では同期送信しない）。
 
-### ディレクトリ構成（実装済み）
-
-Cloudflare公式テンプレートの命名規則を優先し、バックエンドは`src/worker/`、
-フロントエンドは`src/react-app/`という構成になっている。
+### ディレクトリ構成
 
 ```
 src/
-  worker/                # バックエンド(Hono)
-    index.ts              # fetch(Hono app) と queue() をexport
-    routes/{auth,groups,records,push}.ts
-    lib/{auth,db,push,session}.ts
-    middleware/requireAuth.ts
-    types/env.d.ts        # wrangler typesが生成しないシークレットの型補完
-  react-app/             # フロントエンド(React)
-    stores/uiStore.ts      # Zustand
-    queries/*.ts           # TanStack Query hooks
-    features/{auth,groups,records,push}/**  # ドメイン固有ロジックを持つコンポーネント
-    routes/                # react-router定義・認証ガード・`/`・`/mypage`（プレースホルダ可）・404
-    components/{Layout,ProfileMenu,LoadingScreen}.tsx  # 横断的なUI（Layoutは2行ヘッダ: ロゴ / グループ+通知+プロフィール）
-    components/ui/{Button,FormField,ErrorMessage}.tsx  # ドメイン非依存の汎用UI部品
-    lib/{api,push,cn,avatar}.ts  # cn.tsはclsxベースの条件分岐クラス名ヘルパー、avatar.tsはアバターURL/デフォルト表示
-    main.tsx / App.tsx     # App.tsxはRouterProviderを描画するだけの薄いラッパー
-shared/schemas.ts        # Zodスキーマ（Worker/フロント共通）
-shared/avatars.ts        # アバタープリセットキー・getAvatarUrl
-migrations/0001_init.sql # D1スキーマ（以降 0002〜 で変更）
-public/{sw.ts,manifest.webmanifest,icons/,avatars/}
-wrangler.jsonc            # D1/KV/Queueバインディング設定
-vite.config.ts            # react() + cloudflare() + tailwindcss() + VitePWA(injectManifest)
+  worker/          # Hono: index.ts, routes/, lib/, middleware/
+  react-app/       # React: stores/, queries/, features/, routes/, components/, lib/
+shared/            # schemas.ts, avatars.ts
+migrations/        # D1 スキーマ（0001〜）
+public/            # sw.ts, manifest, icons/, avatars/
+wrangler.jsonc / vite.config.ts
 ```
 
 ## 機能ごとの整理
 
-各機能の関連ファイル・データフロー・注意点は個別のreferenceファイルにまとめている。作業内容に
-対応するものだけを読むこと。
-
 | # | 機能 | 概要 | 詳細 |
 | --- | --- | --- | --- |
-| 1 | 認証・セッション | 固定アカウント方式、Cookie(`session`)ベースのセッション認証。マイページでプロフィール/パスワード変更可 | [reference/auth.md](reference/auth.md) |
-| 2 | グループ機能 | 所属グループのメンバーの記録のみ閲覧可能。作成/招待UIは無い | [reference/groups.md](reference/groups.md) |
-| 3 | 学習記録機能 | 勉強日時・タイトル・メモを投稿・編集・削除、カーソルページネーションで一覧表示 | [reference/records.md](reference/records.md) |
-| 4 | Push通知機能 | 記録投稿時に他メンバーへWeb Push（VAPID）を送信 | [reference/push.md](reference/push.md) |
-| 5 | PWA対応 | ホーム画面追加、Service Workerプリキャッシュ、Push受信 | [reference/pwa.md](reference/pwa.md) |
-| 6 | 状態管理方針 | Zustand(クライアント状態) + TanStack Query(サーバー状態)の分担 | [reference/state-management.md](reference/state-management.md) |
+| 1 | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更 | [reference/auth.md](reference/auth.md) |
+| 2 | グループ | 所属グループの記録のみ閲覧。作成/招待UIなし | [reference/groups.md](reference/groups.md) |
+| 3 | 学習記録 | 投稿・編集・削除、カーソルページネーション | [reference/records.md](reference/records.md) |
+| 4 | Push通知 | 投稿時に他メンバーへ Web Push（VAPID） | [reference/push.md](reference/push.md) |
+| 5 | PWA | ホーム画面追加、SW、Push 受信 | [reference/pwa.md](reference/pwa.md) |
+| 6 | 状態管理 | Zustand（クライアント）+ TanStack Query（サーバー） | [reference/state-management.md](reference/state-management.md) |
+| 7 | ルーティング | react-router data router、認証ガード | [reference/routing.md](reference/routing.md) |
 
-## データモデル（D1 / SQLite、`migrations/`）
+## データモデル（D1 / SQLite）
 
-ER図・テーブル定義・インデックス・マイグレーション運用の詳細は [docs/data-model.md](/docs/data-model.md) を参照。
-テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ
-（セッションは D1 ではなく Workers KV の `SESSIONS` バインディング）。
+テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ。
+セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`
+は直接編集しない）。詳細は [docs/data-model.md](/docs/data-model.md)。
 
-- `users` には表示名・認証情報に加え、マイページ用の `bio`（自己紹介、NULL可）と
-  `avatar_key`（プリセット画像キー、NULL可＝デフォルト）がある（`migrations/0004_user_profile.sql`）。
-- セッションはD1ではなく**Workers KV**（`SESSIONS`バインディング）に保存する
-  （`session:{token}` → `{ userId, expiresAt }`）。
-- インデックス: `group_members(user_id)`、`study_records(group_id, created_at DESC)`
-  （カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`。
-- スキーマを変更する場合は`migrations/`に新しい番号のマイグレーションファイルを追加すること
-  （既存の`0001_init.sql`は本番適用済みのため直接編集しない）。
+## API
 
-## 主要APIエンドポイント一覧
+正本は [docs/api.md](/docs/api.md)。`requireAuth` は `index.ts` で `/api/groups/*` に一括適用し、
+auth/push の一部は各ルートファイル内で個別適用する。
 
-| メソッド | パス | 認証 | 概要 |
-| --- | --- | --- | --- |
-| POST | `/api/auth/login` | 不要 | ログイン（email/password検証、セッションCookie発行） |
-| POST | `/api/auth/logout` | 必要 | ログアウト（KVセッション削除、Cookieクリア） |
-| GET | `/api/auth/me` | 必要 | ログイン中ユーザー情報取得（`bio` / `avatarKey` 含む） |
-| PATCH | `/api/auth/me` | 必要 | プロフィール更新（`displayName` / `bio` / `avatarKey`） |
-| POST | `/api/auth/password` | 必要 | パスワード変更（現在のパスワード検証 + PBKDF2再ハッシュ） |
-| GET | `/api/groups` | 必要 | 自分が所属するグループ一覧 |
-| GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順） |
-| POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue） |
-| PATCH | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の編集 |
-| DELETE | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の削除 |
-| GET | `/api/push/vapid-public-key` | 不要 | Push購読用のVAPID公開鍵取得 |
-| POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
-| DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
-
-認証必須の適用箇所: `src/worker/index.ts`で`/api/groups/*`全体に`requireAuth`を一括適用し、
-`/api/auth/logout`・`/me`・`PATCH /me`・`POST /password`と`/api/push/subscribe`は各ルートファイル内で
-個別に`requireAuth`を適用している。新しいエンドポイントを追加する際はどちらの方式にするか
-`index.ts`を確認すること。
-
-## ビルド・検証コマンド
+## ビルド・検証
 
 ```bash
-pnpm exec tsc -b # 型チェック（フロント/バックエンド両方、noEmit）
-pnpm build       # tsc -b && vite build（dist/client に静的アセット+SW、dist/shared_study_logger にWorkerバンドル）
-pnpm lint        # ESLint
-pnpm dev         # ローカル開発サーバー(Vite、ポート5173/使用中なら5174等に自動変更)
-pnpm seed        # scripts/seed-users.mjs（サンプルユーザー・グループ投入、ローカルD1向け）
-pnpm run format:check # Prettier（+ prettier-plugin-tailwindcss）の整形チェック(src/react-app・shared限定)
-pnpm run format        # 上記を実際に整形して上書き
+pnpm exec tsc -b   # 型チェック
+pnpm build         # 本番ビルド
+pnpm lint          # ESLint
+pnpm dev           # ローカル開発
 ```
 
-- ローカルD1へのマイグレーション適用: `npx wrangler d1 migrations apply shared-study-logger-db --local`
-- サンプルログイン: `admin@example.com` / `ChangeMe123!`
+その他（seed・format・マイグレーション等）は [`README.md`](/README.md)。
 
-## エディタ警告・コード品質
+## コード品質・設計判断
 
-`tsc -b`やESLintでは検出されず、エディタ(Cursor/VSCode)上にだけ表示される型エラーや、
-非推奨API・Tailwindのアービトラリバリューの扱いなど、コードレビュー・実装時に気を付けるべき
-チェックリストは [reference/code-quality.md](reference/code-quality.md) にまとめている。
-新しいディレクトリ/エントリーポイントの追加、Base64変換等のユーティリティ実装、
-Tailwindのクラス指定を行う際は事前に確認すること。
+- [reference/code-quality.md](reference/code-quality.md)
+- [reference/design-decisions.md](reference/design-decisions.md)
 
-## 既知の制約・未完了事項
+## 既知の制約
 
-- **本番デプロイ未実施**: 本番シークレット(`VAPID_*`)の`wrangler secret put`設定、
-  本番D1マイグレーション適用(`--remote`)、本番シード投入、`wrangler deploy`はすべて
-  ユーザーの承認待ちで未実行。
-- **ブラウザE2E確認が一部未完了**: 投稿モーダルの実クリック→一覧反映、通知許可プロンプトの
-  表示、Push通知の実配信（2ユーザー・2端末）、iOS実機でのホーム画面追加・Push受信は
-  いずれも未確認（ツール制約・実機なし）。これらに関わる変更を行う際は特に注意すること。
-- **Cookie Secure属性の開発時対応**: [reference/auth.md](reference/auth.md)参照。本番デプロイ後は
-  `Set-Cookie`に`Secure`が付与されていることを確認することが推奨されている。
-- **`@hono/zod-validator`は未導入**: 各ルートで`schema.safeParse(json)`による手動バリデーション
-  を実装している（意図的な選択。挙動は同等）。新しいエンドポイントもこのパターンに合わせる。
-- 初回git commitも本タスク時点では未実施（リポジトリ全体がuntrackedの可能性がある）。
-
-## コードを変更する際に注意すべき設計判断
-
-Hono/D1の維持、Zustand+TanStack Queryの併用、`injectManifest`戦略、Push非同期化など、既に
-検討済みで見送った代替案がある。大きな技術選定やアーキテクチャの変更を提案・実装する前に
-必ず [reference/design-decisions.md](reference/design-decisions.md) を確認すること。
+- **Cookie Secure**: [reference/auth.md](reference/auth.md) を参照。
+- **`@hono/zod-validator` は未導入（意図的）**: 各ルートで `schema.safeParse(json)`。新エンドポイントも同パターン。
 
 ## 更新すべきタイミング
 
-新しい機能追加（例: 記録の編集/削除、グループ管理UI、コメント機能等）、APIエンドポイントの
-追加・変更、データモデルの変更、状態管理方針の変更、主要ライブラリの入れ替えを行った際は、
-このSKILL.mdおよび対応する`reference/*.md`の該当箇所をあわせて更新すること。同様に、
-今回の`tsconfig.sw.json`新設のような「機能追加ではないがエディタ警告・コード品質に関する
-知見」が得られた場合も、[reference/code-quality.md](reference/code-quality.md)に
-チェックリストとして追記し、将来同種の問題が再発しないようにすること。
+API・データモデル・状態管理・主要ライブラリ変更時は本ファイルと対応する `reference/*.md` /
+`docs/*.md` を更新。コード品質の知見は [code-quality.md](reference/code-quality.md) に追記。

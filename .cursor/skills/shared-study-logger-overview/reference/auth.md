@@ -27,7 +27,7 @@
   フロントは起動時に`useMeQuery`(`GET /api/auth/me`)でログイン状態を判定し、401は例外にせず
   `null`を返す（`src/react-app/routes/ProtectedRoute.tsx`/`GuestRoute.tsx`がこれを使い
   `/login`⇔`/`のリダイレクトを行う。ルーティングの詳細は
-  [state-management.md](state-management.md)参照）。
+  [routing.md](routing.md)参照）。
   - プロフィール更新: `PATCH /api/auth/me`（`displayName` / `bio` / `avatarKey`、いずれも任意だが
     少なくとも1つ必須）。`avatarKey`は`AvatarKeySchema`（許可リスト）で検証し、`null`で
     デフォルト画像に戻せる。成功時は更新後の`User`を返す。

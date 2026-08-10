@@ -1,8 +1,9 @@
 ---
 name: zod-schemas
 description: >-
-  shared/schemas.ts の Zod v4 スキーマを編集・追加する際に使用する。
-  フォーマット検証（email, url, datetime 等）の書き方と変更後の検証手順。
+  shared/schemas.ts の Zod v4 スキーマ追加・変更時のフォーマット検証規約
+  （z.email / z.url / z.iso.datetime 等）と変更後の検証手順をまとめる。
+  schemas.ts を編集するとき、または Zod の非推奨 API 警告を直すときに使用する。
 ---
 
 # Zod スキーマ規約
@@ -33,4 +34,3 @@ pnpm exec tsc -b
 ## 関連
 
 - 検査スクリプト: `scripts/check-zod-deprecated.mjs`
-- その他の品質チェック: [shared-study-logger-overview/reference/code-quality.md](../shared-study-logger-overview/reference/code-quality.md) §2
