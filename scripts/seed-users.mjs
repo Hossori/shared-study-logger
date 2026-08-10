@@ -3,8 +3,9 @@
  * 初期ユーザー・グループ・学習記録投入用シードスクリプト。
  *
  * このアプリは固定アカウント方式（自己登録なし、管理者が事前にユーザーをDBに登録する）を
- * 採用しているため、サンプルの管理者ユーザー・サンプルグループ3件・
- * グループメンバーシップ・学習記録（2つ目のグループに61件）を投入する。
+ * 採用しているため、サンプルユーザー2名（管理者・テストユーザー）・サンプルグループ3件・
+ * グループメンバーシップ・学習記録（2つ目のグループに61件: 先頭30件はテストユーザー投稿、
+ * 残り31件は管理者投稿）を投入する。
  *
  * パスワードはWeb CryptoのPBKDF2（SHA-256, 100,000 iterations, 32byte導出）で
  * ハッシュ化する。これは `src/worker/lib/auth.ts`（backend-auth）で実装される
@@ -27,11 +28,35 @@ import path from "node:path";
 const DB_NAME = "shared-study-logger-db";
 const PBKDF2_ITERATIONS = 100_000;
 
-const SAMPLE_ADMIN = {
-	email: "admin@example.com",
-	password: "ChangeMe123!",
-	displayName: "管理者",
-};
+/** @type {{ id: string, email: string, password: string, displayName: string }[]} */
+const SAMPLE_USERS = [
+	{
+		id: "00000000-0000-4000-a000-000000000001",
+		email: "admin@example.com",
+		password: "ChangeMe123!",
+		displayName: "管理者",
+	},
+	{
+		id: "00000000-0000-4000-a000-000000000005",
+		email: "test@example.com",
+		password: "ChangeMe123!",
+		displayName: "テストユーザー",
+	},
+];
+
+/** 学習記録の投稿者（管理者 / テストユーザー） */
+const SEED_ADMIN_USER_ID = SAMPLE_USERS[0].id;
+const SEED_TEST_USER_ID = SAMPLE_USERS[1].id;
+
+/**
+ * 学習記録の投稿者を index（1始まり）から決定する。
+ * 61件中ちょうど30件がテストユーザーになるよう、i <= 30 をテストユーザー・それ以外を管理者とする。
+ * @param {number} index
+ * @returns {string}
+ */
+function resolveRecordAuthorId(index) {
+	return index <= 30 ? SEED_TEST_USER_ID : SEED_ADMIN_USER_ID;
+}
 
 /** @type {{ name: string, recordCount: number }[]} */
 const SAMPLE_GROUPS = [
@@ -41,7 +66,6 @@ const SAMPLE_GROUPS = [
 ];
 
 /** 再実行しても同じ行を指す固定ID（INSERT OR IGNORE と組み合わせて冪等にする） */
-const SEED_USER_ID = "00000000-0000-4000-a000-000000000001";
 const SEED_GROUP_IDS = [
 	"00000000-0000-4000-a000-000000000002",
 	"00000000-0000-4000-a000-000000000003",
@@ -102,15 +126,16 @@ function seedRecordId(index) {
 
 /**
  * @param {string} groupId
- * @param {string} userId
  * @param {number} count
+ * @param {(index: number) => string} resolveUserId index（1始まり）→投稿者 user_id
  * @returns {string[]}
  */
-function buildStudyRecordStatements(groupId, userId, count) {
+function buildStudyRecordStatements(groupId, count, resolveUserId) {
 	const dayMs = 24 * 60 * 60 * 1000;
 	const statements = [];
 
 	for (let i = 1; i <= count; i++) {
+		const userId = resolveUserId(i);
 		const studyDatetime = new Date(
 			SEED_RECORDS_BASE_DATETIME - (i - 1) * dayMs,
 		).toISOString();
@@ -130,26 +155,39 @@ function buildStudyRecordStatements(groupId, userId, count) {
 
 async function buildSeedSql() {
 	const now = new Date().toISOString();
-	const salt = generateSaltHex();
-	const passwordHash = await hashPassword(SAMPLE_ADMIN.password, salt);
+
+	const userStatements = await Promise.all(
+		SAMPLE_USERS.map(async (user) => {
+			const salt = generateSaltHex();
+			const passwordHash = await hashPassword(user.password, salt);
+			return `INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, display_name, created_at) VALUES ('${user.id}', '${sqlEscape(user.email)}', '${passwordHash}', '${salt}', '${sqlEscape(user.displayName)}', '${now}');`;
+		}),
+	);
 
 	const statements = [
-		`INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, display_name, created_at) VALUES ('${SEED_USER_ID}', '${sqlEscape(SAMPLE_ADMIN.email)}', '${passwordHash}', '${salt}', '${sqlEscape(SAMPLE_ADMIN.displayName)}', '${now}');`,
+		...userStatements,
 		...SAMPLE_GROUPS.flatMap((group, i) => {
 			const groupId = SEED_GROUP_IDS[i];
 			return [
 				`INSERT OR IGNORE INTO groups (id, name, created_at) VALUES ('${groupId}', '${sqlEscape(group.name)}', '${now}');`,
-				`INSERT OR IGNORE INTO group_members (group_id, user_id, joined_at) VALUES ('${groupId}', '${SEED_USER_ID}', '${now}');`,
+				...SAMPLE_USERS.map(
+					(user) =>
+						`INSERT OR IGNORE INTO group_members (group_id, user_id, joined_at) VALUES ('${groupId}', '${user.id}', '${now}');`,
+				),
 				...buildStudyRecordStatements(
 					groupId,
-					SEED_USER_ID,
 					group.recordCount,
+					resolveRecordAuthorId,
 				),
 			];
 		}),
 	];
 
-	return { sql: statements.join("\n"), userId: SEED_USER_ID, groupIds: SEED_GROUP_IDS };
+	return {
+		sql: statements.join("\n"),
+		users: SAMPLE_USERS,
+		groupIds: SEED_GROUP_IDS,
+	};
 }
 
 function runWrangler(wranglerBin, projectRoot, args) {
@@ -181,7 +219,7 @@ function main() {
 		return;
 	}
 
-	return buildSeedSql().then(({ sql, userId, groupIds }) => {
+	return buildSeedSql().then(({ sql, users, groupIds }) => {
 		const projectRoot = path.join(
 			path.dirname(fileURLToPath(import.meta.url)),
 			"..",
@@ -202,12 +240,31 @@ function main() {
 		console.log("# 生成したSQL:");
 		console.log(sql);
 		console.log(`\n# ${outputPath} に書き出しました。`);
-		console.log(`\n# サンプル管理者ユーザー: ${SAMPLE_ADMIN.email} / ${SAMPLE_ADMIN.password}`);
-		console.log(`# user.id = ${userId}`);
+		users.forEach((user, i) => {
+			console.log(
+				`# サンプルユーザー[${i}]: ${user.email} / ${user.password} (${user.displayName})`,
+			);
+			console.log(`# user[${i}].id = ${user.id}`);
+		});
 		groupIds.forEach((id, i) => {
 			const group = SAMPLE_GROUPS[i];
+			if (group.recordCount === 0) {
+				console.log(
+					`# group[${i}].id = ${id} (${group.name}, records=0)`,
+				);
+				return;
+			}
+			let testAuthorCount = 0;
+			let adminAuthorCount = 0;
+			for (let r = 1; r <= group.recordCount; r++) {
+				if (resolveRecordAuthorId(r) === SEED_TEST_USER_ID) {
+					testAuthorCount += 1;
+				} else {
+					adminAuthorCount += 1;
+				}
+			}
 			console.log(
-				`# group[${i}].id = ${id} (${group.name}, records=${group.recordCount})`,
+				`# group[${i}].id = ${id} (${group.name}, records=${group.recordCount}: test=${testAuthorCount}, admin=${adminAuthorCount})`,
 			);
 		});
 
