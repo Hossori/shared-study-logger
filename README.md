@@ -155,15 +155,23 @@ D1・KV・Queueのバインディング（`DB` / `SESSIONS` / `PUSH_QUEUE`）は
 
 ```bash
 pnpm exec tsc -b     # 型チェック（フロント・バックエンド両方、noEmit）
+pnpm run typecheck   # 同上（CI / 品質ゲート用エイリアス）
 pnpm build           # tsc -b && vite build（本番ビルド。dist/client にService Worker含む静的アセット、
                      #   dist/shared_study_logger にWorkerバンドルを出力）
 pnpm lint            # ESLint
+pnpm test            # Vitest unit（tests/unit）
+pnpm test:worker     # Workers 統合（tests/worker、@cloudflare/vitest-pool-workers）
+pnpm test:e2e        # Playwright スモーク（e2e、≤7本。要 seed。初回 pnpm playwright:install）
+pnpm playwright:install # Chromium + headless-shell（%LOCALAPPDATA%\ms-playwright）
 pnpm dev             # ローカル開発サーバー（Vite）
 pnpm run format:check # Prettier（+ prettier-plugin-tailwindcssによるTailwindクラス並び順）の整形チェック
                        # 対象は src/react-app/**/*.{ts,tsx} と shared/**/*.ts
 pnpm run format        # 上記を実際に整形して上書きする
 ```
 
+テスト方針（ピラミッド・Push/PWA除外・seed/Cookie前提）は
+[`.cursor/skills/testing-strategy/SKILL.md`](.cursor/skills/testing-strategy/SKILL.md)。
+E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 `pnpm build` では `vite-plugin-pwa`（`injectManifest`戦略）により `public/sw.ts` が
 コンパイルされ、`self.__WB_MANIFEST` にプリキャッシュ対象が注入された `dist/client/sw.js` が
 生成されます。ビルド時に `sw.mjs`（コンパイル後の生ソース）と `sw.js`（マニフェスト注入後の最終版）の

@@ -9,7 +9,7 @@
 const PBKDF2_ITERATIONS = 100_000;
 const DERIVED_KEY_BITLEN = 256; // 32byte
 
-function hexToBytes(hex: string): Uint8Array {
+function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);

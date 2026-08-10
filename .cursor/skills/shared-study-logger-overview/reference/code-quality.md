@@ -10,14 +10,17 @@
 ルートの`tsconfig.json`が次を`references`で束ねる:
 
 - `tsconfig.app.json` … `src/react-app` + `shared`
-- `tsconfig.node.json` … `vite.config.ts`
+- `tsconfig.node.json` … `vite.config.ts` / `vitest*.config.ts` / `playwright.config.ts`
 - `tsconfig.worker.json` … `src/worker` + `shared`
 - `tsconfig.sw.json` … `public/sw.ts`
+- `tsconfig.unit.json` … `tests/unit`（DOM。`worker-configuration.d.ts` + `src/worker/types/env.d.ts` で Env を補完）
+- `tsconfig.tests.worker.json` … `tests/worker`（`tsconfig.worker.json` を拡張 + `@cloudflare/vitest-pool-workers/types`）
 
-**新しいディレクトリ・エントリーポイント（`public/`の新規スクリプト、`scripts/`のNode用等）を追加したら、必ずいずれかの`include`に含まれるか確認すること。**
+**新しいディレクトリ・エントリーポイント（`public/`の新規スクリプト、`scripts/`のNode用、`tests/` 等）を追加したら、必ずいずれかの`include`に含まれるか確認すること。**
 
 - どのtsconfigにも属さないファイルは`tsc -b`の対象外になる一方、エディタは推論プロジェクト（DOM込みの既定lib）で型チェックする。`/// <reference lib="webworker" />`等があると`self`/`Notification`等の型が衝突し、的外れなエラーが続く。
 - **実例（`public/sw.ts`）**: 未所属だったため誤検出が発生 → `lib: ["ES2020", "WebWorker"]`（DOMなし）の`tsconfig.sw.json`を新設し、ルートの`references`に追加して解決。
+- **実例（`tests/`）**: 未所属だと CI の `typecheck` をすり抜ける。unit は DOM、worker テストは Workers 型が必要なので専用 tsconfig を分け、`pnpm run typecheck` / `typecheck:tests` でゲートする。
 - `pnpm exec tsc -b`が通っても「全ファイルが型チェック済み」とは限らない。`references`配下の`include`以外は静かにスキップされる。
 - **対処手順**:
   1. 既存の`tsconfig.*.json`の`include`に入るか確認（入るなら追加対応不要）。

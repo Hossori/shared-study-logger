@@ -1,0 +1,136 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { env, exports } from "cloudflare:workers";
+import { loginAs, SEED, seedMinimalDb } from "./helpers";
+
+const workerFetch = exports.default.fetch.bind(exports.default);
+
+describe("records routes", () => {
+	beforeEach(async () => {
+		await seedMinimalDb();
+	});
+
+	it("CRUD study record in member group", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const createRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{
+					method: "POST",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T10:00:00.000Z",
+						title: "Worker CRUD",
+						memo: "memo",
+					}),
+				},
+			),
+		);
+		expect(createRes.status).toBe(201);
+		const created = (await createRes.json()) as {
+			record: { id: string; title: string };
+		};
+		expect(created.record.title).toBe("Worker CRUD");
+
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as {
+			records: Array<{ id: string }>;
+		};
+		expect(list.records.some((r) => r.id === created.record.id)).toBe(true);
+
+		const patchRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records/${created.record.id}`,
+				{
+					method: "PATCH",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T11:00:00.000Z",
+						title: "Worker CRUD edited",
+						memo: "updated",
+					}),
+				},
+			),
+		);
+		expect(patchRes.status).toBe(200);
+
+		const deleteRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records/${created.record.id}`,
+				{
+					method: "DELETE",
+					headers: { cookie },
+				},
+			),
+		);
+		expect(deleteRes.status).toBe(200);
+	});
+
+	it("returns 403 for non-member group", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const response = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupOther}/records`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(response.status).toBe(403);
+	});
+
+	it("enqueues push messages on create when other members exist", async () => {
+		const send = vi
+			.spyOn(env.PUSH_QUEUE, "send")
+			.mockResolvedValue(undefined as unknown as QueueSendResponse);
+
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const createRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{
+					method: "POST",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T12:00:00.000Z",
+						title: "Queue enqueue",
+					}),
+				},
+			),
+		);
+		expect(createRes.status).toBe(201);
+		expect(send).toHaveBeenCalled();
+		const firstCall = send.mock.calls[0];
+		expect(firstCall).toBeDefined();
+		const payload = firstCall![0] as {
+			userId: string;
+			notification: { title: string };
+		};
+		expect(payload.userId).toBe(SEED.testUser.id);
+	});
+});

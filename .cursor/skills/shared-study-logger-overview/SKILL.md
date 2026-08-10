@@ -67,13 +67,16 @@ auth/push の一部は各ルートファイル内で個別適用する。
 ## ビルド・検証
 
 ```bash
-pnpm exec tsc -b   # 型チェック
+pnpm exec tsc -b   # 型チェック（または pnpm run typecheck）
 pnpm build         # 本番ビルド
 pnpm lint          # ESLint
+pnpm test          # Vitest unit
+pnpm test:worker   # Workers 統合（PoC成功済み）
+pnpm test:e2e      # Playwright スモーク（要 pnpm seed）
 pnpm dev           # ローカル開発
 ```
 
-その他（seed・format・マイグレーション等）は [`README.md`](/README.md)。
+テスト方針は [testing-strategy](../testing-strategy/SKILL.md)。その他（seed・format・マイグレーション等）は [`README.md`](/README.md)。
 
 ## コード品質・設計判断
 
