@@ -1,13 +1,12 @@
 /**
- * 所属グループの切替UI（ヘッダー内セレクトボックス）。
+ * 所属グループの切替UI（記録一覧ツールバー用セレクトボックス）。
  */
 import { useEffect } from "react";
 import { useGroupsQuery } from "../../queries/useGroups";
 import { useUiStore } from "../../stores/uiStore";
 
-// モバイルでは幅を狭めて折り返しを防ぎ、PC(sm:)では幅制限を解除する。
 const selectClassName =
-  "max-w-40 truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:max-w-none sm:text-base";
+  "w-full max-w-xs cursor-pointer truncate rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base";
 
 export default function GroupSwitcher() {
   const { data: groups, isLoading } = useGroupsQuery();

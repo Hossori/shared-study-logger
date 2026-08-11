@@ -1,21 +1,63 @@
 /**
  * 選択中グループの学習記録一覧（勉強日時・投稿者・タイトル・メモを表示）。
+ * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import { useUiStore } from "../../stores/uiStore";
 import { useMeQuery } from "../../queries/useAuth";
 import {
   useDeleteRecordMutation,
   useRecordsQuery,
 } from "../../queries/useRecords";
-import type { StudyRecord } from "../../../../shared/schemas";
+import { getAvatarUrl, type StudyRecord } from "../../../../shared/schemas";
 import Button from "../../components/ui/Button";
+import { useConfirm } from "../../components/useConfirm";
+import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
 
 const cardClassName =
   "rounded-xl border border-gray-200 bg-white p-4 shadow-sm";
+const toolbarClassName = "mb-4 flex flex-wrap items-center gap-2 sm:gap-3";
+const toolbarGroupClassName = "min-w-0 flex-1";
+const addRecordButtonClassName =
+  "hidden shrink-0 px-4 py-1.5 text-sm sm:inline-flex";
+const authorLinkClassName =
+  "inline-flex max-w-full items-center gap-1.5 rounded-full text-xs text-gray-500 transition hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
+const iconActionButtonClassName =
+  "inline-flex h-9 w-9 items-center justify-center p-0";
+
+function PencilIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path
+        fillRule="evenodd"
+        d="M8.75 1A1.75 1.75 0 0 0 7 2.75V3h6v-.25A1.75 1.75 0 0 0 11.25 1h-2.5ZM6.5 3v-.25a3.25 3.25 0 0 1 6.5 0V3H16a.75.75 0 0 1 0 1.5h-.64l-.7 11.2A2.75 2.75 0 0 1 11.92 18H8.08a2.75 2.75 0 0 1-2.74-2.3l-.7-11.2H4a.75.75 0 0 1 0-1.5h2.5Zm1.62 4.25a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5a.75.75 0 0 1 .75-.75Zm3.51.75a.75.75 0 0 0-1.5 0v6.5a.75.75 0 0 0 1.5 0v-6.5Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
 
 function formatStudyDatetime(studyDatetime: string): string {
   const date = new Date(studyDatetime);
@@ -45,15 +87,28 @@ function RecordCard({
   onDelete,
   isDeleting,
 }: RecordCardProps) {
+  const authorName = record.authorDisplayName ?? "不明なユーザー";
+
   return (
     <li className={cardClassName}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="text-xs font-medium text-gray-500">
           {formatStudyDatetime(record.studyDatetime)}
         </span>
-        <span className="text-xs text-gray-400">
-          {record.authorDisplayName ?? "不明なユーザー"}
-        </span>
+        <Link
+          to={`/users/${record.userId}`}
+          className={authorLinkClassName}
+          aria-label={`${authorName}のユーザーページ`}
+        >
+          <img
+            src={getAvatarUrl(record.authorAvatarKey ?? null)}
+            alt=""
+            className="h-6 w-6 rounded-full ring-1 ring-gray-200"
+            width={24}
+            height={24}
+          />
+          <span className="truncate">{authorName}</span>
+        </Link>
       </div>
       <h3 className="mt-1.5 text-base font-semibold text-gray-900 sm:text-lg">
         {record.title}
@@ -64,21 +119,25 @@ function RecordCard({
         </p>
       )}
       {isOwner && (
-        <div className="mt-3 flex justify-end gap-2 border-t border-gray-100 pt-3">
+        <div className="mt-3 flex justify-end gap-1 border-t border-gray-100 pt-3">
           <Button
             variant="ghost"
             onClick={() => onEdit(record)}
-            className="px-3 py-1.5 text-sm"
+            aria-label="編集"
+            title="編集"
+            className={iconActionButtonClassName}
           >
-            編集
+            <PencilIcon />
           </Button>
           <Button
             variant="ghost"
             onClick={() => onDelete(record)}
             disabled={isDeleting}
-            className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
+            aria-label="削除"
+            title="削除"
+            className={`${iconActionButtonClassName} text-red-600 hover:bg-red-50 hover:text-red-700`}
           >
-            削除
+            <TrashIcon />
           </Button>
         </div>
       )}
@@ -93,9 +152,33 @@ function EmptyRecordsMessage() {
         まだ学習記録がありません。右下の「＋」ボタンから最初の記録を投稿しましょう。
       </p>
       <p className="hidden sm:block">
-        まだ学習記録がありません。ヘッダーの「＋
+        まだ学習記録がありません。「＋
         記録を追加」ボタンから最初の記録を投稿しましょう。
       </p>
+    </div>
+  );
+}
+
+function RecordsToolbar() {
+  const openPostModal = useUiStore((state) => state.openPostModal);
+
+  return (
+    <div className={toolbarClassName}>
+      <div className={toolbarGroupClassName}>
+        <GroupSwitcher />
+      </div>
+      <Button onClick={openPostModal} className={addRecordButtonClassName}>
+        ＋ 記録を追加
+      </Button>
+    </div>
+  );
+}
+
+function RecordsListFrame({ children }: { children: ReactNode }) {
+  return (
+    <div>
+      <RecordsToolbar />
+      {children}
     </div>
   );
 }
@@ -112,12 +195,16 @@ export default function RecordsList() {
     isFetchingNextPage,
   } = useRecordsQuery(selectedGroupId);
   const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
+  const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
 
   const handleDelete = async (record: StudyRecord) => {
-    const confirmed = window.confirm(
-      `「${record.title}」を削除しますか？この操作は取り消せません。`,
-    );
+    const confirmed = await confirm({
+      title: "記録の削除",
+      message: `「${record.title}」を削除しますか？この操作は取り消せません。`,
+      confirmLabel: "削除",
+      variant: "danger",
+    });
     if (!confirmed) return;
     try {
       await deleteRecordMutation.mutateAsync(record.id);
@@ -128,34 +215,44 @@ export default function RecordsList() {
 
   if (!selectedGroupId) {
     return (
-      <p className="py-12 text-center text-sm text-gray-400">
-        グループを選択してください。
-      </p>
+      <RecordsListFrame>
+        <p className="py-12 text-center text-sm text-gray-400">
+          グループを選択してください。
+        </p>
+      </RecordsListFrame>
     );
   }
 
   if (isLoading) {
     return (
-      <p className="py-12 text-center text-sm text-gray-400">読み込み中...</p>
+      <RecordsListFrame>
+        <p className="py-12 text-center text-sm text-gray-400">読み込み中...</p>
+      </RecordsListFrame>
     );
   }
 
   if (isError) {
     return (
-      <p className="py-12 text-center text-sm text-red-500">
-        学習記録の取得に失敗しました。
-      </p>
+      <RecordsListFrame>
+        <p className="py-12 text-center text-sm text-red-500">
+          学習記録の取得に失敗しました。
+        </p>
+      </RecordsListFrame>
     );
   }
 
   const records = data?.pages.flatMap((page) => page.records) ?? [];
 
   if (records.length === 0) {
-    return <EmptyRecordsMessage />;
+    return (
+      <RecordsListFrame>
+        <EmptyRecordsMessage />
+      </RecordsListFrame>
+    );
   }
 
   return (
-    <div>
+    <RecordsListFrame>
       <ul className="space-y-3">
         {records.map((record) => (
           <RecordCard
@@ -191,6 +288,6 @@ export default function RecordsList() {
           onClose={() => setEditingRecord(null)}
         />
       )}
-    </div>
+    </RecordsListFrame>
   );
 }

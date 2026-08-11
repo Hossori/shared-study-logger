@@ -17,3 +17,15 @@ body {
 	min-height: 100vh;
 	min-width: 320px;
 }
+
+/* 素の button / クリック可能な select もホバーでポインターにする */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+select:not(:disabled) {
+	cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+	cursor: not-allowed;
+}
