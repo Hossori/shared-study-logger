@@ -2,9 +2,8 @@
  * ドメインに依存しない汎用ボタン。色・ホバー・disabled時の見た目のみを共通化し、
  * サイズ(padding/text)やレイアウト(flex-1/w-full等)は呼び出し側が`className`で指定する。
  *
- * 対象外: モバイル用フローティングアクションボタン(`Layout.tsx`の円形ボタン)や
- * `NotificationOptIn.tsx`の購読状態に応じた2色切り替えボタンは、この汎用ボタンでは
- * 表現しづらい一点物のスタイルのため、意図的にそのまま個別実装している
+ * 対象外: モバイル用フローティングアクションボタン(`Layout.tsx`の円形ボタン)は、
+ * この汎用ボタンでは表現しづらい一点物のスタイルのため個別実装している
  * （理由は`reference/design-decisions.md`参照）。
  */
 import { forwardRef, type ButtonHTMLAttributes } from "react";

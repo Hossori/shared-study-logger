@@ -22,7 +22,7 @@ createRoot(document.getElementById("root")!).render(
 );
 
 // カスタムService Worker(public/sw.ts, injectManifestでビルド)を登録する。
-// Push通知の購読(`NotificationOptIn`)は`navigator.serviceWorker.ready`を前提にしている。
+// Push通知の購読(`useNotificationOptIn`)は`navigator.serviceWorker.ready`を前提にしている。
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
