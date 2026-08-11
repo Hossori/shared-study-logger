@@ -24,8 +24,8 @@ const toolbarClassName = "mb-4 flex flex-wrap items-center gap-2 sm:gap-3";
 const toolbarGroupClassName = "min-w-0 flex-1";
 const addRecordButtonClassName =
   "hidden shrink-0 px-4 py-1.5 text-sm sm:inline-flex";
-const authorLinkClassName =
-  "inline-flex max-w-full items-center gap-1.5 rounded-full text-xs text-gray-500 transition hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
+const authorAvatarLinkClassName =
+  "inline-flex shrink-0 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
 const iconActionButtonClassName =
   "inline-flex h-9 w-9 items-center justify-center p-0";
 
@@ -91,25 +91,50 @@ function RecordCard({
 
   return (
     <li className={cardClassName}>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <span className="text-xs font-medium text-gray-500">
-          {formatStudyDatetime(record.studyDatetime)}
-        </span>
-        <Link
-          to={`/users/${record.userId}`}
-          className={authorLinkClassName}
-          aria-label={`${authorName}のユーザーページ`}
-        >
-          <img
-            src={getAvatarUrl(record.authorAvatarKey ?? null)}
-            alt=""
-            className="h-6 w-6 rounded-full ring-1 ring-gray-200"
-            width={24}
-            height={24}
-          />
-          <span className="truncate">{authorName}</span>
-        </Link>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Link
+            to={`/users/${record.userId}`}
+            className={authorAvatarLinkClassName}
+            aria-label={`${authorName}のユーザーページ`}
+          >
+            <img
+              src={getAvatarUrl(record.authorAvatarKey ?? null)}
+              alt=""
+              className="h-6 w-6 rounded-full ring-1 ring-gray-200"
+              width={24}
+              height={24}
+            />
+          </Link>
+          <span className="truncate text-xs text-gray-500">{authorName}</span>
+        </div>
+        {isOwner && (
+          <div className="-mt-1 -mr-1 flex shrink-0 gap-1">
+            <Button
+              variant="ghost"
+              onClick={() => onEdit(record)}
+              aria-label="編集"
+              title="編集"
+              className={iconActionButtonClassName}
+            >
+              <PencilIcon />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => onDelete(record)}
+              disabled={isDeleting}
+              aria-label="削除"
+              title="削除"
+              className={`${iconActionButtonClassName} text-red-600 hover:bg-red-50 hover:text-red-700`}
+            >
+              <TrashIcon />
+            </Button>
+          </div>
+        )}
       </div>
+      <span className="mt-1.5 block text-xs font-medium text-gray-500">
+        {formatStudyDatetime(record.studyDatetime)}
+      </span>
       <h3 className="mt-1.5 text-base font-semibold text-gray-900 sm:text-lg">
         {record.title}
       </h3>
@@ -117,29 +142,6 @@ function RecordCard({
         <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">
           {record.memo}
         </p>
-      )}
-      {isOwner && (
-        <div className="mt-3 flex justify-end gap-1 border-t border-gray-100 pt-3">
-          <Button
-            variant="ghost"
-            onClick={() => onEdit(record)}
-            aria-label="編集"
-            title="編集"
-            className={iconActionButtonClassName}
-          >
-            <PencilIcon />
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => onDelete(record)}
-            disabled={isDeleting}
-            aria-label="削除"
-            title="削除"
-            className={`${iconActionButtonClassName} text-red-600 hover:bg-red-50 hover:text-red-700`}
-          >
-            <TrashIcon />
-          </Button>
-        </div>
       )}
     </li>
   );
@@ -188,7 +190,8 @@ export default function RecordsList() {
   const { data: me } = useMeQuery();
   const {
     data,
-    isLoading,
+    isPending,
+    isFetching,
     isError,
     hasNextPage,
     fetchNextPage,
@@ -197,6 +200,10 @@ export default function RecordsList() {
   const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
+
+  // isLoading(= isPending && isFetching) だけだと fetch 開始前や retry 待ちで
+  // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
+  const isInitialLoading = isPending || (isFetching && !data);
 
   const handleDelete = async (record: StudyRecord) => {
     const confirmed = await confirm({
@@ -223,10 +230,12 @@ export default function RecordsList() {
     );
   }
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <RecordsListFrame>
-        <p className="py-12 text-center text-sm text-gray-400">読み込み中...</p>
+        <p className="py-12 text-center text-sm text-gray-400">
+          学習記録を読み込み中...
+        </p>
       </RecordsListFrame>
     );
   }
