@@ -4,9 +4,9 @@
  */
 import { useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router";
-import { getAvatarUrl } from "../../../../shared/schemas";
 import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import Layout from "../../components/Layout";
+import UserAvatar from "../../components/UserAvatar";
 import Button from "../../components/ui/Button";
 import { useUserQuery } from "../../queries/useUser";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -69,13 +69,7 @@ export default function UserPage() {
       {profile && (
         <section className={sectionClassName}>
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <img
-              src={getAvatarUrl(profile.avatarKey)}
-              alt=""
-              className="h-20 w-20 rounded-full ring-1 ring-gray-200"
-              width={80}
-              height={80}
-            />
+            <UserAvatar avatarKey={profile.avatarKey} className="h-20 w-20" />
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-lg font-bold text-gray-900">
                 {profile.displayName}

@@ -13,8 +13,9 @@ import {
   useDeleteRecordMutation,
   useRecordsQuery,
 } from "../../queries/useRecords";
-import { getAvatarUrl, type StudyRecord } from "../../../../shared/schemas";
+import { type StudyRecord } from "../../../../shared/schemas";
 import Button from "../../components/ui/Button";
+import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
@@ -69,12 +70,9 @@ function RecordCard({
             className={authorAvatarLinkClassName}
             aria-label={`${authorName}のユーザーページ`}
           >
-            <img
-              src={getAvatarUrl(record.authorAvatarKey ?? null)}
-              alt=""
-              className="h-6 w-6 rounded-full ring-1 ring-gray-200"
-              width={24}
-              height={24}
+            <UserAvatar
+              avatarKey={record.authorAvatarKey ?? null}
+              className="h-6 w-6"
             />
           </Link>
           <span className="truncate text-xs text-gray-500">{authorName}</span>

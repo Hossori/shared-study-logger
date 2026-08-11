@@ -3,12 +3,9 @@
  */
 import { useEffect, useState, type FormEvent } from "react";
 import { X } from "lucide-react";
-import {
-  AVATAR_KEYS,
-  getAvatarUrl,
-  type AvatarKey,
-} from "../../../../shared/schemas";
+import { AVATAR_KEYS, type AvatarKey } from "../../../../shared/schemas";
 import Button from "../../components/ui/Button";
+import UserAvatar from "../../components/UserAvatar";
 import { TextAreaField, TextField } from "../../components/ui/FormField";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 import { useUpdateProfileMutation } from "../../queries/useAuth";
@@ -111,12 +108,10 @@ export default function EditProfileModal({
           <div>
             <p className="mb-2 text-sm font-medium text-gray-700">アバター</p>
             <div className="mb-3 flex items-center gap-3">
-              <img
-                src={getAvatarUrl(avatarKey)}
+              <UserAvatar
+                avatarKey={avatarKey}
                 alt="選択中のアバター"
-                className="h-16 w-16 rounded-full"
-                width={64}
-                height={64}
+                className="h-16 w-16"
               />
               <button
                 type="button"
@@ -143,13 +138,7 @@ export default function EditProfileModal({
                         : "ring-transparent hover:ring-gray-300",
                     )}
                   >
-                    <img
-                      src={getAvatarUrl(key)}
-                      alt=""
-                      className="h-12 w-12 rounded-full"
-                      width={48}
-                      height={48}
-                    />
+                    <UserAvatar avatarKey={key} className="h-12 w-12" />
                   </button>
                 );
               })}
