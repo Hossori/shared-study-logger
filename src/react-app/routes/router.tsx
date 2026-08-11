@@ -3,12 +3,14 @@
  *
  * - `/login`: 未ログイン専用（`GuestRoute`配下）。ログイン済みなら`/`へリダイレクト。
  * - `/`: 認証必須のメイン画面（`ProtectedRoute`配下）。未ログインなら`/login`へリダイレクト。
- * - `/mypage`: 認証必須のマイページ（プロフィール・パスワード設定）。
+ * - `/users/:userId`: 認証必須のユーザーページ（自分=マイページ、他人=閲覧のみ）。
+ * - `/mypage`: 自分のユーザーページへ Navigate。
  * - それ以外の全パス: 404画面。
  */
 import { createBrowserRouter } from "react-router";
 import LoginPage from "../features/auth/LoginPage";
 import MyPage from "../features/auth/MyPage";
+import UserPage from "../features/auth/UserPage";
 import GuestRoute from "./GuestRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import HomePage from "./HomePage";
@@ -23,6 +25,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       { path: "/", element: <HomePage /> },
+      { path: "/users/:userId", element: <UserPage /> },
       { path: "/mypage", element: <MyPage /> },
     ],
   },

@@ -1,6 +1,7 @@
 /**
- * 通知許可 UI。状態は `useNotificationOptIn` に集約し、
- * Layout が PC/モバイルの表示位置を分けても購読状態がずれないようにする。
+ * 通知許可 UI（バナー/トグル表示）。
+ * ヘッダ通知ベル経由の一覧は `features/notifications` 側。
+ * 状態は `useNotificationOptIn` に集約する。単体埋め込み用に残している。
  */
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";

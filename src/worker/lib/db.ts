@@ -3,7 +3,12 @@
  * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録の作成/更新/削除、
  * push_subscriptions CRUDをまとめる。
  */
-import type { AvatarKey, StudyRecord, User } from "../../../shared/schemas";
+import type {
+  AvatarKey,
+  PublicUser,
+  StudyRecord,
+  User,
+} from "../../../shared/schemas";
 import { AvatarKeySchema } from "../../../shared/schemas";
 
 export interface UserRow {
@@ -28,6 +33,7 @@ export interface StudyRecordRow {
   group_id: string;
   user_id: string;
   author_display_name: string;
+  author_avatar_key: string | null;
   study_datetime: string;
   title: string;
   memo: string | null;
@@ -69,15 +75,30 @@ export async function getUserById(
   return row ?? null;
 }
 
+function parseAvatarKey(value: string | null | undefined): AvatarKey | null {
+  const parsed = AvatarKeySchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 /** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。 */
 export function toUser(row: UserRow): User {
-  const parsedAvatar = AvatarKeySchema.safeParse(row.avatar_key);
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
     bio: row.bio ?? null,
-    avatarKey: parsedAvatar.success ? parsedAvatar.data : null,
+    avatarKey: parseAvatarKey(row.avatar_key),
+    createdAt: row.created_at,
+  };
+}
+
+/** 公開プロフィール（email を含めない）。 */
+export function toPublicUser(row: UserRow): PublicUser {
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    bio: row.bio ?? null,
+    avatarKey: parseAvatarKey(row.avatar_key),
     createdAt: row.created_at,
   };
 }
@@ -235,6 +256,7 @@ function toStudyRecord(row: StudyRecordRow): StudyRecord {
     groupId: row.group_id,
     userId: row.user_id,
     authorDisplayName: row.author_display_name,
+    authorAvatarKey: parseAvatarKey(row.author_avatar_key),
     studyDatetime: row.study_datetime,
     title: row.title,
     memo: row.memo,
@@ -257,6 +279,7 @@ export async function listStudyRecords(
 
   const baseQuery = `
     SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
+           u.avatar_key AS author_avatar_key,
            sr.study_datetime, sr.title, sr.memo,
            sr.created_at, sr.updated_at
     FROM study_records sr
@@ -350,6 +373,7 @@ export async function createStudyRecord(
     groupId: input.groupId,
     userId: input.userId,
     authorDisplayName: author?.display_name,
+    authorAvatarKey: parseAvatarKey(author?.avatar_key),
     studyDatetime: input.studyDatetime,
     title: input.title,
     memo: input.memo ?? null,
@@ -367,6 +391,7 @@ export async function getStudyRecord(
   const row = await db
     .prepare(
       `SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
+              u.avatar_key AS author_avatar_key,
               sr.study_datetime, sr.title, sr.memo,
               sr.created_at, sr.updated_at
        FROM study_records sr

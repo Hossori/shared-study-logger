@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { authRoutes } from "./routes/auth";
 import { groupsRoutes } from "./routes/groups";
 import { recordsRoutes } from "./routes/records";
+import { usersRoutes } from "./routes/users";
 import { pushRoutes } from "./routes/push";
 import { requireAuth, type AuthVariables } from "./middleware/requireAuth";
 import { getPushSubscriptionsForUser } from "./lib/db";
@@ -12,9 +13,11 @@ const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 
 // 認証必須: POST /api/auth/login と GET /api/push/vapid-public-key のみ公開。
-// それ以外の /api/auth/*（logout, me, PATCH /me, POST /password）と /api/push/subscribe は
-// 各ルートファイル内で requireAuth を個別に適用し、/api/groups 以下は丸ごとrequireAuth必須にする。
+// それ以外の /api/auth/*（logout, me, PATCH /me, POST /password）と /api/push/subscribe、
+// /api/users/* は各ルートファイル内で requireAuth を個別に適用し、
+// /api/groups 以下は丸ごと requireAuth 必須にする。
 app.route("/api/auth", authRoutes);
+app.route("/api/users", usersRoutes);
 app.use("/api/groups/*", requireAuth);
 app.route("/api/groups", groupsRoutes);
 app.route("/api/groups", recordsRoutes);

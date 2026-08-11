@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { getAvatarUrl, type User } from "../../../shared/schemas";
 import { useLogoutMutation } from "../queries/useAuth";
+import { useConfirm } from "./useConfirm";
 
 interface ProfileMenuProps {
   user: User;
@@ -26,6 +27,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const logoutMutation = useLogoutMutation();
+  const confirm = useConfirm();
   const avatarUrl = getAvatarUrl(user.avatarKey);
 
   useEffect(() => {
@@ -48,8 +50,14 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
     };
   }, [open]);
 
-  const handleLogout = () => {
-    if (!window.confirm("ログアウトしますか？")) return;
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: "ログアウト",
+      message: "ログアウトしますか？",
+      confirmLabel: "ログアウト",
+      variant: "danger",
+    });
+    if (!ok) return;
     setOpen(false);
     logoutMutation.mutate();
   };
@@ -74,7 +82,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
             {user.displayName}
           </p>
           <Link
-            to="/mypage"
+            to={`/users/${user.id}`}
             role="menuitem"
             className={menuItemClassName}
             onClick={() => setOpen(false)}

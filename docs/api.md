@@ -11,6 +11,7 @@
 | GET | `/api/auth/me` | 必要 | ログイン中ユーザー情報取得（`bio` / `avatarKey` 含む） |
 | PATCH | `/api/auth/me` | 必要 | プロフィール更新（`displayName` / `bio` / `avatarKey`） |
 | POST | `/api/auth/password` | 必要 | パスワード変更（現在のパスワード検証 + PBKDF2再ハッシュ） |
+| GET | `/api/users/:userId` | 必要 | 公開プロフィール取得（`displayName` / `bio` / `avatarKey`。email なし） |
 | GET | `/api/groups` | 必要 | 自分が所属するグループ一覧 |
 | GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順） |
 | POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue） |
@@ -23,6 +24,6 @@
 ## requireAuth の適用箇所
 
 認証必須の適用箇所: `src/worker/index.ts` で `/api/groups/*` 全体に `requireAuth` を一括適用し、
-`/api/auth/logout`・`/me`・`PATCH /me`・`POST /password` と `/api/push/subscribe` は各ルート
-ファイル内で個別に `requireAuth` を適用している。新しいエンドポイントを追加する際はどちらの
-方式にするか `index.ts` を確認すること。
+`/api/auth/logout`・`/me`・`PATCH /me`・`POST /password`、`/api/users/:userId`、
+`/api/push/subscribe` は各ルートファイル内で個別に `requireAuth` を適用している。
+新しいエンドポイントを追加する際はどちらの方式にするか `index.ts` を確認すること。

@@ -43,7 +43,7 @@ export default function RecordFormFields({
 
       <TextAreaField
         id={`${idPrefix}-memo`}
-        label="メモ（任意）"
+        label="メモ"
         rows={3}
         maxLength={2000}
         value={values.memo}

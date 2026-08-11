@@ -70,15 +70,15 @@ test("自分の学習記録を削除できる", async ({ page }) => {
 	const card = page.locator("li").filter({ hasText: title });
 	await expect(card).toBeVisible();
 
-	page.once("dialog", (dialog) => dialog.accept());
 	await card.getByRole("button", { name: "削除" }).click();
+	await page.getByRole("dialog").getByRole("button", { name: "削除" }).click();
 	await expect(card).toHaveCount(0);
 });
 
 test("ログアウト後は /login に戻る", async ({ page }) => {
 	await loginAsAdmin(page);
 	await page.getByLabel("プロフィールメニュー").click();
-	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("menuitem", { name: "ログアウト" }).click();
+	await page.getByRole("dialog").getByRole("button", { name: "ログアウト" }).click();
 	await expect(page).toHaveURL(/\/login/);
 });

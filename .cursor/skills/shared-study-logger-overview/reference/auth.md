@@ -12,9 +12,13 @@
     `src/worker/routes/auth.ts`（`/login`,`/logout`,`/me`,`PATCH /me`,`POST /password`）、
     `src/worker/lib/db.ts`（`toUser` / `updateUserProfile` / `updateUserPassword`）
   - フロント: `src/react-app/features/auth/LoginPage.tsx`、
-    `src/react-app/features/auth/MyPage.tsx`（`/mypage`）、
+    `src/react-app/features/auth/UserPage.tsx`（`/users/:userId`、自分=マイページ）、
+    `src/react-app/features/auth/MyPage.tsx`（`/mypage` → 自分の UserPage へ Navigate）、
+    `src/react-app/features/auth/EditProfileModal.tsx` / `ChangePasswordModal.tsx`、
     `src/react-app/queries/useAuth.ts`（`useMeQuery`/`useLoginMutation`/`useLogoutMutation`/
-    `useUpdateProfileMutation`/`useChangePasswordMutation`）
+    `useUpdateProfileMutation`/`useChangePasswordMutation`）、
+    `src/react-app/queries/useUser.ts`（`GET /api/users/:userId`）
+  - Worker: `src/worker/routes/users.ts`（公開プロフィール、email なし）
   - 共通: `shared/schemas.ts`の`LoginRequestSchema`/`UserSchema`/
     `UpdateProfileRequestSchema`/`ChangePasswordRequestSchema`、
     `shared/avatars.ts`（プリセットキー・`getAvatarUrl`）

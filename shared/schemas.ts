@@ -38,6 +38,16 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
+/** GET /api/users/:userId — 他ユーザー向け公開プロフィール（email なし） */
+export const PublicUserSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  bio: z.string().nullable(),
+  avatarKey: AvatarKeySchema.nullable(),
+  createdAt: z.string(),
+});
+export type PublicUser = z.infer<typeof PublicUserSchema>;
+
 /** PATCH /api/auth/me — プロフィール更新（少なくとも1フィールド必須） */
 export const UpdateProfileRequestSchema = z
   .object({
@@ -77,6 +87,7 @@ export const StudyRecordSchema = z.object({
   groupId: z.string(),
   userId: z.string(),
   authorDisplayName: z.string().optional(),
+  authorAvatarKey: AvatarKeySchema.nullable().optional(),
   studyDatetime: z.string(),
   title: z.string().min(1),
   memo: z.string().optional().nullable(),
