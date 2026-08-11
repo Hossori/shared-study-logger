@@ -9,6 +9,7 @@
  */
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { Plus } from "lucide-react";
 import type { User } from "../../../shared/schemas";
 import { useUiStore } from "../stores/uiStore";
 import HeaderNotifications from "../features/notifications/HeaderNotifications";
@@ -31,7 +32,7 @@ const logoLinkClassName =
 const headerActionsClassName = "ml-auto flex shrink-0 items-center gap-2";
 const mainClassName = "mx-auto max-w-4xl px-3 py-4 sm:px-6 sm:py-8";
 const fabClassName =
-  "fixed right-5 bottom-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-2xl text-white shadow-lg transition hover:bg-indigo-700 sm:hidden";
+  "fixed right-5 bottom-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 sm:hidden";
 
 export default function Layout({
   user,
@@ -66,7 +67,7 @@ export default function Layout({
             aria-label="記録を追加"
             className={fabClassName}
           >
-            ＋
+            <Plus className="h-7 w-7" aria-hidden />
           </button>
         </>
       )}

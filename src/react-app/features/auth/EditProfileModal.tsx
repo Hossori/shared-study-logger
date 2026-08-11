@@ -2,6 +2,7 @@
  * プロフィール編集モーダル（アバター・表示名・自己紹介）。
  */
 import { useEffect, useState, type FormEvent } from "react";
+import { X } from "lucide-react";
 import {
   AVATAR_KEYS,
   getAvatarUrl,
@@ -102,7 +103,7 @@ export default function EditProfileModal({
             aria-label="閉じる"
             className={closeButtonClassName}
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 

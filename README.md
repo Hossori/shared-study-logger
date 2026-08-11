@@ -249,7 +249,7 @@ Push通知有効化までのE2E動作確認を行うことを推奨します。
 - 購読先エンドポイントが410/404を返した場合（ブラウザ側で購読が失効した場合）、該当の
   `push_subscriptions`レコードをD1から自動削除します。
 - iOSでPush通知を利用するには、PWAをホーム画面に追加（standaloneモード）する必要があります。
-  `NotificationOptIn`コンポーネントはUser-AgentベースでiOS Safari（非standalone）を検出し、
+  アプリ内通知（ヘッダーベル）がUser-AgentベースでiOS Safari（非standalone）を検出し、
   ホーム画面への追加を案内します。
 
 ## 既知の注意点・制約

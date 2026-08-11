@@ -2,6 +2,7 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
+import { X } from "lucide-react";
 import Button from "../../components/ui/Button";
 import { TextField } from "../../components/ui/FormField";
 import ErrorMessage from "../../components/ui/ErrorMessage";
@@ -134,7 +135,7 @@ export default function ChangePasswordModal({
             aria-label="閉じる"
             className={closeButtonClassName}
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 

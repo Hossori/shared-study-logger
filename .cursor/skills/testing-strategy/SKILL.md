@@ -96,3 +96,18 @@ e2e で契約を担保。理由を本節と `tests/worker/README.md` に残す�
 2. API → `pnpm test:worker`（migrations setup 維持）
 3. 画面 → e2e 本数を数え ≤7 → `pnpm test:e2e`
 4. 静的ゲート → `pnpm run typecheck` / `lint` / `format:check` / `check:zod-deprecated`
+
+## コミット前ゲート（必須）
+
+コード変更をコミットする前に、ローカルで次を **すべて成功**させてからコミットする。
+
+| コマンド | 目的 |
+| --- | --- |
+| `pnpm test` | Vitest unit |
+| `pnpm test:e2e` | Playwright スモーク（要 seed / `.dev.vars` / 初回は `pnpm playwright:install`） |
+| `pnpm lint` | ESLint |
+| `pnpm run typecheck` | `tsc -b` |
+
+- UI・アクセシブルネーム・ルーティング・記録 CRUD など画面契約に触れる変更では、e2e を省略しない（CI の E2E smoke と同じ失敗をローカルで先に拾う）。
+- API / Worker のみの変更でも `pnpm test` は必須。`pnpm test:worker` は API 契約変更時に追加で必須。
+- ドキュメントのみ・スキル文言のみなどコードに影響しない変更はテスト省略可。判断に迷う場合は実行する。

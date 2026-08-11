@@ -2,6 +2,7 @@
  * 学習記録の投稿/編集モーダル共通シェル（オーバーレイ・タイトル・フッター）。
  */
 import type { FormEvent, ReactNode } from "react";
+import { X } from "lucide-react";
 import Button from "../../components/ui/Button";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 
@@ -44,7 +45,7 @@ export default function RecordModalShell({
             aria-label="閉じる"
             className={closeButtonClassName}
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 

@@ -6,6 +6,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
 import { useMeQuery } from "../../queries/useAuth";
 import {
@@ -23,41 +24,11 @@ const cardClassName =
 const toolbarClassName = "mb-4 flex flex-wrap items-center gap-2 sm:gap-3";
 const toolbarGroupClassName = "min-w-0 flex-1";
 const addRecordButtonClassName =
-  "hidden shrink-0 px-4 py-1.5 text-sm sm:inline-flex";
+  "hidden shrink-0 items-center gap-1.5 px-4 py-1.5 text-sm sm:inline-flex";
 const authorAvatarLinkClassName =
   "inline-flex shrink-0 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
 const iconActionButtonClassName =
   "inline-flex h-9 w-9 items-center justify-center p-0";
-
-function PencilIcon() {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        d="M8.75 1A1.75 1.75 0 0 0 7 2.75V3h6v-.25A1.75 1.75 0 0 0 11.25 1h-2.5ZM6.5 3v-.25a3.25 3.25 0 0 1 6.5 0V3H16a.75.75 0 0 1 0 1.5h-.64l-.7 11.2A2.75 2.75 0 0 1 11.92 18H8.08a2.75 2.75 0 0 1-2.74-2.3l-.7-11.2H4a.75.75 0 0 1 0-1.5h2.5Zm1.62 4.25a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5a.75.75 0 0 1 .75-.75Zm3.51.75a.75.75 0 0 0-1.5 0v6.5a.75.75 0 0 0 1.5 0v-6.5Z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
 
 function formatStudyDatetime(studyDatetime: string): string {
   const date = new Date(studyDatetime);
@@ -117,7 +88,7 @@ function RecordCard({
               title="編集"
               className={iconActionButtonClassName}
             >
-              <PencilIcon />
+              <Pencil className="h-4 w-4" aria-hidden />
             </Button>
             <Button
               variant="ghost"
@@ -127,7 +98,7 @@ function RecordCard({
               title="削除"
               className={`${iconActionButtonClassName} text-red-600 hover:bg-red-50 hover:text-red-700`}
             >
-              <TrashIcon />
+              <Trash2 className="h-4 w-4" aria-hidden />
             </Button>
           </div>
         )}
@@ -151,11 +122,10 @@ function EmptyRecordsMessage() {
   return (
     <div className="py-12 text-center text-sm text-gray-400">
       <p className="sm:hidden">
-        まだ学習記録がありません。右下の「＋」ボタンから最初の記録を投稿しましょう。
+        まだ学習記録がありません。右下の追加ボタンから最初の記録を投稿しましょう。
       </p>
       <p className="hidden sm:block">
-        まだ学習記録がありません。「＋
-        記録を追加」ボタンから最初の記録を投稿しましょう。
+        まだ学習記録がありません。「記録を追加」ボタンから最初の記録を投稿しましょう。
       </p>
     </div>
   );
@@ -170,7 +140,8 @@ function RecordsToolbar() {
         <GroupSwitcher />
       </div>
       <Button onClick={openPostModal} className={addRecordButtonClassName}>
-        ＋ 記録を追加
+        <Plus className="h-4 w-4" aria-hidden />
+        記録を追加
       </Button>
     </div>
   );

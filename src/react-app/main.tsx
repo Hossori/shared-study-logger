@@ -21,10 +21,10 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 
-// カスタムService Worker(public/sw.ts)を登録する。
+// カスタムService Worker(public/sw.ts, injectManifestでビルド)を登録する。
 // 開発: VitePWA `devOptions` が配信する `/dev-sw.js?dev-sw`
 // 本番: injectManifest 出力の `/sw.js`
-// Push通知の購読(`NotificationOptIn`)は`navigator.serviceWorker.ready`を前提にしている。
+// Push通知の購読(`useNotificationOptIn`)は`navigator.serviceWorker.ready`を前提にしている。
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker

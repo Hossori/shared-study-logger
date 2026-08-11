@@ -4,6 +4,7 @@
  */
 import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import Button from "../../components/ui/Button";
 import type { AppNotificationItem } from "./types";
 import type { AppNotificationsController } from "./useAppNotifications";
@@ -65,7 +66,7 @@ export default function NotificationModal({
             aria-label="閉じる"
             className={closeButtonClassName}
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 
@@ -150,7 +151,7 @@ function NotificationListItem({
           className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
           onClick={onDismiss}
         >
-          ✕
+          <X className="h-5 w-5" aria-hidden />
         </button>
       </div>
 
