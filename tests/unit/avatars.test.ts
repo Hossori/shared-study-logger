@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import {
-	DEFAULT_AVATAR_PATH,
-	getAvatarUrl,
-} from "../../shared/avatars";
+import { getAvatarUrl } from "../../shared/avatars";
 
 describe("getAvatarUrl", () => {
-	it("returns preset path for known key", () => {
-		expect(getAvatarUrl("fox")).toBe("/avatars/fox.svg");
+	it("returns numbered preset path for known key", () => {
+		expect(getAvatarUrl("avoidy")).toBe("/avatars/1_avoidy.png");
+		expect(getAvatarUrl("lavender")).toBe("/avatars/2_lavender.png");
+		expect(getAvatarUrl("stolen")).toBe("/avatars/6_stolen.png");
 	});
 
-	it("returns default for null/undefined/unknown", () => {
-		expect(getAvatarUrl(null)).toBe(DEFAULT_AVATAR_PATH);
-		expect(getAvatarUrl(undefined)).toBe(DEFAULT_AVATAR_PATH);
-		expect(getAvatarUrl("dragon")).toBe(DEFAULT_AVATAR_PATH);
+	it("returns null for null/undefined/unknown/legacy key", () => {
+		expect(getAvatarUrl(null)).toBeNull();
+		expect(getAvatarUrl(undefined)).toBeNull();
+		expect(getAvatarUrl("dragon")).toBeNull();
+		expect(getAvatarUrl("fox")).toBeNull();
 	});
 });

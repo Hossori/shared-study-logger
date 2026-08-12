@@ -6,12 +6,12 @@
 import { z } from "zod";
 
 export const AVATAR_KEYS = [
-  "fox",
-  "owl",
-  "cat",
-  "bear",
-  "penguin",
-  "rabbit",
+  "avoidy",
+  "lavender",
+  "fever",
+  "born",
+  "innocence",
+  "stolen",
 ] as const;
 
 export type AvatarKey = (typeof AVATAR_KEYS)[number];
@@ -20,27 +20,26 @@ export const AvatarKeySchema = z.enum(AVATAR_KEYS);
 
 /** プリセットキー → public/avatars 配下のパス */
 export const AVATAR_PATHS: Record<AvatarKey, string> = {
-  fox: "/avatars/fox.svg",
-  owl: "/avatars/owl.svg",
-  cat: "/avatars/cat.svg",
-  bear: "/avatars/bear.svg",
-  penguin: "/avatars/penguin.svg",
-  rabbit: "/avatars/rabbit.svg",
+  avoidy: "/avatars/1_avoidy.png",
+  lavender: "/avatars/2_lavender.png",
+  fever: "/avatars/3_fever.png",
+  born: "/avatars/4_born.png",
+  innocence: "/avatars/5_innocence.png",
+  stolen: "/avatars/6_stolen.png",
 };
 
-/** avatarKey が null / 未設定のときに使うデフォルト画像 */
-export const DEFAULT_AVATAR_PATH = "/avatars/default.svg";
-
 /**
- * アバターキーから画像URLを返す。未設定・未知キーはデフォルト画像。
+ * アバターキーから画像URLを返す。未設定・未知キーは null（表示はクライアントで Lucide アイコン）。
  * ヘッダ等の表示側から import して使う。
  */
-export function getAvatarUrl(avatarKey: string | null | undefined): string {
+export function getAvatarUrl(
+  avatarKey: string | null | undefined,
+): string | null {
   if (
     avatarKey != null &&
     (AVATAR_KEYS as readonly string[]).includes(avatarKey)
   ) {
     return AVATAR_PATHS[avatarKey as AvatarKey];
   }
-  return DEFAULT_AVATAR_PATH;
+  return null;
 }

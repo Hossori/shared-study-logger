@@ -5,7 +5,8 @@
  */
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
-import { getAvatarUrl, type User } from "../../../shared/schemas";
+import { type User } from "../../../shared/schemas";
+import UserAvatar from "./UserAvatar";
 import { useLogoutMutation } from "../queries/useAuth";
 import { useConfirm } from "./useConfirm";
 
@@ -28,8 +29,6 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const menuId = useId();
   const logoutMutation = useLogoutMutation();
   const confirm = useConfirm();
-  const avatarUrl = getAvatarUrl(user.avatarKey);
-
   useEffect(() => {
     if (!open) return;
 
@@ -73,7 +72,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         onClick={() => setOpen((prev) => !prev)}
         className={avatarButtonClassName}
       >
-        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+        <UserAvatar avatarKey={user.avatarKey} className="h-full w-full" />
       </button>
 
       {open ? (

@@ -22,7 +22,7 @@
   - 共通: `shared/schemas.ts`の`LoginRequestSchema`/`UserSchema`/
     `UpdateProfileRequestSchema`/`ChangePasswordRequestSchema`、
     `shared/avatars.ts`（プリセットキー・`getAvatarUrl`）
-  - 静的アセット: `public/avatars/{default,fox,owl,cat,bear,penguin,rabbit}.svg`
+  - 静的アセット: `public/avatars/{1_avoidy,2_lavender,3_fever,4_born,5_innocence,6_stolen}.png`
 - **データフロー**: `POST /api/auth/login` → email/passwordをzod検証 →
   `getUserByEmail`でD1照会 → PBKDF2(SHA-256, 100,000 iterations, 32byte, タイミングセーフ比較)で
   `verifyPassword` → 成功時`createSession`でKVに`session:{token}`→`{userId, expiresAt}`を
@@ -34,7 +34,7 @@
   [routing.md](routing.md)参照）。
   - プロフィール更新: `PATCH /api/auth/me`（`displayName` / `bio` / `avatarKey`、いずれも任意だが
     少なくとも1つ必須）。`avatarKey`は`AvatarKeySchema`（許可リスト）で検証し、`null`で
-    デフォルト画像に戻せる。成功時は更新後の`User`を返す。
+    デフォルト表示に戻せる（クライアントでは Lucide アイコン）。成功時は更新後の`User`を返す。
   - パスワード変更: `POST /api/auth/password`（`currentPassword` + `newPassword`）。
     現在のパスワードを`verifyPassword`で検証し、新saltを`generateSaltHex`、新ハッシュを
     `hashPassword`（既存PBKDF2）で保存する。
@@ -48,4 +48,5 @@
   - 公開APIでのユーザー登録は存在しない。ユーザー追加は`scripts/seed-users.mjs`または
     直接SQL投入で行う運用。
   - アバターはアップロード不可。プリセット選択のみ（キー一覧は`shared/avatars.ts`の
-    `AVATAR_KEYS`）。ヘッダ等での表示は`getAvatarUrl(avatarKey)`を使う。
+    `AVATAR_KEYS`）。未設定（`null`）は `UserAvatar` コンポーネントで Lucide アイコン表示。
+    プリセット選択時は `getAvatarUrl(avatarKey)` で番号付き PNG パスを取得する。

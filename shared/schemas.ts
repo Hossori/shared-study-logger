@@ -15,7 +15,6 @@ export {
   AVATAR_KEYS,
   AVATAR_PATHS,
   AvatarKeySchema,
-  DEFAULT_AVATAR_PATH,
   getAvatarUrl,
   type AvatarKey,
 } from "./avatars";
