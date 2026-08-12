@@ -28,9 +28,8 @@ const client = axios.create({
   timeout: REQUEST_TIMEOUT_MS,
 });
 
-// リクエストにボディがある場合のみ`Content-Type: application/json`を付与する
-// （元のfetchラッパーの挙動を踏襲）。axiosはデフォルトでプレーンオブジェクトのボディに
-// このヘッダーを自動付与するが、挙動を明示するためにここで設定している。
+// リクエストにボディがある場合のみ`Content-Type: application/json`を付与する。
+// axiosはデフォルトでプレーンオブジェクトのボディにこのヘッダーを自動付与するが、挙動を明示するためにここで設定している。
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (config.data !== undefined) {
     config.headers.set("Content-Type", "application/json");
