@@ -18,6 +18,6 @@ export async function loginAsAdmin(page: Page): Promise<void> {
 }
 
 export async function openPostModal(page: Page): Promise<void> {
-	await page.getByRole("button", { name: "＋ 記録を追加" }).click();
+	await page.getByRole("button", { name: "記録を追加" }).click();
 	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeVisible();
 }

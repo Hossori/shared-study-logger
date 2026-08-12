@@ -1,6 +1,8 @@
 /**
  * 認証必須のメイン画面（`/`）。`ProtectedRoute`の子ルートとしてのみ描画されるため、
  * `Outlet`のcontext経由で渡された`user`をそのまま利用できる。
+ *
+ * グループ切替・記録追加は記録一覧側。FAB は Layout の `showRecordActions` で出す。
  */
 import { useOutletContext } from "react-router";
 import type { AuthenticatedOutletContext } from "./ProtectedRoute";
@@ -11,10 +13,7 @@ export default function HomePage() {
   const { user } = useOutletContext<AuthenticatedOutletContext>();
 
   return (
-    <Layout user={user}>
-      {/* Layout内ヘッダーにもGroupSwitcherがあるが、ここではメインコンテンツとして
-          選択中グループの記録一覧を表示する。GroupSwitcher自体はLayoutのヘッダーに配置。
-          記録追加モーダルは Layout 側（ヘッダ/FAB と同居）で描画する。 */}
+    <Layout user={user} showRecordActions>
       <RecordsList />
     </Layout>
   );

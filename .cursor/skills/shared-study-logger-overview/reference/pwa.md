@@ -6,11 +6,12 @@
   プリキャッシュ、Push通知受信をサポート。
 - **関連ファイル**: `vite.config.ts`（`VitePWA`設定）、`public/sw.ts`（カスタムService Worker
   ソース）、`public/manifest.webmanifest`、`public/icons/`、`index.html`
-  （`<link rel="manifest">`等）、`src/react-app/main.tsx`（`/sw.js`の手動登録）
+  （`<link rel="manifest">`等）、`src/react-app/main.tsx`（SWの手動登録）
 - **データフロー/ビルド**: `vite-plugin-pwa`を**`injectManifest`戦略**で使用
   （`generateSW`の自動生成では`push`/`notificationclick`の独自ハンドリングを追加できないため）。
   `srcDir: "public"`, `filename: "sw.ts"`, `manifest: false`（マニフェストは静的ファイルとして
-  自前管理）, `injectRegister: false`（登録はmain.tsxで手動）。`pnpm build`時に
+  自前管理）, `injectRegister: false`（登録はmain.tsxで手動）。開発時は`devOptions.enabled`
+  により`/dev-sw.js?dev-sw`を登録し、本番は`/sw.js`を登録する。`pnpm build`時に
   `public/sw.ts`がコンパイルされ、Workboxの`precacheAndRoute(self.__WB_MANIFEST)`で
   プリキャッシュ対象が注入された`dist/client/sw.js`が生成される（`sw.mjs`も出力されるが
   実際に登録されるのは`sw.js`）。

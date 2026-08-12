@@ -5,8 +5,10 @@
  */
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
-import { getAvatarUrl, type User } from "../../../shared/schemas";
+import { type User } from "../../../shared/schemas";
+import UserAvatar from "./UserAvatar";
 import { useLogoutMutation } from "../queries/useAuth";
+import { useConfirm } from "./useConfirm";
 
 interface ProfileMenuProps {
   user: User;
@@ -26,8 +28,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const logoutMutation = useLogoutMutation();
-  const avatarUrl = getAvatarUrl(user.avatarKey);
-
+  const confirm = useConfirm();
   useEffect(() => {
     if (!open) return;
 
@@ -48,8 +49,14 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
     };
   }, [open]);
 
-  const handleLogout = () => {
-    if (!window.confirm("ログアウトしますか？")) return;
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: "ログアウト",
+      message: "ログアウトしますか？",
+      confirmLabel: "ログアウト",
+      variant: "danger",
+    });
+    if (!ok) return;
     setOpen(false);
     logoutMutation.mutate();
   };
@@ -65,7 +72,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         onClick={() => setOpen((prev) => !prev)}
         className={avatarButtonClassName}
       >
-        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+        <UserAvatar avatarKey={user.avatarKey} className="h-full w-full" />
       </button>
 
       {open ? (
@@ -74,7 +81,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
             {user.displayName}
           </p>
           <Link
-            to="/mypage"
+            to={`/users/${user.id}`}
             role="menuitem"
             className={menuItemClassName}
             onClick={() => setOpen(false)}

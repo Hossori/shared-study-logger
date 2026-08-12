@@ -1,24 +1,21 @@
 ---
 name: testing-strategy
 description: >-
-  shared-study-logger のテスト自動化方針（Vitest unit/worker、Playwright スモーク ≤7、
-  CI ゲート、seed/Cookie 前提、Push/PWA 手動除外）をまとめる。
-  テスト追加・修正、CI ワークフロー変更、Vitest/Playwright 導入、
-  自動化可否の判断、フレーク調査時に参照する。
+  shared-study-logger のテスト自動化方針（Vitest unit/worker、Playwright スモーク ≤7、CI ゲート、seed/Cookie 前提、Push/PWA 手動除外）をまとめる。
+  テスト追加・修正、CI ワークフロー変更、Vitest/Playwright 導入、自動化可否の判断、フレーク調査時に参照する。
 ---
 
-# テスト戦略（案B）
+# テスト戦略
 
-Vitest を主戦場、Playwright は薄いスモーク（≤7本）。アーキテクチャ全体は overview Skill、
-Zod フォーマットは zod-schemas Skill を参照（本 Skill と重複させない）。
+Vitest を主戦場、Playwright は薄いスモーク（≤7本）。アーキテクチャ全体は overview Skill、Zod フォーマットは zod-schemas Skill を参照（本 Skill と重複させない）。
 
 ## ピラミッド
 
-| 層 | ツール | 配置 | CI / script |
-| --- | --- | --- | --- |
-| unit | Vitest (Node) | `tests/unit/**` | `pnpm test`（必須） |
+| 層     | ツール                            | 配置              | CI / script                             |
+| ------ | --------------------------------- | ----------------- | --------------------------------------- |
+| unit   | Vitest (Node)                     | `tests/unit/**`   | `pnpm test`（必須）                     |
 | worker | `@cloudflare/vitest-pool-workers` | `tests/worker/**` | `pnpm test:worker`（必須・PoC成功済み） |
-| e2e | Playwright | `e2e/**` | `pnpm test:e2e`（スモーク ≤7） |
+| e2e    | Playwright                        | `e2e/**`          | `pnpm test:e2e`（スモーク ≤7）          |
 
 ```bash
 pnpm test              # unit
@@ -30,15 +27,15 @@ pnpm run typecheck     # tsc -b（app/node/worker/sw + tests/unit + tests/worker
 pnpm lint && pnpm run format:check && pnpm run check:zod-deprecated
 ```
 
-## 書く / 書かない
+## テスト対象
 
-**書く**
+**対象**
 
 - 純関数・スキーマ・カーソル・日時変換・認証ハッシュ等（unit）
 - API 代表経路: login/logout/me、記録 CRUD、非所属 403、Queue `send` mock（worker）
 - Cookie セッション前提の UI スモーク: ログイン成否、グループ、記録 CRUD、logout、未認証リダイレクト（e2e）
 
-**書かない（手動）**
+**対象外（手動テスト）**
 
 - Web Push 実送信・購読 UI・VAPID 実機
 - PWA インストール / Service Worker / オフライン
@@ -48,29 +45,19 @@ pnpm lint && pnpm run format:check && pnpm run check:zod-deprecated
 
 ## seed / Cookie 前提
 
-- 固定アカウント。E2E・ローカル確認は `pnpm seed`（または `pnpm seed:reset`）後の
-  `admin@example.com` / `ChangeMe123!`（および `test@example.com`）を使う。
+- 固定アカウント。E2E・ローカル確認は `pnpm seed`（または `pnpm seed:reset`）後の `admin@example.com` / `ChangeMe123!`（および `test@example.com`）を使う。
 - セッション Cookie 名 `session`（httpOnly）。同一オリジンのため CORS なし。
 - ローカル HTTP では `Secure` オフ（本番 HTTPS ではオン）。詳細は overview の auth reference。
 
-## Phase 2（Workers）— PoC 成功済み
-
-進入条件だった最小 PoC（未認証 `GET /api/auth/me` → 401、`GET /api/`）は **成功**。
-以降 worker 層は CI 必須。
+## Workers
 
 - 設定: `wrangler.test.jsonc`（assets 無し）+ `vitest.worker.config.ts`
-- マイグレーション: `readD1Migrations` → binding `TEST_MIGRATIONS` →
-  `tests/worker/apply-migrations.ts` で `applyD1Migrations`
-- ランタイム: `import { env, exports } from "cloudflare:workers"` /
-  `applyD1Migrations` は `cloudflare:test`
+- マイグレーション: `readD1Migrations` → binding `TEST_MIGRATIONS` → `tests/worker/apply-migrations.ts` で `applyD1Migrations`
+- ランタイム: `import { env, exports } from "cloudflare:workers"` / `applyD1Migrations` は `cloudflare:test`
 - Queue 実 Push はしない。`env.PUSH_QUEUE.send` の呼び出し確認（mock）に留める
-
-退避方針（将来 PoC 相当が壊れた場合）: worker ジョブを一時 skip し Node unit を厚くして
-e2e で契約を担保。理由を本節と `tests/worker/README.md` に残す。
 
 ## E2E（Playwright）
 
-- **上限 7本**（現行 6本: `e2e/smoke.spec.ts`）。超えるなら unit/worker へ落とす。
 - Push/PWA 禁止。フレーク（固定 sleep・networkidle 濫用）禁止。locator / response wait のみ。
 - `webServer`: `vite --host 127.0.0.1`（`playwright.config.ts`）
 - **`serviceWorkers: "block"`** 必須（dev の vite-plugin-pwa SW が API を阻害するため）
@@ -90,9 +77,26 @@ e2e で契約を担保。理由を本節と `tests/worker/README.md` に残す�
 - Worker テストは `dist/client` assets を前提にしない（`wrangler.test.jsonc`）。
 - E2E 前に migrations apply + `pnpm seed` + `.dev.vars`（VAPID_*）が必要。初回 `pnpm playwright:install`（既定の `%LOCALAPPDATA%\ms-playwright`。エージェントの `PLAYWRIGHT_BROWSERS_PATH` 注意）。
 
-## 変更時の手順（短い）
+## 変更時の手順
 
 1. 純関数 → `tests/unit` → `pnpm test`
 2. API → `pnpm test:worker`（migrations setup 維持）
-3. 画面 → e2e 本数を数え ≤7 → `pnpm test:e2e`
+3. 画面 → `pnpm test:e2e`
 4. 静的ゲート → `pnpm run typecheck` / `lint` / `format:check` / `check:zod-deprecated`
+
+## コミット前ゲート（必須）
+
+コード変更をコミットする前に、ローカルで次を **すべて成功**させてからコミットする。
+
+| コマンド             | 目的                                                                            |
+| -------------------- | ------------------------------------------------------------------------------- |
+| `pnpm test`          | Vitest unit                                                                     |
+| `pnpm test:e2e`      | Playwright スモーク（要 seed / `.dev.vars` / 初回は `pnpm playwright:install`） |
+| `pnpm lint`          | ESLint                                                                          |
+| `pnpm run format:check` | Prettier と Tailwind クラス順序                                                |
+| `pnpm run check:zod-deprecated` | 非推奨の Zod 文字列フォーマット API                                      |
+| `pnpm run typecheck` | `tsc -b`                                                                        |
+
+- UI・アクセシブルネーム・ルーティング・記録 CRUD など画面契約に触れる変更では、e2e を省略しない（CI の E2E smoke と同じ失敗をローカルで先に拾う）。
+- API / Worker のみの変更でも `pnpm test` は必須。`pnpm test:worker` は API 契約変更時に追加で必須。
+- ドキュメントのみ・スキル文言のみなどコードに影響しない変更はテスト省略可。判断に迷う場合は実行する。

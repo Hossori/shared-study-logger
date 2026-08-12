@@ -10,6 +10,8 @@ import type {
   User,
 } from "../../../shared/schemas";
 import { apiGet, apiPatch, apiPost, ApiError } from "../lib/api";
+import { recordsQueryKeys } from "./useRecords";
+import { userQueryKeys } from "./useUser";
 
 export const authQueryKeys = {
   me: ["auth", "me"] as const,
@@ -67,6 +69,11 @@ export function useUpdateProfileMutation() {
     onSuccess: async ({ user }) => {
       queryClient.setQueryData(authQueryKeys.me, user);
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me });
+      await queryClient.invalidateQueries({
+        queryKey: userQueryKeys.detail(user.id),
+      });
+      // 記録一覧の authorAvatarKey / displayName を最新化する
+      await queryClient.invalidateQueries({ queryKey: recordsQueryKeys.all });
     },
   });
 }

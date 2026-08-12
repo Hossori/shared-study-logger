@@ -6,13 +6,11 @@ description: >-
   リポジトリ構成やデータフローの全体像、どの reference を読むべきかを
   把握するときに使用する。エディタ警告・tsconfig・Tailwind 品質は
   reference/code-quality、設計判断は reference/design-decisions。
-  個別の Zod 規約（shared/schemas.ts）には使わない。
 ---
 
 # shared-study-logger 機能ガイド
 
-アーキテクチャ地図と機能索引。横断情報は本ファイル、機能詳細は `reference/`。
-**作業対象の reference のみ読めば十分**。セットアップは [`README.md`](/README.md)。
+アーキテクチャ地図と機能索引。横断情報は本ファイル、機能詳細は `reference/`。*_作業対象の reference のみ読む_。セットアップは [`README.md`](/README.md)。
 
 ## 全体アーキテクチャ
 
@@ -43,21 +41,21 @@ wrangler.jsonc / vite.config.ts
 
 ## 機能ごとの整理
 
-| # | 機能 | 概要 | 詳細 |
-| --- | --- | --- | --- |
-| 1 | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更 | [reference/auth.md](reference/auth.md) |
-| 2 | グループ | 所属グループの記録のみ閲覧。作成/招待UIなし | [reference/groups.md](reference/groups.md) |
-| 3 | 学習記録 | 投稿・編集・削除、カーソルページネーション | [reference/records.md](reference/records.md) |
-| 4 | Push通知 | 投稿時に他メンバーへ Web Push（VAPID） | [reference/push.md](reference/push.md) |
-| 5 | PWA | ホーム画面追加、SW、Push 受信 | [reference/pwa.md](reference/pwa.md) |
-| 6 | 状態管理 | Zustand（クライアント）+ TanStack Query（サーバー） | [reference/state-management.md](reference/state-management.md) |
-| 7 | ルーティング | react-router data router、認証ガード | [reference/routing.md](reference/routing.md) |
+| #   | 機能             | 概要                                                       | 詳細                                                           |
+| --- | ---------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| 1   | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更 | [reference/auth.md](reference/auth.md)                         |
+| 2   | グループ         | 所属グループの記録のみ閲覧。作成/招待UIなし                | [reference/groups.md](reference/groups.md)                     |
+| 3   | 学習記録         | 投稿・編集・削除、カーソルページネーション                 | [reference/records.md](reference/records.md)                   |
+| 4   | Push通知         | 投稿時に他メンバーへ Web Push（VAPID）                     | [reference/push.md](reference/push.md)                         |
+| 5   | PWA              | ホーム画面追加、SW、Push 受信                              | [reference/pwa.md](reference/pwa.md)                           |
+| 6   | 状態管理         | Zustand（クライアント）+ TanStack Query（サーバー）        | [reference/state-management.md](reference/state-management.md) |
+| 7   | ルーティング     | react-router data router、認証ガード                       | [reference/routing.md](reference/routing.md)                   |
 
 ## データモデル（D1 / SQLite）
 
 テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ。
-セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`
-は直接編集しない）。詳細は [docs/data-model.md](/docs/data-model.md)。
+セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
+詳細は [docs/data-model.md](/docs/data-model.md)。
 
 ## API
 
@@ -77,8 +75,9 @@ pnpm test:e2e      # Playwright スモーク（要 pnpm seed）
 pnpm dev           # ローカル開発
 ```
 
-テスト方針は [testing-strategy](../testing-strategy/SKILL.md)。format / pre-commit は
-[reference/code-quality.md](reference/code-quality.md)。その他（seed・マイグレーション等）は [`README.md`](/README.md)。
+テスト方針は [testing-strategy](../testing-strategy/SKILL.md)。
+format / pre-commit は[reference/code-quality.md](reference/code-quality.md)。
+その他（seed・マイグレーション等）は [`README.md`](/README.md)。
 
 ## コード品質・設計判断
 
@@ -92,5 +91,5 @@ pnpm dev           # ローカル開発
 
 ## 更新すべきタイミング
 
-API・データモデル・状態管理・主要ライブラリ変更時は本ファイルと対応する `reference/*.md` /
-`docs/*.md` を更新。コード品質の知見は [code-quality.md](reference/code-quality.md) に追記。
+API・データモデル・状態管理・主要ライブラリ変更時は本ファイルと対応する `reference/*.md` / `docs/*.md` を更新。
+コード品質の知見は [code-quality.md](reference/code-quality.md) に追記。
