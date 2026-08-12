@@ -1,7 +1,6 @@
 # Workers 統合テスト
 
-Phase 2 PoC（`tests/worker/poc.test.ts`）**成功済み**。`@cloudflare/vitest-pool-workers` +
-`wrangler.test.jsonc`（assets 無し）で API を検証する。
+`@cloudflare/vitest-pool-workers` + `wrangler.test.jsonc`（assets 無し）で API を検証する。
 
 ```bash
 pnpm test:worker

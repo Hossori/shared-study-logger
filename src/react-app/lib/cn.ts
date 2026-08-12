@@ -6,7 +6,7 @@
  * このリポジトリの`variant`用クラス（例: `Button`の`variantClassNames`）と呼び出し側が渡す
  * `className`は、色/ホバー系と余白/文字サイズ系のように担当するユーティリティグループが
  * 重ならないよう設計されているため、クラスの重複解決自体が発生しない
- * （詳細は`reference/code-quality.md`の「長いTailwindクラス名の可読性改善方針」参照）。
+ * （詳細は`reference/code-quality.md`の「Tailwind の可読性」参照）。
  * 将来、同じユーティリティグループ（例: 複数箇所からの`bg-*`）が重なる書き方が必要になった
  * 場合は`tailwind-merge`の導入を再検討すること。
  */

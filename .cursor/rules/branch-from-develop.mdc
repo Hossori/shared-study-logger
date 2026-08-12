@@ -1,5 +1,5 @@
 ---
-description: develop 起点のブランチ作成と feat/chore/fix 命名規約
+description: develop 起点のブランチ作成と feature/chore/fix 命名規約
 alwaysApply: true
 ---
 
@@ -9,21 +9,21 @@ alwaysApply: true
 - 作業後は`develop`ブランチへのPRを作成する。PR承認後は作成したブランチを削除する。
 - ブランチ名は目的に応じて次のプレフィックスを使う。
 
-| 目的       | プレフィックス | 例                          |
-| ---------- | -------------- | --------------------------- |
-| 機能追加   | `feat/`        | `feat/record-form-refactor` |
-| 環境・設定 | `chore/`       | `chore/eslint-config`       |
-| 不具合修正 | `fix/`         | `fix/push-opt-in-crash`     |
+| 目的       | プレフィックス | 例                             |
+| ---------- | -------------- | ------------------------------ |
+| 機能追加   | `feature/`     | `feature/record-form-refactor` |
+| 環境・設定 | `chore/`       | `chore/eslint-config`          |
+| 不具合修正 | `fix/`         | `fix/push-opt-in-crash`        |
 
 ```bash
 # ✅ GOOD
 git fetch origin
 git checkout develop
 git pull origin develop
-git checkout -b feat/notification-opt-in
+git checkout -b feature/notification-opt-in
 
 # ❌ BAD
-git checkout -b feat/foo          # develop 以外から切っている可能性
-git checkout -b feature/foo       # プレフィックス不一致
+git checkout -b feature/foo       # develop 以外から切っている可能性
+git checkout -b feat/foo          # プレフィックス不一致
 git checkout -b fix-login-bug     # プレフィックス欠落
 ```

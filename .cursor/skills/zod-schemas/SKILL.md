@@ -8,16 +8,16 @@ description: >-
 
 # Zod スキーマ規約
 
-`shared/schemas.ts` を変更するときだけ読めば十分。
+`shared/schemas.ts` を変更するときだけ読む。
 
 ## ルール
 
 Zod v4 では `z.string().<format>()` は非推奨。トップレベル関数を使う。
 
-| 非推奨 | 代替 |
-| --- | --- |
-| `z.string().email()` | `z.email()` |
-| `z.string().url()` | `z.url()` |
+| 非推奨                  | 代替               |
+| ----------------------- | ------------------ |
+| `z.string().email()`    | `z.email()`        |
+| `z.string().url()`      | `z.url()`          |
 | `z.string().datetime()` | `z.iso.datetime()` |
 
 日時フィールドはフロントから `toISOString()` で送る想定。

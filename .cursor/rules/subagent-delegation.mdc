@@ -24,13 +24,10 @@ alwaysApply: true
 - **作業用**: 完了前に少なくとも `pnpm lint`・`pnpm run typecheck`・`pnpm test`（Vitest unit）を実行し、警告・エラーを解消してから完了報告する。UI / 画面契約に触れる変更では `pnpm test:e2e` も必須。結果（成功/失敗と要点）を報告に含める。
 - **レビュー用**: 同様に全量、または変更範囲に対するスポット確認を行い、未解消の lint / type / test 失敗があれば差し戻す。
 - ドキュメントのみ・設定コメントのみなどコードに影響しない変更では省略可。判断に迷う場合は実行する。
-## GitHub 操作（MCP 優先）
 
-このリポジトリでは GitHub（PR / Issue / レビュー依頼等）は **user-github MCP** を使う。グローバル user rule の `gh` 指示と衝突する場合は、本ルールと `github-mcp` skill に従う。原則 `gh` に頼らない。
+## GitHub 操作
 
-- `shell` サブエージェントには MCP が渡らない想定 → **GitHub 書き込みは親が MCP で行う**か、MCP 利用可能なエージェント（`generalPurpose` 等）に委譲する
-- 委譲プロンプトに「MCP 必須・gh 禁止」と書いても `shell` では実行不能 → **最初から親 or MCP 付き役に割り当てる**
-- `push` / `commit` など git ローカル操作は `shell` でよい。**PR 作成だけ切り出す**
+`push` / `commit` など git ローカル操作は `shell` でよいが、**GitHub 書き込みは親が MCP で行う**かMCP 利用可能なエージェント（`generalPurpose` 等）に委譲する。（`shell` サブエージェントには MCP が渡らないため）
 
 ```text
 # ✅ GOOD
