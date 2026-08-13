@@ -9,6 +9,7 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import type { PrecacheEntry } from "workbox-precaching";
 import { NOTIFICATION_CLICK_MESSAGE_TYPE } from "../shared/sw-messages";
+import { getStudyRecordNotificationTag } from "../shared/notification-tags";
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;
@@ -44,13 +45,19 @@ self.addEventListener("push", (event) => {
     if (event.data) payload.body = event.data.text();
   }
 
+  const notificationOptions: NotificationOptions = {
+    body: payload.body,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: payload.data ?? {},
+  };
+  const notificationTag = getStudyRecordNotificationTag(payload.data);
+  if (notificationTag) {
+    notificationOptions.tag = notificationTag;
+  }
+
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      data: payload.data ?? {},
-    }),
+    self.registration.showNotification(payload.title, notificationOptions),
   );
 });
 
