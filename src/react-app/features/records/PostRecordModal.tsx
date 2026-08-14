@@ -5,11 +5,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useUiStore } from "../../stores/uiStore";
 import { useCreateRecordMutation } from "../../queries/useRecords";
-import RecordFormFields, { type RecordFormValues } from "./RecordFormFields";
+import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
   buildRecordRequestPayload,
   nowDatetimeLocalString,
+  type RecordFormValues,
 } from "./recordFormUtils";
 
 export default function PostRecordModal() {
@@ -36,8 +37,6 @@ export default function PostRecordModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const payload = buildRecordRequestPayload(values);
@@ -53,6 +52,7 @@ export default function PostRecordModal() {
 
   return (
     <RecordModalShell
+      open={isOpen}
       title="学習記録を投稿"
       onClose={closePostModal}
       onSubmit={handleSubmit}

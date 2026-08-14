@@ -2,17 +2,14 @@
  * ヘッダ用通知ベル。未読（アクティブ通知）件数をバッジ表示する。
  */
 import { Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface NotificationBellProps {
   badgeCount: number;
   open: boolean;
   onClick: () => void;
 }
-
-const bellButtonClassName =
-  "relative flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
-const badgeClassName =
-  "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white";
 
 export default function NotificationBell({
   badgeCount,
@@ -27,20 +24,27 @@ export default function NotificationBell({
         : "通知を開く";
 
   return (
-    <button
+    <Button
       type="button"
-      className={bellButtonClassName}
+      variant="ghost"
+      size="icon-lg"
+      className="relative rounded-full"
       aria-label={label}
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={onClick}
     >
-      <Bell className="h-5 w-5" aria-hidden />
+      <Bell aria-hidden />
+      <span className="sr-only">{label}</span>
       {badgeCount > 0 ? (
-        <span className={badgeClassName} aria-hidden="true">
+        <Badge
+          variant="destructive"
+          className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1"
+          aria-hidden="true"
+        >
           {badgeCount > 99 ? "99+" : badgeCount}
-        </span>
+        </Badge>
       ) : null}
-    </button>
+    </Button>
   );
 }

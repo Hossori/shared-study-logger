@@ -2,19 +2,25 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { X } from "lucide-react";
-import Button from "../../components/ui/Button";
-import { TextField } from "../../components/ui/FormField";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 import { useChangePasswordMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
-
-const overlayClassName =
-  "fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center";
-const panelClassName =
-  "max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-2xl sm:p-6";
-const closeButtonClassName =
-  "cursor-pointer rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600";
 
 function passwordApiErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -114,102 +120,131 @@ export default function ChangePasswordModal({
     !fieldErrors.confirmPassword;
 
   return (
-    <div className={overlayClassName} onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
+    <Dialog
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
+      <DialogContent
+        className="sm:max-w-md"
         aria-labelledby="change-password-title"
-        onClick={(e) => e.stopPropagation()}
-        className={panelClassName}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2
-            id="change-password-title"
-            className="text-lg font-bold text-gray-900"
-          >
-            パスワード変更
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="閉じる"
-            className={closeButtonClassName}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+        <form onSubmit={handlePasswordSubmit} className="contents">
+          <DialogHeader>
+            <DialogTitle id="change-password-title">パスワード変更</DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handlePasswordSubmit} className="space-y-4">
-          <TextField
-            id="modal-currentPassword"
-            label="現在のパスワード"
-            type="password"
-            required
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={(e) => {
-              setCurrentPassword(e.target.value);
-              clearFieldError("currentPassword");
-            }}
-            error={Boolean(fieldErrors.currentPassword)}
-            errorMessage={fieldErrors.currentPassword}
-          />
-          <TextField
-            id="modal-newPassword"
-            label="新しいパスワード"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={(e) => {
-              setNewPassword(e.target.value);
-              clearFieldError("newPassword");
-            }}
-            placeholder="8文字以上"
-            error={Boolean(fieldErrors.newPassword)}
-            errorMessage={fieldErrors.newPassword}
-          />
-          <TextField
-            id="modal-confirmPassword"
-            label="新しいパスワード（確認）"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              clearFieldError("confirmPassword");
-            }}
-            error={Boolean(fieldErrors.confirmPassword)}
-            errorMessage={fieldErrors.confirmPassword}
-          />
-
-          {showFormLevelApiError && (
-            <ErrorMessage>
-              {passwordApiErrorMessage(changePasswordMutation.error)}
-            </ErrorMessage>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="secondary"
-              onClick={onClose}
-              className="flex-1 py-2.5"
+          <FieldGroup>
+            <Field
+              data-invalid={Boolean(fieldErrors.currentPassword) || undefined}
             >
+              <FieldLabel htmlFor="modal-currentPassword">
+                現在のパスワード
+              </FieldLabel>
+              <Input
+                id="modal-currentPassword"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  clearFieldError("currentPassword");
+                }}
+                aria-invalid={Boolean(fieldErrors.currentPassword) || undefined}
+                aria-describedby={
+                  fieldErrors.currentPassword
+                    ? "modal-currentPassword-error"
+                    : undefined
+                }
+              />
+              <FieldError id="modal-currentPassword-error">
+                {fieldErrors.currentPassword}
+              </FieldError>
+            </Field>
+
+            <Field data-invalid={Boolean(fieldErrors.newPassword) || undefined}>
+              <FieldLabel htmlFor="modal-newPassword">
+                新しいパスワード
+              </FieldLabel>
+              <Input
+                id="modal-newPassword"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  clearFieldError("newPassword");
+                }}
+                placeholder="8文字以上"
+                aria-invalid={Boolean(fieldErrors.newPassword) || undefined}
+                aria-describedby={
+                  fieldErrors.newPassword
+                    ? "modal-newPassword-error"
+                    : undefined
+                }
+              />
+              <FieldError id="modal-newPassword-error">
+                {fieldErrors.newPassword}
+              </FieldError>
+            </Field>
+
+            <Field
+              data-invalid={Boolean(fieldErrors.confirmPassword) || undefined}
+            >
+              <FieldLabel htmlFor="modal-confirmPassword">
+                新しいパスワード（確認）
+              </FieldLabel>
+              <Input
+                id="modal-confirmPassword"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  clearFieldError("confirmPassword");
+                }}
+                aria-invalid={Boolean(fieldErrors.confirmPassword) || undefined}
+                aria-describedby={
+                  fieldErrors.confirmPassword
+                    ? "modal-confirmPassword-error"
+                    : undefined
+                }
+              />
+              <FieldError id="modal-confirmPassword-error">
+                {fieldErrors.confirmPassword}
+              </FieldError>
+            </Field>
+
+            {showFormLevelApiError && (
+              <ErrorMessage>
+                {passwordApiErrorMessage(changePasswordMutation.error)}
+              </ErrorMessage>
+            )}
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            <Button
-              type="submit"
-              disabled={changePasswordMutation.isPending}
-              className="flex-1 py-2.5"
-            >
-              {changePasswordMutation.isPending ? "変更中..." : "変更する"}
+            <Button type="submit" disabled={changePasswordMutation.isPending}>
+              {changePasswordMutation.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  変更中...
+                </>
+              ) : (
+                "変更する"
+              )}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

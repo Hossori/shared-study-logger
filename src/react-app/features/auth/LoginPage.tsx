@@ -4,13 +4,17 @@
 import { useState, type FormEvent } from "react";
 import { useLoginMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
-import Button from "../../components/ui/Button";
-import { TextField } from "../../components/ui/FormField";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "../../components/ui/ErrorMessage";
-
-const containerClassName =
-  "flex min-h-screen items-center justify-center bg-gray-50 px-4";
-const cardClassName = "w-full max-w-sm rounded-xl bg-white p-8 shadow-sm";
 
 function loginErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -32,53 +36,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={containerClassName}>
-      <div className={cardClassName}>
-        <h1 className="mb-1 text-center text-2xl font-bold text-gray-900">
-          学習記録シェア
-        </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
-          グループの学習記録を共有しよう
-        </p>
+    <div className="bg-background flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <h1 className="font-heading text-2xl font-medium">学習記録シェア</h1>
+          <CardDescription>グループの学習記録を共有しよう</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </Field>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <TextField
-            id="email"
-            label="メールアドレス"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-          />
+              <Field>
+                <FieldLabel htmlFor="password">パスワード</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </Field>
 
-          <TextField
-            id="password"
-            label="パスワード"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-          />
+              {loginMutation.isError && (
+                <ErrorMessage>
+                  {loginErrorMessage(loginMutation.error)}
+                </ErrorMessage>
+              )}
 
-          {loginMutation.isError && (
-            <ErrorMessage>
-              {loginErrorMessage(loginMutation.error)}
-            </ErrorMessage>
-          )}
-
-          <Button
-            type="submit"
-            disabled={loginMutation.isPending}
-            className="w-full py-2.5"
-          >
-            {loginMutation.isPending ? "ログイン中..." : "ログイン"}
-          </Button>
-        </form>
-      </div>
+              <Field>
+                <Button
+                  type="submit"
+                  disabled={loginMutation.isPending}
+                  className="w-full"
+                >
+                  {loginMutation.isPending ? (
+                    <>
+                      <Spinner data-icon="inline-start" />
+                      ログイン中...
+                    </>
+                  ) : (
+                    "ログイン"
+                  )}
+                </Button>
+              </Field>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
