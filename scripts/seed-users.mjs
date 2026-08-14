@@ -28,19 +28,21 @@ import path from "node:path";
 const DB_NAME = "shared-study-logger-db";
 const PBKDF2_ITERATIONS = 100_000;
 
-/** @type {{ id: string, email: string, password: string, displayName: string }[]} */
+/** @type {{ id: string, email: string, password: string, displayName: string, role: "ADMIN" | "USER" }[]} */
 const SAMPLE_USERS = [
 	{
 		id: "00000000-0000-4000-a000-000000000001",
 		email: "admin@example.com",
 		password: "ChangeMe123!",
 		displayName: "管理者",
+		role: "ADMIN",
 	},
 	{
 		id: "00000000-0000-4000-a000-000000000005",
 		email: "test@example.com",
 		password: "ChangeMe123!",
 		displayName: "テストユーザー",
+		role: "USER",
 	},
 ];
 
@@ -160,12 +162,14 @@ async function buildSeedSql() {
 		SAMPLE_USERS.map(async (user) => {
 			const salt = generateSaltHex();
 			const passwordHash = await hashPassword(user.password, salt);
-			return `INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, display_name, created_at) VALUES ('${user.id}', '${sqlEscape(user.email)}', '${passwordHash}', '${salt}', '${sqlEscape(user.displayName)}', '${now}');`;
+			return `INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, display_name, role, created_at) VALUES ('${user.id}', '${sqlEscape(user.email)}', '${passwordHash}', '${salt}', '${sqlEscape(user.displayName)}', '${user.role}', '${now}');`;
 		}),
 	);
 
 	const statements = [
 		...userStatements,
+		// INSERT OR IGNORE では既存行の role が変わらないため、サンプル管理者を明示的に ADMIN にする
+		`UPDATE users SET role = 'ADMIN' WHERE id = '${SEED_ADMIN_USER_ID}';`,
 		...SAMPLE_GROUPS.flatMap((group, i) => {
 			const groupId = SEED_GROUP_IDS[i];
 			return [
@@ -254,7 +258,7 @@ function main() {
 		console.log(`\n# ${outputPath} に書き出しました。`);
 		users.forEach((user, i) => {
 			console.log(
-				`# サンプルユーザー[${i}]: ${user.email} / ${user.password} (${user.displayName})`,
+				`# サンプルユーザー[${i}]: ${user.email} / ${user.password} (${user.displayName}, ${user.role})`,
 			);
 			console.log(`# user[${i}].id = ${user.id}`);
 		});

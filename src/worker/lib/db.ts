@@ -9,7 +9,7 @@ import type {
   StudyRecord,
   User,
 } from "../../../shared/schemas";
-import { AvatarKeySchema } from "../../../shared/schemas";
+import { AvatarKeySchema, parseUserRole } from "../../../shared/schemas";
 
 export interface UserRow {
   id: string;
@@ -17,6 +17,7 @@ export interface UserRow {
   password_hash: string;
   password_salt: string;
   display_name: string;
+  role: string | null;
   bio: string | null;
   avatar_key: string | null;
   created_at: string;
@@ -80,12 +81,13 @@ function parseAvatarKey(value: string | null | undefined): AvatarKey | null {
   return parsed.success ? parsed.data : null;
 }
 
-/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。 */
+/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。未知の role は USER。 */
 export function toUser(row: UserRow): User {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
+    role: parseUserRole(row.role),
     bio: row.bio ?? null,
     avatarKey: parseAvatarKey(row.avatar_key),
     createdAt: row.created_at,
