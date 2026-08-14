@@ -19,7 +19,7 @@ description: >-
 ```
 ブラウザ(React SPA + Service Worker)
   ├─→ Static Assets (dist/client、SPAフォールバック)
-  └─→ Hono API ──→ D1 (users/groups/group_members/study_records/push_subscriptions)
+  └─→ Hono API ──→ D1 (users/groups/group_members/study_records/push_subscriptions/app_notifications)
                 ├─→ KV (SESSIONS)
                 └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
@@ -53,14 +53,15 @@ wrangler.jsonc / vite.config.ts
 
 ## データモデル（D1 / SQLite）
 
-テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ。
+テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` / `app_notifications` の6つ。
 `users.role` は `ADMIN` または `USER`（既存行・未指定は `USER`）。セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
 詳細は [docs/data-model.md](/docs/data-model.md)。
 
 ## API
 
 正本は [docs/api.md](/docs/api.md)。`requireAuth` は `index.ts` で `/api/groups/*` に一括適用し、
-auth/push の一部は各ルートファイル内で個別適用する。
+auth/push/notifications の一部は各ルートファイル内で個別適用する。`/api/admin/notifications` は
+`requireAuth` + `requireAdmin`。
 
 ## ビルド・検証
 

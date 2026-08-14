@@ -3,8 +3,8 @@ import { isAdmin } from "../../../shared/schemas";
 import type { AuthVariables } from "./requireAuth";
 
 /**
- * `requireAuth` の後に使い、ADMIN 以外は 403 を返す。
- * 次 PR（通知管理 UI 等）の管理者専用エンドポイント用。
+ * `requireAuth` の後に使い、ADMIN 以外は 403 `{ error: "forbidden" }` を返す。
+ * `/api/admin/notifications` など管理者専用エンドポイントに重ねる。
  */
 export const requireAdmin = createMiddleware<{
   Bindings: Env;

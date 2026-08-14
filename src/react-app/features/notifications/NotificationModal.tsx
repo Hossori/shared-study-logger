@@ -1,5 +1,5 @@
 /**
- * 通知一覧モーダル。クライアントローカル通知（PWA 案内・Push オプトイン）を表示する。
+ * 通知一覧モーダル。アプリ内通知（管理者案内・PWA 案内・Push オプトイン）を表示する。
  * sticky ヘッダ内の stacking context を避けるため document.body へ portal する。
  */
 import { useEffect, useId } from "react";

@@ -151,3 +151,32 @@ export const PushSubscriptionSchema = z.object({
   }),
 });
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
+
+// ---- アプリ内通知 -----------------------------------------------------------
+
+export const InAppNotificationSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  body: z.string(),
+  enabled: z.boolean(),
+  createdBy: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type InAppNotification = z.infer<typeof InAppNotificationSchema>;
+
+export const CreateInAppNotificationRequestSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  body: z.string().trim().min(1).max(2000),
+  enabled: z.boolean().optional(),
+});
+export type CreateInAppNotificationRequest = z.infer<
+  typeof CreateInAppNotificationRequestSchema
+>;
+
+export const UpdateInAppNotificationRequestSchema = z.object({
+  enabled: z.boolean(),
+});
+export type UpdateInAppNotificationRequest = z.infer<
+  typeof UpdateInAppNotificationRequestSchema
+>;

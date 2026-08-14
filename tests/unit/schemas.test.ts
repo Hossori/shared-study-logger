@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	ChangePasswordRequestSchema,
+	CreateInAppNotificationRequestSchema,
 	CreateStudyRecordRequestSchema,
 	LoginRequestSchema,
+	UpdateInAppNotificationRequestSchema,
 	UpdateProfileRequestSchema,
 	UserRoleSchema,
 	UserSchema,
@@ -128,5 +130,49 @@ describe("UserSchema", () => {
 		expect(
 			UserSchema.safeParse({ ...validUser, role: "GOD" }).success,
 		).toBe(false);
+	});
+});
+
+describe("CreateInAppNotificationRequestSchema", () => {
+	it("accepts trimmed title and body", () => {
+		const result = CreateInAppNotificationRequestSchema.safeParse({
+			title: "  お知らせ  ",
+			body: " 本文 ",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.title).toBe("お知らせ");
+			expect(result.data.body).toBe("本文");
+		}
+	});
+
+	it("rejects empty title or body", () => {
+		expect(
+			CreateInAppNotificationRequestSchema.safeParse({
+				title: "   ",
+				body: "本文",
+			}).success,
+		).toBe(false);
+		expect(
+			CreateInAppNotificationRequestSchema.safeParse({
+				title: "お知らせ",
+				body: "",
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("UpdateInAppNotificationRequestSchema", () => {
+	it("accepts enabled boolean", () => {
+		expect(
+			UpdateInAppNotificationRequestSchema.safeParse({ enabled: false })
+				.success,
+		).toBe(true);
+	});
+
+	it("rejects missing enabled", () => {
+		expect(UpdateInAppNotificationRequestSchema.safeParse({}).success).toBe(
+			false,
+		);
 	});
 });

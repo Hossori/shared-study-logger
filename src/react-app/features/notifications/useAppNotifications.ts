@@ -1,9 +1,9 @@
 /**
  * アプリ内通知リストをソースから組み立てる。
- * 現状はクライアントローカル（PWA 案内・Push オプトイン）のみ。
- * サーバー通知 API 追加時はここでマージする。
+ * サーバーの有効な案内と、クライアントローカル（PWA 案内・Push オプトイン）をマージする。
  */
 import { useMemo } from "react";
+import { useEnabledNotificationsQuery } from "../../queries/useNotifications";
 import { useNotificationOptIn } from "../push/useNotificationOptIn";
 import { useNotificationStore } from "./notificationStore";
 import type { AppNotificationItem } from "./types";
@@ -25,10 +25,22 @@ export function useAppNotifications(): AppNotificationsController {
   const pwa = usePwaInstall();
   const dismissedIds = useNotificationStore((s) => s.dismissedIds);
   const dismiss = useNotificationStore((s) => s.dismiss);
+  const enabledQuery = useEnabledNotificationsQuery();
 
   const items = useMemo(() => {
     const next: AppNotificationItem[] = [];
     const dismissed = new Set(dismissedIds);
+
+    for (const notification of enabledQuery.data?.notifications ?? []) {
+      if (dismissed.has(notification.id)) continue;
+      next.push({
+        id: notification.id,
+        kind: "announcement",
+        title: notification.title,
+        body: notification.body,
+        countsTowardBadge: true,
+      });
+    }
 
     if (pwa.shouldGuide && !dismissed.has(PWA_INSTALL_NOTIFICATION_ID)) {
       next.push({
@@ -58,7 +70,13 @@ export function useAppNotifications(): AppNotificationsController {
     }
 
     return next;
-  }, [dismissedIds, pwa.isIosGuide, pwa.shouldGuide, push.status]);
+  }, [
+    dismissedIds,
+    enabledQuery.data?.notifications,
+    pwa.isIosGuide,
+    pwa.shouldGuide,
+    push.status,
+  ]);
 
   const badgeCount = items.filter((item) => item.countsTowardBadge).length;
 

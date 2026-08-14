@@ -12,6 +12,7 @@ erDiagram
   groups ||--o{ study_records : contains
   users ||--o{ study_records : authors
   users ||--o{ push_subscriptions : registers
+  users ||--o{ app_notifications : creates
 
   users {
     string id PK
@@ -53,6 +54,15 @@ erDiagram
     string user_agent
     string created_at
   }
+  app_notifications {
+    string id PK
+    string title
+    string body
+    int enabled "0 or 1"
+    string created_by FK "NULL可"
+    string created_at
+    string updated_at
+  }
 ```
 
 ## 補足
@@ -64,8 +74,11 @@ erDiagram
 - `users.role` は `ADMIN` または `USER`（CHECK 制約）。既存行・列省略時のデフォルトは `USER`。
   アプリからのロール変更 API は無い。管理者にする例:
   `UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';`
+- `app_notifications` は管理者が作成するアプリ内通知。`enabled = 1` のものだけ
+  `GET /api/notifications` で全ユーザーに返す。CRUD は ADMIN のみ。
 - セッションは D1 ではなく **Cloudflare Workers KV**（`SESSIONS` バインディング）に保存する（`session:{token}` → `{ userId, expiresAt }`）。
-- インデックス: `group_members(user_id)`、`study_records(group_id, study_datetime DESC, updated_at DESC, id DESC)`（カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`。
+- インデックス: `group_members(user_id)`、`study_records(group_id, study_datetime DESC, updated_at DESC, id DESC)`（カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`、`app_notifications(enabled, created_at DESC)`。
 - スキーマを変更する場合は `migrations/` に新しい番号のマイグレーションファイルを追加すること（既存の `0001_init.sql` は本番適用済みの可能性があるため直接編集しない）。
   - `0004_user_profile.sql`: `users` に `bio` / `avatar_key` を追加。
   - `0005_user_roles.sql`: `users` に `role`（`ADMIN` / `USER`、DEFAULT `USER`）を追加。
+  - `0006_app_notifications.sql`: `app_notifications`（アプリ内通知）を追加。

@@ -1,10 +1,11 @@
 /**
  * D1(`DB`バインディング)へのクエリヘルパー。
  * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録の作成/更新/削除、
- * push_subscriptions CRUDをまとめる。
+ * push_subscriptions / app_notifications CRUDをまとめる。
  */
 import type {
   AvatarKey,
+  InAppNotification,
   PublicUser,
   StudyRecord,
   User,
@@ -529,4 +530,142 @@ export async function deletePushSubscriptionById(
   id: string,
 ): Promise<void> {
   await db.prepare("DELETE FROM push_subscriptions WHERE id = ?").bind(id).run();
+}
+
+// ---- app_notifications ------------------------------------------------
+
+export interface AppNotificationRow {
+  id: string;
+  title: string;
+  body: string;
+  enabled: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function toInAppNotification(row: AppNotificationRow): InAppNotification {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    enabled: Number(row.enabled) === 1,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listAppNotifications(
+  db: D1Database,
+): Promise<InAppNotification[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+       FROM app_notifications
+       ORDER BY created_at DESC, id DESC`,
+    )
+    .all<AppNotificationRow>();
+  return (results ?? []).map(toInAppNotification);
+}
+
+export async function listEnabledAppNotifications(
+  db: D1Database,
+): Promise<InAppNotification[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+       FROM app_notifications
+       WHERE enabled = 1
+       ORDER BY created_at DESC, id DESC`,
+    )
+    .all<AppNotificationRow>();
+  return (results ?? []).map(toInAppNotification);
+}
+
+export async function getAppNotification(
+  db: D1Database,
+  id: string,
+): Promise<InAppNotification | null> {
+  const row = await db
+    .prepare(
+      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+       FROM app_notifications
+       WHERE id = ?`,
+    )
+    .bind(id)
+    .first<AppNotificationRow>();
+  return row ? toInAppNotification(row) : null;
+}
+
+export interface CreateAppNotificationInput {
+  id: string;
+  title: string;
+  body: string;
+  enabled: boolean;
+  createdBy: string;
+}
+
+export async function createAppNotification(
+  db: D1Database,
+  input: CreateAppNotificationInput,
+): Promise<InAppNotification> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO app_notifications
+        (id, title, body, enabled, created_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      input.id,
+      input.title,
+      input.body,
+      input.enabled ? 1 : 0,
+      input.createdBy,
+      now,
+      now,
+    )
+    .run();
+
+  return {
+    id: input.id,
+    title: input.title,
+    body: input.body,
+    enabled: input.enabled,
+    createdBy: input.createdBy,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export async function setAppNotificationEnabled(
+  db: D1Database,
+  id: string,
+  enabled: boolean,
+): Promise<InAppNotification | null> {
+  const now = new Date().toISOString();
+  const result = await db
+    .prepare(
+      `UPDATE app_notifications
+       SET enabled = ?, updated_at = ?
+       WHERE id = ?`,
+    )
+    .bind(enabled ? 1 : 0, now, id)
+    .run();
+
+  if ((result.meta.changes ?? 0) === 0) return null;
+
+  return getAppNotification(db, id);
+}
+
+export async function deleteAppNotification(
+  db: D1Database,
+  id: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare("DELETE FROM app_notifications WHERE id = ?")
+    .bind(id)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }
