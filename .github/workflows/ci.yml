@@ -8,7 +8,8 @@ on:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # main では進行中の deploy をキャンセルしない
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   quality:
@@ -92,3 +93,28 @@ jobs:
       - run: pnpm test:e2e
         env:
           CI: true
+
+  # Worker のロールバックは D1 のスキーマ変更を戻さないため、
+  # wrangler d1 migrations apply はここではなく d1-migrate.yml（手動承認）で行う。
+  deploy:
+    name: Deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [quality, unit, worker, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build and deploy Worker
+        # pnpm deploy は pnpm 本体の CLI のため、スクリプトは pnpm run deploy を使う
+        run: pnpm build && pnpm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

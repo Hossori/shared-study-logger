@@ -64,3 +64,4 @@ erDiagram
 - インデックス: `group_members(user_id)`、`study_records(group_id, study_datetime DESC, updated_at DESC, id DESC)`（カーソルページネーション用）、`study_records(user_id)`、`push_subscriptions(user_id)`。
 - スキーマを変更する場合は `migrations/` に新しい番号のマイグレーションファイルを追加すること（既存の `0001_init.sql` は本番適用済みの可能性があるため直接編集しない）。
   - `0004_user_profile.sql`: `users` に `bio` / `avatar_key` を追加。
+- 本番 D1 への apply は Worker デプロイ（`main` push の CI）とは別手順。Worker ロールバックでは D1 は戻らないため、[`.github/workflows/d1-migrate.yml`](../.github/workflows/d1-migrate.yml) で手動承認する。
