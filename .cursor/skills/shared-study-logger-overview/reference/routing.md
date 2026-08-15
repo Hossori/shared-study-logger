@@ -21,7 +21,8 @@
   子ルート側で `useMeQuery()` を呼び直して `User | null | undefined` を再度絞り込む必要が無い。
 - **画面の分担**: `routes/HomePage.tsx` が `Layout` + `RecordsList` を描画し、
   （ヘッダ/FAB と同居するため） `Layout` が `PostRecordModal` を描画する。
-  ユーザーページは `features/auth/UserPage.tsx`。`/mypage` は `MyPage.tsx` が自分の
+  ユーザーページは `features/auth/UserPage.tsx`。自分のときのみヘッダとプロフィールの間に
+  Push 設定カードを表示する。`/mypage` は `MyPage.tsx` が自分の
   UserPage へ Navigate する。管理者の通知管理は
   `features/notifications/AdminNotificationsPage.tsx`（プロフィールメニュー「通知管理」）。
 - **スコープ外**: `GroupSwitcher` が管理する選択中グループ（Zustand の `selectedGroupId`）は
