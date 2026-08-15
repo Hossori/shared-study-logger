@@ -19,3 +19,6 @@
   前提条件）。認証必須のデータアプリのため完全なオフライン編集は対象外（最小構成のキャッシュ
   のみ）。アイコンやマニフェストの内容を変更した場合、`vite.config.ts`の
   `injectManifest.globPatterns`に含まれているか確認すること。
+- **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
+  Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
+  ログイン画面で使い、通常の padding と inset の大きい方を取る。

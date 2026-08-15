@@ -47,7 +47,7 @@ export default function NotificationModal({
         if (!nextOpen) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[80vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
+      <DialogContent className="flex max-h-[min(80vh,calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom)))] flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
         <DialogHeader className="px-4 py-3">
           <DialogTitle>通知</DialogTitle>
         </DialogHeader>
