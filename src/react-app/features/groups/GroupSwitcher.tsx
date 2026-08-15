@@ -4,9 +4,11 @@
 import { useEffect } from "react";
 import { useGroupsQuery } from "../../queries/useGroups";
 import { useUiStore } from "../../stores/uiStore";
-
-const selectClassName =
-  "w-full max-w-xs cursor-pointer truncate rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function GroupSwitcher() {
   const { data: groups, isLoading } = useGroupsQuery();
@@ -22,33 +24,35 @@ export default function GroupSwitcher() {
   }, [groups, selectedGroupId, setSelectedGroupId]);
 
   if (isLoading) {
-    return <span className="text-sm text-gray-400">読み込み中...</span>;
+    return <Skeleton className="h-8 w-40" />;
   }
 
   if (!groups || groups.length === 0) {
-    return <span className="text-sm text-gray-400">所属グループなし</span>;
+    return (
+      <span className="text-muted-foreground text-sm">所属グループなし</span>
+    );
   }
 
   if (groups.length === 1) {
     return (
-      <span className="truncate text-sm font-semibold text-gray-800 sm:text-base">
+      <span className="truncate text-sm font-semibold sm:text-base">
         {groups[0].name}
       </span>
     );
   }
 
   return (
-    <select
+    <NativeSelect
       value={selectedGroupId ?? ""}
       onChange={(e) => setSelectedGroupId(e.target.value)}
-      className={selectClassName}
       aria-label="グループ切替"
+      className="w-full max-w-xs"
     >
       {groups.map((group) => (
-        <option key={group.id} value={group.id}>
+        <NativeSelectOption key={group.id} value={group.id}>
           {group.name}
-        </option>
+        </NativeSelectOption>
       ))}
-    </select>
+    </NativeSelect>
   );
 }

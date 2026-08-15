@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { Plus } from "lucide-react";
 import type { User } from "../../../shared/schemas";
+import { Button } from "@/components/ui/button";
 import { useUiStore } from "../stores/uiStore";
 import HeaderNotifications from "../features/notifications/HeaderNotifications";
 import PostRecordModal from "../features/records/PostRecordModal";
@@ -23,17 +24,6 @@ interface LayoutProps {
   showRecordActions?: boolean;
 }
 
-const headerClassName =
-  "sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur";
-const headerInnerClassName =
-  "mx-auto flex max-w-4xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3";
-const logoLinkClassName =
-  "shrink-0 text-base font-bold text-gray-900 transition hover:text-indigo-700 sm:text-lg";
-const headerActionsClassName = "ml-auto flex shrink-0 items-center gap-2";
-const mainClassName = "mx-auto max-w-4xl px-3 py-4 sm:px-6 sm:py-8";
-const fabClassName =
-  "fixed right-5 bottom-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 sm:hidden";
-
 export default function Layout({
   user,
   children,
@@ -42,33 +32,38 @@ export default function Layout({
   const openPostModal = useUiStore((state) => state.openPostModal);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className={headerClassName}>
-        <div className={headerInnerClassName}>
-          <Link to="/" className={logoLinkClassName}>
+    <div className="bg-background min-h-screen">
+      <header className="bg-background/90 sticky top-0 z-20 border-b backdrop-blur">
+        <div className="mx-auto flex max-w-4xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
+          <Link
+            to="/"
+            className="text-foreground hover:text-primary shrink-0 text-base font-bold transition sm:text-lg"
+          >
             <h1 className="text-inherit">📚 学習記録</h1>
           </Link>
 
-          <div className={headerActionsClassName}>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <HeaderNotifications />
             <ProfileMenu user={user} />
           </div>
         </div>
       </header>
 
-      <main className={mainClassName}>{children}</main>
+      <main className="mx-auto max-w-4xl px-3 py-4 sm:px-6 sm:py-8">
+        {children}
+      </main>
 
       {showRecordActions && (
         <>
           <PostRecordModal />
-          <button
-            type="button"
+          <Button
+            size="icon-lg"
             onClick={openPostModal}
             aria-label="記録を追加"
-            className={fabClassName}
+            className="fixed right-5 bottom-5 z-20 size-14 rounded-full sm:hidden"
           >
-            <Plus className="h-7 w-7" aria-hidden />
-          </button>
+            <Plus aria-hidden />
+          </Button>
         </>
       )}
     </div>

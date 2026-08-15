@@ -1,24 +1,29 @@
 /**
  * 通知一覧モーダル。アプリ内通知（管理者案内・PWA 案内・Push オプトイン）を表示する。
- * sticky ヘッダ内の stacking context を避けるため document.body へ portal する。
  */
-import { useEffect, useId } from "react";
-import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import Button from "../../components/ui/Button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import type { AppNotificationItem } from "./types";
 import type { AppNotificationsController } from "./useAppNotifications";
 import {
   PWA_INSTALL_NOTIFICATION_ID,
   PUSH_OPT_IN_NOTIFICATION_ID,
 } from "./useAppNotifications";
-
-const overlayClassName =
-  "fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-start sm:justify-end sm:bg-black/30 sm:pt-14 sm:pr-4";
-const panelClassName =
-  "flex max-h-[80vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-w-sm sm:rounded-2xl";
-const closeButtonClassName =
-  "rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600";
 
 interface NotificationModalProps {
   open: boolean;
@@ -33,50 +38,33 @@ export default function NotificationModal({
   items,
   controller,
 }: NotificationModalProps) {
-  const titleId = useId();
   const { push, pwa, dismiss } = controller;
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div className={overlayClassName} onClick={onClose} role="presentation">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className={panelClassName}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <h2 id={titleId} className="text-base font-bold text-gray-900">
-            通知
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="閉じる"
-            className={closeButtonClassName}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
+      <DialogContent className="flex max-h-[80vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
+        <DialogHeader className="px-4 py-3">
+          <DialogTitle>通知</DialogTitle>
+        </DialogHeader>
+        <Separator />
 
         <div className="overflow-y-auto px-2 py-2">
           {items.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-gray-500">
-              新しい通知はありません
-            </p>
+            <Empty className="py-8">
+              <EmptyHeader>
+                <EmptyTitle>新しい通知はありません</EmptyTitle>
+                <EmptyDescription>
+                  お知らせがあればここに表示されます。
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-2">
               {items.map((item) => (
                 <li key={item.id}>
                   <NotificationListItem
@@ -92,34 +80,37 @@ export default function NotificationModal({
         </div>
 
         {push.status === "subscribed" || push.status === "unsubscribed" ? (
-          <div className="border-t border-gray-100 px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-gray-500">
-                {push.status === "subscribed"
-                  ? "Push 通知は有効です"
-                  : "Push 通知はオフです"}
-              </p>
-              <Button
-                variant={push.status === "subscribed" ? "secondary" : "primary"}
-                className="px-3 py-1.5 text-xs"
-                disabled={push.isPending}
-                onClick={() =>
-                  void (push.status === "subscribed"
-                    ? push.disable()
-                    : push.enable())
-                }
-              >
-                {push.status === "subscribed" ? "無効にする" : "有効にする"}
-              </Button>
+          <>
+            <Separator />
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-muted-foreground text-xs">
+                  {push.status === "subscribed"
+                    ? "Push 通知は有効です"
+                    : "Push 通知はオフです"}
+                </p>
+                <Button
+                  variant={push.status === "subscribed" ? "outline" : "default"}
+                  size="sm"
+                  disabled={push.isPending}
+                  onClick={() =>
+                    void (push.status === "subscribed"
+                      ? push.disable()
+                      : push.enable())
+                  }
+                >
+                  {push.isPending ? <Spinner data-icon="inline-start" /> : null}
+                  {push.status === "subscribed" ? "無効にする" : "有効にする"}
+                </Button>
+              </div>
+              {push.error ? (
+                <p className="text-destructive mt-1 text-xs">{push.error}</p>
+              ) : null}
             </div>
-            {push.error ? (
-              <p className="mt-1 text-xs text-red-600">{push.error}</p>
-            ) : null}
-          </div>
+          </>
         ) : null}
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -137,28 +128,29 @@ function NotificationListItem({
   onDismiss,
 }: NotificationListItemProps) {
   return (
-    <div className="rounded-xl bg-gray-50 px-3 py-3">
+    <div className="bg-muted/50 rounded-xl px-3 py-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-gray-900">{item.title}</p>
-          <p className="mt-1 text-xs leading-relaxed text-gray-600">
+          <p className="text-sm font-semibold">{item.title}</p>
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             {item.body}
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           aria-label="この通知を閉じる"
-          className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
           onClick={onDismiss}
         >
-          <X className="h-5 w-5" aria-hidden />
-        </button>
+          <X aria-hidden />
+        </Button>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         {item.id === PWA_INSTALL_NOTIFICATION_ID && pwa.canPromptInstall ? (
           <Button
-            className="px-3 py-1.5 text-xs"
+            size="sm"
             onClick={() => {
               void pwa.promptInstall().then((outcome) => {
                 if (outcome === "accepted") onDismiss();
@@ -171,23 +163,32 @@ function NotificationListItem({
 
         {item.id === PUSH_OPT_IN_NOTIFICATION_ID ? (
           <Button
-            className="px-3 py-1.5 text-xs"
+            size="sm"
             disabled={push.isPending}
             onClick={() => void push.enable()}
           >
-            {push.isPending ? "設定中…" : "通知を有効にする"}
+            {push.isPending ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                設定中…
+              </>
+            ) : (
+              "通知を有効にする"
+            )}
           </Button>
         ) : null}
       </div>
 
       {item.kind === "push-opt-in" && push.error ? (
-        <p className="mt-2 text-xs text-red-600">{push.error}</p>
+        <p className="text-destructive mt-2 text-xs">{push.error}</p>
       ) : null}
 
       {item.kind === "pwa-install" && pwa.isIosGuide ? (
-        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
-          Safari の共有ボタン →「ホーム画面に追加」
-        </p>
+        <Alert className="mt-2">
+          <AlertDescription>
+            Safari の共有ボタン →「ホーム画面に追加」
+          </AlertDescription>
+        </Alert>
       ) : null}
     </div>
   );

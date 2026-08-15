@@ -2,24 +2,31 @@
  * プロフィール編集モーダル（アバター・表示名・自己紹介）。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { X } from "lucide-react";
 import { AVATAR_KEYS, type AvatarKey } from "../../../../shared/schemas";
-import Button from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "../../components/UserAvatar";
-import { TextAreaField, TextField } from "../../components/ui/FormField";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 import { useUpdateProfileMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
-import { cn } from "../../lib/cn";
-
-const overlayClassName =
-  "fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center";
-const panelClassName =
-  "max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-2xl sm:p-6";
-const avatarButtonBaseClassName =
-  "cursor-pointer rounded-full ring-2 ring-offset-2 transition focus:outline-none focus-visible:ring-indigo-500";
-const closeButtonClassName =
-  "cursor-pointer rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600";
+import { cn } from "@/lib/utils";
 
 function profileErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -78,122 +85,126 @@ export default function EditProfileModal({
     );
   };
 
+  const displayNameInvalid = Boolean(displayNameError);
+
   return (
-    <div className={overlayClassName} onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
+    <Dialog
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
+      <DialogContent
+        className="sm:max-w-md"
         aria-labelledby="edit-profile-title"
-        onClick={(e) => e.stopPropagation()}
-        className={panelClassName}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2
-            id="edit-profile-title"
-            className="text-lg font-bold text-gray-900"
-          >
-            プロフィールを編集
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="閉じる"
-            className={closeButtonClassName}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+        <form onSubmit={handleProfileSubmit} className="contents">
+          <DialogHeader>
+            <DialogTitle id="edit-profile-title">
+              プロフィールを編集
+            </DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handleProfileSubmit} className="space-y-4">
-          <div>
-            <p className="mb-2 text-sm font-medium text-gray-700">アバター</p>
-            <div className="mb-3 flex items-center gap-3">
-              <UserAvatar
-                avatarKey={avatarKey}
-                alt="選択中のアバター"
-                className="h-16 w-16"
+          <FieldGroup>
+            <FieldSet>
+              <FieldLegend variant="label">アバター</FieldLegend>
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  avatarKey={avatarKey}
+                  alt="選択中のアバター"
+                  className="size-16"
+                />
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setAvatarKey(null)}
+                >
+                  デフォルトに戻す
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {AVATAR_KEYS.map((key) => {
+                  const selected = avatarKey === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setAvatarKey(key)}
+                      aria-label={`アバター ${key}`}
+                      aria-pressed={selected}
+                      className={cn(
+                        "focus-visible:ring-ring cursor-pointer rounded-full ring-2 ring-offset-2 transition focus:outline-none",
+                        selected
+                          ? "ring-primary"
+                          : "hover:ring-border ring-transparent",
+                      )}
+                    >
+                      <UserAvatar avatarKey={key} className="size-12" />
+                    </button>
+                  );
+                })}
+              </div>
+            </FieldSet>
+
+            <Field data-invalid={displayNameInvalid || undefined}>
+              <FieldLabel htmlFor="edit-displayName">表示名</FieldLabel>
+              <Input
+                id="edit-displayName"
+                required
+                maxLength={50}
+                value={displayName}
+                onChange={(e) => {
+                  setDisplayName(e.target.value);
+                  if (displayNameError) setDisplayNameError(null);
+                }}
+                autoComplete="nickname"
+                aria-invalid={displayNameInvalid || undefined}
+                aria-describedby={
+                  displayNameError ? "edit-displayName-error" : undefined
+                }
               />
-              <button
-                type="button"
-                onClick={() => setAvatarKey(null)}
-                className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 hover:underline"
-              >
-                デフォルトに戻す
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {AVATAR_KEYS.map((key) => {
-                const selected = avatarKey === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setAvatarKey(key)}
-                    aria-label={`アバター ${key}`}
-                    aria-pressed={selected}
-                    className={cn(
-                      avatarButtonBaseClassName,
-                      selected
-                        ? "ring-indigo-600"
-                        : "ring-transparent hover:ring-gray-300",
-                    )}
-                  >
-                    <UserAvatar avatarKey={key} className="h-12 w-12" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+              <FieldError id="edit-displayName-error">
+                {displayNameError}
+              </FieldError>
+            </Field>
 
-          <TextField
-            id="edit-displayName"
-            label="表示名"
-            required
-            maxLength={50}
-            value={displayName}
-            onChange={(e) => {
-              setDisplayName(e.target.value);
-              if (displayNameError) setDisplayNameError(null);
-            }}
-            autoComplete="nickname"
-            error={Boolean(displayNameError)}
-            errorMessage={displayNameError ?? undefined}
-          />
+            <Field>
+              <FieldLabel htmlFor="edit-bio">自己紹介</FieldLabel>
+              <Textarea
+                id="edit-bio"
+                rows={4}
+                maxLength={500}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="好きな学習分野や目標など"
+                className="resize-none"
+              />
+            </Field>
 
-          <TextAreaField
-            id="edit-bio"
-            label="自己紹介"
-            rows={4}
-            maxLength={500}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="好きな学習分野や目標など"
-          />
+            {updateProfileMutation.isError && (
+              <ErrorMessage>
+                {profileErrorMessage(updateProfileMutation.error)}
+              </ErrorMessage>
+            )}
+          </FieldGroup>
 
-          {updateProfileMutation.isError && (
-            <ErrorMessage>
-              {profileErrorMessage(updateProfileMutation.error)}
-            </ErrorMessage>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="secondary"
-              onClick={onClose}
-              className="flex-1 py-2.5"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            <Button
-              type="submit"
-              disabled={updateProfileMutation.isPending}
-              className="flex-1 py-2.5"
-            >
-              {updateProfileMutation.isPending ? "保存中..." : "保存"}
+            <Button type="submit" disabled={updateProfileMutation.isPending}>
+              {updateProfileMutation.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  保存中...
+                </>
+              ) : (
+                "保存"
+              )}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

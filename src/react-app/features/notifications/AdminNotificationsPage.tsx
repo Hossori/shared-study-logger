@@ -6,8 +6,8 @@ import { Link, useOutletContext } from "react-router";
 import { Bell } from "lucide-react";
 import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import Layout from "../../components/Layout";
-import Button from "../../components/ui/Button";
 import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import {
   Card,
@@ -118,14 +118,11 @@ export default function AdminNotificationsPage() {
   return (
     <Layout user={user}>
       <div className="mb-4">
-        <Link
-          to="/"
-          className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline"
-        >
+        <Link to="/" className="text-primary text-sm hover:underline">
           ← ホームに戻る
         </Link>
-        <h2 className="mt-2 text-xl font-bold text-gray-900">通知管理</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className="mt-2 text-xl font-bold">通知管理</h2>
+        <p className="text-muted-foreground mt-1 text-sm">
           アプリ内通知の作成・有効/無効・削除ができます。有効な通知は全ユーザーの通知一覧に表示されます。
         </p>
       </div>
@@ -169,11 +166,7 @@ export default function AdminNotificationsPage() {
                   />
                   {formError ? <FieldError>{formError}</FieldError> : null}
                 </Field>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2"
-                >
+                <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending ? (
                     <>
                       <Spinner data-icon="inline-start" />
@@ -263,8 +256,8 @@ export default function AdminNotificationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
-                          variant="danger"
-                          className="px-3 py-1.5 text-xs"
+                          variant="destructive"
+                          size="xs"
                           disabled={pendingId === item.id}
                           onClick={() => {
                             void handleDelete(item.id, item.title);

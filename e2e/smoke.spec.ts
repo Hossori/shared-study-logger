@@ -71,7 +71,7 @@ test("自分の学習記録を削除できる", async ({ page }) => {
 	await expect(card).toBeVisible();
 
 	await card.getByRole("button", { name: "削除" }).click();
-	await page.getByRole("dialog").getByRole("button", { name: "削除" }).click();
+	await page.getByRole("alertdialog").getByRole("button", { name: "削除" }).click();
 	await expect(card).toHaveCount(0);
 });
 
@@ -79,7 +79,7 @@ test("ログアウト後は /login に戻る", async ({ page }) => {
 	await loginAsAdmin(page);
 	await page.getByLabel("プロフィールメニュー").click();
 	await page.getByRole("menuitem", { name: "ログアウト" }).click();
-	await page.getByRole("dialog").getByRole("button", { name: "ログアウト" }).click();
+	await page.getByRole("alertdialog").getByRole("button", { name: "ログアウト" }).click();
 	await expect(page).toHaveURL(/\/login/);
 });
 
@@ -107,7 +107,7 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 
 	await page.getByLabel("プロフィールメニュー").click();
 	await page.getByRole("menuitem", { name: "ログアウト" }).click();
-	await page.getByRole("dialog").getByRole("button", { name: "ログアウト" }).click();
+	await page.getByRole("alertdialog").getByRole("button", { name: "ログアウト" }).click();
 	await expect(page).toHaveURL(/\/login/);
 
 	await loginAsUser(page);
