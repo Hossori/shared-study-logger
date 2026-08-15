@@ -185,6 +185,12 @@ E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 このアプリは固定アカウント方式（自己登録なし）のため、実運用では管理者が
 `scripts/seed-users.mjs` を参考にしたスクリプトやSQLでユーザーを事前登録する必要があります。
 上記のサンプルパスワードは開発用です。本番投入時は必ず変更してください。
+ロールは `users.role`（`ADMIN` / `USER`）。既存ユーザーのデフォルトは `USER` です。
+管理者にする場合は D1 で次を実行します。
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
+```
 
 ## デプロイ手順（概要）
 

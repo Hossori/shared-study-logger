@@ -19,6 +19,25 @@ export {
   type AvatarKey,
 } from "./avatars";
 
+// ---- ロール ---------------------------------------------------------------
+
+export const USER_ROLES = ["ADMIN", "USER"] as const;
+export const UserRoleSchema = z.enum(USER_ROLES);
+export type UserRole = z.infer<typeof UserRoleSchema>;
+
+/**
+ * DB の role 値を UserRole にする。欠落・未知の値は USER
+ * （マイグレーション前後や不正値の安全側デフォルト）。
+ */
+export function parseUserRole(value: unknown): UserRole {
+  const parsed = UserRoleSchema.safeParse(value);
+  return parsed.success ? parsed.data : "USER";
+}
+
+export function isAdmin(user: { role: UserRole }): boolean {
+  return user.role === "ADMIN";
+}
+
 // ---- 認証 -----------------------------------------------------------------
 
 export const LoginRequestSchema = z.object({
@@ -31,6 +50,7 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.email(),
   displayName: z.string(),
+  role: UserRoleSchema,
   bio: z.string().nullable(),
   avatarKey: AvatarKeySchema.nullable(),
   createdAt: z.string(),

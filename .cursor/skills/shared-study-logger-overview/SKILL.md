@@ -54,7 +54,7 @@ wrangler.jsonc / vite.config.ts
 ## データモデル（D1 / SQLite）
 
 テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ。
-セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
+`users.role` は `ADMIN` または `USER`（既存行・未指定は `USER`）。セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
 詳細は [docs/data-model.md](/docs/data-model.md)。
 
 ## API
