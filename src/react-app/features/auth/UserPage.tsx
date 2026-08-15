@@ -1,5 +1,5 @@
 /**
- * ユーザーページ（自分・他人共通）。自分の場合のみ編集 / パスワード変更を出す。
+ * ユーザーページ（自分・他人共通）。自分の場合のみ Push 設定 / 編集 / パスワード変更を出す。
  * ヘッダの「マイページ」もこの画面（`/users/:userId`）を指す。
  */
 import { useState } from "react";
@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 import { useUserQuery } from "../../queries/useUser";
+import PushSettingsCard from "../push/PushSettingsCard";
 import ChangePasswordModal from "./ChangePasswordModal";
 import EditProfileModal from "./EditProfileModal";
 
@@ -56,59 +57,66 @@ export default function UserPage() {
         </h2>
       </div>
 
-      {!isSelf && isLoading && (
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4">
-            <Skeleton className="size-20 rounded-full" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          </CardHeader>
-        </Card>
-      )}
+      <div className="flex flex-col gap-6">
+        {isSelf ? <PushSettingsCard /> : null}
 
-      {!isSelf && isError && (
-        <ErrorMessage>ユーザー情報の取得に失敗しました。</ErrorMessage>
-      )}
-
-      {profile && (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <UserAvatar avatarKey={profile.avatarKey} className="size-20" />
-              <div className="min-w-0 flex-1">
-                <CardTitle className="truncate text-lg">
-                  {profile.displayName}
-                </CardTitle>
-                {profile.bio ? (
-                  <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
-                    {profile.bio}
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    自己紹介は未設定です
-                  </p>
-                )}
+        {!isSelf && isLoading && (
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-4">
+              <Skeleton className="size-20 rounded-full" />
+              <div className="flex flex-1 flex-col gap-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-full" />
               </div>
-            </div>
-          </CardHeader>
+            </CardHeader>
+          </Card>
+        )}
 
-          {isSelf && (
-            <>
-              <Separator />
-              <CardFooter className="justify-start gap-2 border-0 bg-transparent">
-                <Button variant="outline" onClick={() => setEditOpen(true)}>
-                  編集
-                </Button>
-                <Button variant="outline" onClick={() => setPasswordOpen(true)}>
-                  パスワード変更
-                </Button>
-              </CardFooter>
-            </>
-          )}
-        </Card>
-      )}
+        {!isSelf && isError && (
+          <ErrorMessage>ユーザー情報の取得に失敗しました。</ErrorMessage>
+        )}
+
+        {profile && (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <UserAvatar avatarKey={profile.avatarKey} className="size-20" />
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="truncate text-lg">
+                    {profile.displayName}
+                  </CardTitle>
+                  {profile.bio ? (
+                    <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
+                      {profile.bio}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      自己紹介は未設定です
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {isSelf && (
+              <>
+                <Separator />
+                <CardFooter className="justify-start gap-2 border-0 bg-transparent">
+                  <Button variant="outline" onClick={() => setEditOpen(true)}>
+                    編集
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPasswordOpen(true)}
+                  >
+                    パスワード変更
+                  </Button>
+                </CardFooter>
+              </>
+            )}
+          </Card>
+        )}
+      </div>
 
       {isSelf && editOpen && (
         <EditProfileModal
