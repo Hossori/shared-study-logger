@@ -1,10 +1,12 @@
 /**
  * D1(`DB`バインディング)へのクエリヘルパー。
- * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録の作成/更新/削除、
+ * ユーザー/グループ取得、管理者向けユーザー・グループ・所属の作成、
+ * 記録一覧のカーソルページネーション、記録の作成/更新/削除、
  * push_subscriptions / app_notifications CRUDをまとめる。
  */
 import type {
   AvatarKey,
+  Group,
   InAppNotification,
   PublicUser,
   StudyRecord,
@@ -160,6 +162,53 @@ export async function updateUserPassword(
     .run();
 }
 
+/** 全ユーザーを作成順で返す（管理用。password は UserRow に含まれるが API では toUser する）。 */
+export async function listUsers(db: D1Database): Promise<UserRow[]> {
+  const { results } = await db
+    .prepare(
+      "SELECT * FROM users ORDER BY created_at ASC, id ASC",
+    )
+    .all<UserRow>();
+  return results ?? [];
+}
+
+export interface CreateUserInput {
+  id: string;
+  email: string;
+  passwordHash: string;
+  passwordSalt: string;
+  displayName: string;
+}
+
+/** ユーザーを作成する。role は USER 固定、bio / avatar_key は NULL。 */
+export async function createUser(
+  db: D1Database,
+  input: CreateUserInput,
+): Promise<UserRow> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO users
+        (id, email, password_hash, password_salt, display_name, bio, avatar_key, role, created_at)
+       VALUES (?, ?, ?, ?, ?, NULL, NULL, 'USER', ?)`,
+    )
+    .bind(
+      input.id,
+      input.email,
+      input.passwordHash,
+      input.passwordSalt,
+      input.displayName,
+      now,
+    )
+    .run();
+
+  const row = await getUserById(db, input.id);
+  if (!row) {
+    throw new Error("failed_to_create_user");
+  }
+  return row;
+}
+
 // ---- groups -------------------------------------------------------------
 
 export async function getGroupsForUser(
@@ -205,6 +254,120 @@ export async function getOtherGroupMemberUserIds(
     .bind(groupId, excludeUserId)
     .all<{ user_id: string }>();
   return (results ?? []).map((r) => r.user_id);
+}
+
+export function toGroup(row: GroupRow): Group {
+  return {
+    id: row.id,
+    name: row.name,
+    createdAt: row.created_at,
+  };
+}
+
+export async function getGroupById(
+  db: D1Database,
+  id: string,
+): Promise<GroupRow | null> {
+  const row = await db
+    .prepare("SELECT * FROM groups WHERE id = ?")
+    .bind(id)
+    .first<GroupRow>();
+  return row ?? null;
+}
+
+export async function listAllGroups(db: D1Database): Promise<GroupRow[]> {
+  const { results } = await db
+    .prepare("SELECT * FROM groups ORDER BY created_at ASC, id ASC")
+    .all<GroupRow>();
+  return results ?? [];
+}
+
+export interface GroupWithMembers {
+  group: GroupRow;
+  members: UserRow[];
+}
+
+interface GroupMemberJoinRow extends UserRow {
+  group_id: string;
+}
+
+/** 全グループをメンバー付きで返す（管理用。所属不問）。 */
+export async function listAllGroupsWithMembers(
+  db: D1Database,
+): Promise<GroupWithMembers[]> {
+  const groups = await listAllGroups(db);
+  const { results } = await db
+    .prepare(
+      `SELECT gm.group_id,
+              u.id, u.email, u.password_hash, u.password_salt, u.display_name,
+              u.role, u.bio, u.avatar_key, u.created_at
+       FROM group_members gm
+       INNER JOIN users u ON u.id = gm.user_id
+       ORDER BY gm.joined_at ASC, u.id ASC`,
+    )
+    .all<GroupMemberJoinRow>();
+
+  const membersByGroup = new Map<string, UserRow[]>();
+  for (const row of results ?? []) {
+    const { group_id: groupId, ...user } = row;
+    const members = membersByGroup.get(groupId);
+    if (members) {
+      members.push(user);
+    } else {
+      membersByGroup.set(groupId, [user]);
+    }
+  }
+
+  return groups.map((group) => ({
+    group,
+    members: membersByGroup.get(group.id) ?? [],
+  }));
+}
+
+export interface CreateGroupInput {
+  id: string;
+  name: string;
+}
+
+export async function createGroup(
+  db: D1Database,
+  input: CreateGroupInput,
+): Promise<GroupRow> {
+  const now = new Date().toISOString();
+  await db
+    .prepare("INSERT INTO groups (id, name, created_at) VALUES (?, ?, ?)")
+    .bind(input.id, input.name, now)
+    .run();
+  return { id: input.id, name: input.name, created_at: now };
+}
+
+export async function addGroupMember(
+  db: D1Database,
+  groupId: string,
+  userId: string,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      "INSERT INTO group_members (group_id, user_id, joined_at) VALUES (?, ?, ?)",
+    )
+    .bind(groupId, userId, now)
+    .run();
+}
+
+/** 所属を削除する。削除できたら true。 */
+export async function removeGroupMember(
+  db: D1Database,
+  groupId: string,
+  userId: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      "DELETE FROM group_members WHERE group_id = ? AND user_id = ?",
+    )
+    .bind(groupId, userId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }
 
 // ---- study_records --------------------------------------------------------

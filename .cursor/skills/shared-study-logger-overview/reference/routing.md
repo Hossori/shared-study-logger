@@ -10,7 +10,7 @@
 - **ルート構成**: `/login`（`GuestRoute` 配下、ログイン済みなら `/` へリダイレクト）、`/` と
   `/users/:userId`（いずれも `ProtectedRoute` 配下、未ログインなら `/login` へリダイレクト）、
   `/mypage` は `features/auth/MyPage.tsx` が自分の `/users/:userId` へ Navigate、
-  `/admin/notifications` は `AdminRoute` 配下（ADMIN のみ。USER は 403 画面）、
+  `/admin/notifications` と `/admin/groups` は `AdminRoute` 配下（ADMIN のみ。USER は 403 画面）、
   それ以外の全パスは `NotFoundPage`（404画面）。
 - **認証ガード**: `src/react-app/routes/ProtectedRoute.tsx`（認証必須）と
   `routes/GuestRoute.tsx`（未ログイン専用）の2コンポーネント。どちらも `useMeQuery()` を呼び、
@@ -24,6 +24,8 @@
   ユーザーページは `features/auth/UserPage.tsx`。`/mypage` は `MyPage.tsx` が自分の
   UserPage へ Navigate する。管理者の通知管理は
   `features/notifications/AdminNotificationsPage.tsx`（プロフィールメニュー「通知管理」）。
+  グループ・ユーザー管理は `features/groups/AdminDirectoryPage.tsx`
+  （`/admin/groups`、プロフィールメニュー「グループユーザー管理」）。
 - **スコープ外**: `GroupSwitcher` が管理する選択中グループ（Zustand の `selectedGroupId`）は
   URL に同期させていない。新しい画面を追加する場合は `routes/router.tsx` にルートを追加し、
   認証要否に応じて `ProtectedRoute` / `GuestRoute` 配下に置くこと。

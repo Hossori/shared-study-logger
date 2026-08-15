@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
 	ChangePasswordRequestSchema,
+	CreateAdminGroupRequestSchema,
+	CreateAdminUserRequestSchema,
+	AddGroupMemberRequestSchema,
 	CreateInAppNotificationRequestSchema,
 	CreateStudyRecordRequestSchema,
 	LoginRequestSchema,
@@ -172,6 +175,86 @@ describe("UpdateInAppNotificationRequestSchema", () => {
 
 	it("rejects missing enabled", () => {
 		expect(UpdateInAppNotificationRequestSchema.safeParse({}).success).toBe(
+			false,
+		);
+	});
+});
+
+describe("CreateAdminUserRequestSchema", () => {
+	const valid = {
+		email: "new@example.com",
+		password: "Password1!",
+		displayName: "新規ユーザー",
+	};
+
+	it("accepts a valid payload and trims displayName", () => {
+		const result = CreateAdminUserRequestSchema.safeParse({
+			...valid,
+			displayName: "  新規ユーザー  ",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.displayName).toBe("新規ユーザー");
+		}
+	});
+
+	it("rejects invalid email", () => {
+		expect(
+			CreateAdminUserRequestSchema.safeParse({
+				...valid,
+				email: "not-an-email",
+			}).success,
+		).toBe(false);
+	});
+
+	it("rejects short password", () => {
+		expect(
+			CreateAdminUserRequestSchema.safeParse({
+				...valid,
+				password: "short",
+			}).success,
+		).toBe(false);
+	});
+
+	it("rejects empty displayName", () => {
+		expect(
+			CreateAdminUserRequestSchema.safeParse({
+				...valid,
+				displayName: "   ",
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("CreateAdminGroupRequestSchema", () => {
+	it("accepts a trimmed name", () => {
+		const result = CreateAdminGroupRequestSchema.safeParse({
+			name: "  新グループ  ",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.name).toBe("新グループ");
+		}
+	});
+
+	it("rejects empty name", () => {
+		expect(
+			CreateAdminGroupRequestSchema.safeParse({ name: "   " }).success,
+		).toBe(false);
+	});
+});
+
+describe("AddGroupMemberRequestSchema", () => {
+	it("accepts a userId", () => {
+		expect(
+			AddGroupMemberRequestSchema.safeParse({
+				userId: "00000000-0000-4000-a000-000000000005",
+			}).success,
+		).toBe(true);
+	});
+
+	it("rejects empty userId", () => {
+		expect(AddGroupMemberRequestSchema.safeParse({ userId: "" }).success).toBe(
 			false,
 		);
 	});
