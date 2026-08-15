@@ -7,10 +7,15 @@ import { pushRoutes } from "./routes/push";
 import { notificationsRoutes } from "./routes/notifications";
 import { adminNotificationsRoutes } from "./routes/admin-notifications";
 import { requireAuth, type AuthVariables } from "./middleware/requireAuth";
+import { requireClientApiVersion } from "./middleware/requireClientApiVersion";
 import { getPushSubscriptionsForUser } from "./lib/db";
 import { sendPushNotification, type PushQueueMessage } from "./lib/push";
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
+
+// API ルートの最初にクライアント API 版を検証する。
+// 認証・Pushを含め、古いクライアントは他のミドルウェアやルートへ到達させない。
+app.use("/api/*", requireClientApiVersion);
 
 app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 

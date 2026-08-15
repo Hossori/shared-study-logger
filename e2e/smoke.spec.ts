@@ -25,6 +25,23 @@ test("ログイン成功でグループ切替が表示される", async ({ page 
 	const switcher = page.getByLabel("グループ切替");
 	const single = page.getByText("サンプル学習グループ");
 	await expect(switcher.or(single).first()).toBeVisible();
+	await page.reload();
+	await expect(switcher.or(single).first()).toBeVisible();
+
+	await page.route("**/api/auth/me", async (route) => {
+		await route.fulfill({
+			status: 426,
+			contentType: "application/json",
+			body: JSON.stringify({
+				error: "client_update_required",
+				minimumClientApiVersion: "2.0.0",
+			}),
+		});
+	});
+	await page.reload();
+	await expect(
+		page.getByRole("heading", { name: "アプリの更新が必要です" }),
+	).toBeVisible();
 });
 
 test("学習記録を投稿できる", async ({ page }) => {

@@ -35,3 +35,24 @@
 `POST /api/auth/login` と `GET /api/auth/me` の `user` には `role`（`ADMIN` | `USER`）が含まれる。
 管理者専用 API（`/api/admin/notifications`）は `requireAuth` の後に `requireAdmin`（`src/worker/middleware/requireAdmin.ts`）を重ねる。USER は 403 `{ error: "forbidden" }`。
 新しいエンドポイントを追加する際はどちらの方式にするか `index.ts` を確認すること。
+
+## クライアントAPI版
+
+ブラウザアプリとService Workerは、全APIリクエストに
+`X-Client-Api-Version` を付与する。値の正本は
+`shared/client-api-version.ts` の `CLIENT_API_VERSION` である。
+
+API互換性を壊すリリースでは、同ファイルの
+`MIN_SUPPORTED_CLIENT_API_VERSION` を現行クライアント版まで引き上げる。値が最小版未満、
+欠落、または不正なリクエストは、認証・ルートハンドラより前に次を返し、DBなどの副作用を
+実行しない。
+
+```json
+{
+  "error": "client_update_required",
+  "minimumClientApiVersion": "2.0.0"
+}
+```
+
+ステータスは `426 Upgrade Required`、レスポンスは `Cache-Control: no-store` とする。
+ブリッジリリースでは最小版を `null` にして版検証を無効化し、更新UIを配布してから強制する。

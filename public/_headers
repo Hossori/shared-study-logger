@@ -1,0 +1,10 @@
+# Cloudflare Workers Static Assets により public/ から dist/client へ引き継がれる。
+# Vite の HTML 出力は index.html のみ。/ は SPA フォールバックの初回アクセス用。
+/sw.js
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/
+  Cache-Control: no-cache

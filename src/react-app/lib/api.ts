@@ -3,6 +3,14 @@
  * Cookie認証を常に送信する。非2xxレスポンスはレスポンスインターセプターで`ApiError`に変換する。
  */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import {
+  CLIENT_API_VERSION,
+  CLIENT_API_VERSION_HEADER,
+} from "../../../shared/client-api-version";
+import {
+  getClientApiUpdateRequiredEvent,
+  notifyClientApiUpdateRequired,
+} from "./clientApiUpdateRequired";
 
 export class ApiError extends Error {
   status: number;
@@ -20,9 +28,20 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * 現在のクライアントが API 契約上サポート外であることを表すエラー。
+ * 通常の`ApiError`を継承するため、既存のエラーハンドリングも維持される。
+ */
+export class ClientUpdateRequiredError extends ApiError {
+  constructor(body: unknown) {
+    super(426, body);
+    this.name = "ClientUpdateRequiredError";
+  }
+}
+
 const REQUEST_TIMEOUT_MS = 10_000;
 
-const client = axios.create({
+export const apiClient = axios.create({
   baseURL: "/",
   withCredentials: true,
   timeout: REQUEST_TIMEOUT_MS,
@@ -30,7 +49,15 @@ const client = axios.create({
 
 // リクエストにボディがある場合のみ`Content-Type: application/json`を付与する。
 // axiosはデフォルトでプレーンオブジェクトのボディにこのヘッダーを自動付与するが、挙動を明示するためにここで設定している。
-client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const updateRequiredEvent = getClientApiUpdateRequiredEvent();
+  if (updateRequiredEvent) {
+    return Promise.reject(
+      new ClientUpdateRequiredError(updateRequiredEvent.body),
+    );
+  }
+
+  config.headers.set(CLIENT_API_VERSION_HEADER, CLIENT_API_VERSION);
   if (config.data !== undefined) {
     config.headers.set("Content-Type", "application/json");
   }
@@ -40,15 +67,24 @@ client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 // 非2xxレスポンス（および接続エラー等)を、呼び出し側が既に依存している`ApiError`
 // （`status`/`body`を持つ）に変換して再throwする。学習記録アプリではAxiosErrorを
 // そのまま各画面に伝播させず、この層で吸収するのがポイント。
-client.interceptors.response.use(
+apiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
-        return Promise.reject(
-          new ApiError(axiosError.response.status, axiosError.response.data),
-        );
+        const { status, data } = axiosError.response;
+        if (
+          status === 426 &&
+          typeof data === "object" &&
+          data !== null &&
+          "error" in data &&
+          data.error === "client_update_required"
+        ) {
+          notifyClientApiUpdateRequired({ status: 426, body: data });
+          return Promise.reject(new ClientUpdateRequiredError(data));
+        }
+        return Promise.reject(new ApiError(status, data));
       }
       // タイムアウト・オフライン等、レスポンス自体を受け取れなかった場合。
       return Promise.reject(
@@ -60,17 +96,17 @@ client.interceptors.response.use(
 );
 
 export function apiGet<T>(path: string): Promise<T> {
-  return client.get<T>(path).then((response) => response.data);
+  return apiClient.get<T>(path).then((response) => response.data);
 }
 
 export function apiPost<T>(path: string, data?: unknown): Promise<T> {
-  return client.post<T>(path, data).then((response) => response.data);
+  return apiClient.post<T>(path, data).then((response) => response.data);
 }
 
 export function apiPatch<T>(path: string, data?: unknown): Promise<T> {
-  return client.patch<T>(path, data).then((response) => response.data);
+  return apiClient.patch<T>(path, data).then((response) => response.data);
 }
 
 export function apiDelete<T>(path: string, data?: unknown): Promise<T> {
-  return client.delete<T>(path, { data }).then((response) => response.data);
+  return apiClient.delete<T>(path, { data }).then((response) => response.data);
 }
