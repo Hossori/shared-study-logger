@@ -20,12 +20,18 @@
 | GET | `/api/push/vapid-public-key` | 不要 | Push購読用のVAPID公開鍵取得 |
 | POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
+| GET | `/api/notifications` | 必要 | 有効なアプリ内通知一覧（全ユーザー） |
+| GET | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の全件一覧 |
+| POST | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の作成 |
+| PATCH | `/api/admin/notifications/:id` | 必要+ADMIN | 有効/無効の切替（`{ enabled }`） |
+| DELETE | `/api/admin/notifications/:id` | 必要+ADMIN | アプリ内通知の削除 |
 
 ## requireAuth の適用箇所
 
 認証必須の適用箇所: `src/worker/index.ts` で `/api/groups/*` 全体に `requireAuth` を一括適用し、
 `/api/auth/logout`・`/me`・`PATCH /me`・`POST /password`、`/api/users/:userId`、
-`/api/push/subscribe` は各ルートファイル内で個別に `requireAuth` を適用している。
+`/api/push/subscribe`、`/api/notifications`、`/api/admin/notifications` は各ルートファイル内で
+個別に `requireAuth` を適用している。
 `POST /api/auth/login` と `GET /api/auth/me` の `user` には `role`（`ADMIN` | `USER`）が含まれる。
-管理者専用 API は `requireAuth` の後に `requireAdmin`（`src/worker/middleware/requireAdmin.ts`）を重ねる。
+管理者専用 API（`/api/admin/notifications`）は `requireAuth` の後に `requireAdmin`（`src/worker/middleware/requireAdmin.ts`）を重ねる。USER は 403 `{ error: "forbidden" }`。
 新しいエンドポイントを追加する際はどちらの方式にするか `index.ts` を確認すること。

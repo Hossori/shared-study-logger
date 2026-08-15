@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAsAdmin, openPostModal, SEED_ADMIN } from "./helpers";
+import { loginAsAdmin, loginAsUser, openPostModal, SEED_ADMIN } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -81,4 +81,46 @@ test("ログアウト後は /login に戻る", async ({ page }) => {
 	await page.getByRole("menuitem", { name: "ログアウト" }).click();
 	await page.getByRole("dialog").getByRole("button", { name: "ログアウト" }).click();
 	await expect(page).toHaveURL(/\/login/);
+});
+
+test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
+	await loginAsAdmin(page);
+	await page.getByLabel("プロフィールメニュー").click();
+	await page.getByRole("menuitem", { name: "通知管理" }).click();
+	await expect(page.getByRole("heading", { name: "通知管理" })).toBeVisible();
+
+	const title = `e2e-notice-${Date.now()}`;
+	await page.locator("#admin-notification-title").fill(title);
+	await page.locator("#admin-notification-body").fill("e2e 本文");
+
+	const createPromise = page.waitForResponse(
+		(response) =>
+			response.url().includes("/api/admin/notifications") &&
+			response.request().method() === "POST",
+	);
+	await page.getByRole("button", { name: "追加" }).click();
+	expect(
+		(await createPromise).ok(),
+		"POST /api/admin/notifications failed",
+	).toBeTruthy();
+	await expect(page.getByText(title)).toBeVisible();
+
+	await page.getByLabel("プロフィールメニュー").click();
+	await page.getByRole("menuitem", { name: "ログアウト" }).click();
+	await page.getByRole("dialog").getByRole("button", { name: "ログアウト" }).click();
+	await expect(page).toHaveURL(/\/login/);
+
+	await loginAsUser(page);
+	await page.getByLabel("プロフィールメニュー").click();
+	await expect(page.getByRole("menuitem", { name: "マイページ" })).toBeVisible();
+	await expect(page.getByRole("menuitem", { name: "通知管理" })).toHaveCount(0);
+
+	await page.goto("/admin/notifications");
+	await expect(
+		page.getByRole("heading", { name: "アクセスできません" }),
+	).toBeVisible();
+
+	const forbidden = await page.request.get("/api/admin/notifications");
+	expect(forbidden.status()).toBe(403);
+	expect(await forbidden.json()).toEqual({ error: "forbidden" });
 });

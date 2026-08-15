@@ -1,11 +1,11 @@
 /**
  * ヘッダー用プロフィールメニュー。丸いアバターアイコンを押すと
- * 「マイページ」「ログアウト」を選べるドロップダウンを表示する。
+ * 「マイページ」「通知管理（ADMINのみ）」「ログアウト」を選べる。
  * クリック外または再度アイコンで閉じる。ログアウトは確認ダイアログ付き。
  */
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
-import { type User } from "../../../shared/schemas";
+import { isAdmin, type User } from "../../../shared/schemas";
 import UserAvatar from "./UserAvatar";
 import { useLogoutMutation } from "../queries/useAuth";
 import { useConfirm } from "./useConfirm";
@@ -88,6 +88,16 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
           >
             マイページ
           </Link>
+          {isAdmin(user) ? (
+            <Link
+              to="/admin/notifications"
+              role="menuitem"
+              className={menuItemClassName}
+              onClick={() => setOpen(false)}
+            >
+              通知管理
+            </Link>
+          ) : null}
           <button
             type="button"
             role="menuitem"
