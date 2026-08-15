@@ -43,7 +43,7 @@ wrangler.jsonc / vite.config.ts
 
 | #   | 機能             | 概要                                                       | 詳細                                                           |
 | --- | ---------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| 1   | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更 | [reference/auth.md](reference/auth.md)                         |
+| 1   | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更・Push 設定 | [reference/auth.md](reference/auth.md)                         |
 | 2   | グループ         | 所属グループの記録のみ閲覧。作成・所属は管理者画面で操作 | [reference/groups.md](reference/groups.md)                     |
 | 3   | 学習記録         | 投稿・編集・削除、カーソルページネーション                 | [reference/records.md](reference/records.md)                   |
 | 4   | Push通知         | 投稿時に他メンバーへ Web Push（VAPID）                     | [reference/push.md](reference/push.md)                         |
