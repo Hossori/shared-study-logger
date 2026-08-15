@@ -74,6 +74,9 @@ erDiagram
 - `users.role` は `ADMIN` または `USER`（CHECK 制約）。既存行・列省略時のデフォルトは `USER`。
   アプリからのロール変更 API は無い。管理者にする例:
   `UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';`
+- ユーザーとグループの作成、グループへの所属追加/削除は ADMIN API
+  （`/api/admin/users`・`/api/admin/groups`）から行える。公開の自己登録は無い。
+  ユーザー削除・グループ削除の API は無い。
 - `app_notifications` は管理者が作成するアプリ内通知。`enabled = 1` のものだけ
   `GET /api/notifications` で全ユーザーに返す。CRUD は ADMIN のみ。
 - セッションは D1 ではなく **Cloudflare Workers KV**（`SESSIONS` バインディング）に保存する（`session:{token}` → `{ userId, expiresAt }`）。

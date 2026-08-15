@@ -99,6 +99,36 @@ export const GroupSchema = z.object({
 });
 export type Group = z.infer<typeof GroupSchema>;
 
+/** POST /api/admin/users — 管理者によるユーザー作成（role は USER 固定） */
+export const CreateAdminUserRequestSchema = z.object({
+  email: z.email(),
+  password: z.string().min(8).max(128),
+  displayName: z.string().trim().min(1).max(50),
+});
+export type CreateAdminUserRequest = z.infer<
+  typeof CreateAdminUserRequestSchema
+>;
+
+/** POST /api/admin/groups — 管理者によるグループ作成 */
+export const CreateAdminGroupRequestSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+});
+export type CreateAdminGroupRequest = z.infer<
+  typeof CreateAdminGroupRequestSchema
+>;
+
+/** POST /api/admin/groups/:groupId/members — 所属追加 */
+export const AddGroupMemberRequestSchema = z.object({
+  userId: z.string().min(1),
+});
+export type AddGroupMemberRequest = z.infer<typeof AddGroupMemberRequestSchema>;
+
+/** GET /api/admin/groups — 全グループ + メンバー（管理用） */
+export const AdminGroupSchema = GroupSchema.extend({
+  members: z.array(UserSchema),
+});
+export type AdminGroup = z.infer<typeof AdminGroupSchema>;
+
 // ---- 学習記録 ---------------------------------------------------------------
 
 export const StudyRecordSchema = z.object({

@@ -86,6 +86,7 @@ test("ログアウト後は /login に戻る", async ({ page }) => {
 test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 	await loginAsAdmin(page);
 	await page.getByLabel("プロフィールメニュー").click();
+	await expect(page.getByRole("menuitem", { name: "グループユーザー管理" })).toBeVisible();
 	await page.getByRole("menuitem", { name: "通知管理" }).click();
 	await expect(page.getByRole("heading", { name: "通知管理" })).toBeVisible();
 
@@ -114,6 +115,7 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 	await page.getByLabel("プロフィールメニュー").click();
 	await expect(page.getByRole("menuitem", { name: "マイページ" })).toBeVisible();
 	await expect(page.getByRole("menuitem", { name: "通知管理" })).toHaveCount(0);
+	await expect(page.getByRole("menuitem", { name: "グループユーザー管理" })).toHaveCount(0);
 
 	await page.goto("/admin/notifications");
 	await expect(
@@ -123,4 +125,13 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 	const forbidden = await page.request.get("/api/admin/notifications");
 	expect(forbidden.status()).toBe(403);
 	expect(await forbidden.json()).toEqual({ error: "forbidden" });
+
+	await page.goto("/admin/groups");
+	await expect(
+		page.getByRole("heading", { name: "アクセスできません" }),
+	).toBeVisible();
+
+	const forbiddenGroups = await page.request.get("/api/admin/groups");
+	expect(forbiddenGroups.status()).toBe(403);
+	expect(await forbiddenGroups.json()).toEqual({ error: "forbidden" });
 });

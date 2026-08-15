@@ -1,6 +1,6 @@
 /**
  * ヘッダー用プロフィールメニュー。丸いアバターアイコンを押すと
- * 「マイページ」「通知管理（ADMINのみ）」「ログアウト」を選べるドロップダウンを表示する。
+ * 「マイページ」「グループユーザー管理 / 通知管理（ADMINのみ）」「ログアウト」を選べるドロップダウンを表示する。
  * ログアウトは確認ダイアログ付き。
  */
 import { Link } from "react-router";
@@ -64,9 +64,14 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
             マイページ
           </DropdownMenuItem>
           {isAdmin(user) ? (
-            <DropdownMenuItem render={<Link to="/admin/notifications" />}>
-              通知管理
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem render={<Link to="/admin/groups" />}>
+                グループユーザー管理
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link to="/admin/notifications" />}>
+                通知管理
+              </DropdownMenuItem>
+            </>
           ) : null}
           <DropdownMenuItem
             variant="destructive"
