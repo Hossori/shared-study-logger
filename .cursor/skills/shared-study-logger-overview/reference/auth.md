@@ -2,10 +2,10 @@
 
 [← SKILL.md](../SKILL.md)
 
-- **概要**: 固定アカウント方式（自己登録なし、管理者が事前にDBへ登録）。email/passwordでログインし、Cookie(`session`)ベースのセッション認証を行う。マイページで表示名・自己紹介・アバタープリセット・パスワードを変更できる。
+- **概要**: 固定アカウント方式（公開の自己登録なし。管理者が `/admin/groups` または seed/SQL で登録）。email/passwordでログインし、Cookie(`session`)ベースのセッション認証を行う。マイページで表示名・自己紹介・アバタープリセット・パスワードを変更でき、Push 通知の有効/無効を切り替えられる。
 - **関連ファイル**:
-  - Worker: `src/worker/lib/auth.ts`（PBKDF2ハッシュ生成・検証）、 `src/worker/lib/session.ts`（KVセッションCRUD）、 `src/worker/middleware/requireAuth.ts`（Cookie→KV検証→`c.set("user", ...)`）、 `src/worker/middleware/requireAdmin.ts`（`isAdmin` で 403。`/api/admin/notifications` に適用）、 `src/worker/routes/auth.ts`（`/login`,`/logout`,`/me`,`PATCH /me`,`POST /password`）、 `src/worker/lib/db.ts`（`toUser` / `updateUserProfile` / `updateUserPassword`）
-  - フロント: `src/react-app/features/auth/LoginPage.tsx`、 `src/react-app/features/auth/UserPage.tsx`（`/users/:userId`、自分=マイページ）、 `src/react-app/features/auth/MyPage.tsx`（`/mypage` → 自分の UserPage へ Navigate）、 `src/react-app/features/auth/EditProfileModal.tsx` / `ChangePasswordModal.tsx`、 `src/react-app/queries/useAuth.ts`（`useMeQuery`/`useLoginMutation`/ `useLogoutMutation` / `useUpdateProfileMutation` / `useChangePasswordMutation`）、 `src/react-app/queries/useUser.ts`（`GET /api/users/:userId`）
+  - Worker: `src/worker/lib/auth.ts`（PBKDF2ハッシュ生成・検証）、 `src/worker/lib/session.ts`（KVセッションCRUD）、 `src/worker/middleware/requireAuth.ts`（Cookie→KV検証→`c.set("user", ...)`）、 `src/worker/middleware/requireAdmin.ts`（`isAdmin` で 403。`/api/admin/*` に適用）、 `src/worker/routes/auth.ts`（`/login`,`/logout`,`/me`,`PATCH /me`,`POST /password`）、 `src/worker/routes/admin-directory.ts`（`POST /api/admin/users` で USER 作成）、 `src/worker/lib/db.ts`（`toUser` / `updateUserProfile` / `updateUserPassword` / `createUser`）
+  - フロント: `src/react-app/features/auth/LoginPage.tsx`、 `src/react-app/features/auth/UserPage.tsx`（`/users/:userId`、自分=マイページ。自分のときのみ Push 設定カード）、 `src/react-app/features/push/PushSettingsCard.tsx`、 `src/react-app/features/auth/MyPage.tsx`（`/mypage` → 自分の UserPage へ Navigate）、 `src/react-app/features/auth/EditProfileModal.tsx` / `ChangePasswordModal.tsx`、 `src/react-app/features/groups/AdminDirectoryPage.tsx`（管理者のユーザー追加）、 `src/react-app/queries/useAuth.ts`（`useMeQuery`/`useLoginMutation`/ `useLogoutMutation` / `useUpdateProfileMutation` / `useChangePasswordMutation`）、 `src/react-app/queries/useUser.ts`（`GET /api/users/:userId`）
   - Worker: `src/worker/routes/users.ts`（公開プロフィール、email なし）
   - 共通: `shared/schemas.ts`の`LoginRequestSchema`/`UserSchema`/`UserRoleSchema`/`isAdmin`/`parseUserRole`/ `UpdateProfileRequestSchema`/`ChangePasswordRequestSchema`、 `shared/avatars.ts`（プリセットキー・`getAvatarUrl`）
   - 静的アセット: `public/avatars/{1_avoidy,2_lavender,3_fever,4_born,5_innocence,6_stolen}.png`
@@ -15,5 +15,5 @@
 - **注意点・既知の制約**:
   - Cookieの`secure`属性は`new URL(c.req.url).protocol === "https:"`で動的判定している`src/worker/routes/auth.ts`）。`pnpm dev`（HTTP配信）でもブラウザにログインCookieが保存されるようにするための開発体験目的の変更で、本番(Cloudflare、常にHTTPS)の挙動には影響しない。Cookie属性を触る変更をする際はこの判定式を壊さないよう注意。
   - パスワードハッシュのロジックは`src/worker/lib/auth.ts`と`scripts/seed-users.mjs`で**完全に同一**である必要がある（片方だけ変更するとログインできなくなる）。
-  - 公開APIでのユーザー登録は存在しない。ユーザー追加は`scripts/seed-users.mjs`または直接SQL投入で行う運用。ロール変更もアプリUIからは行わず、D1 で `UPDATE users SET role = 'ADMIN' WHERE email = '...';` する。既存ユーザーのデフォルトは `USER`。ローカル seed の `admin@example.com` のみ `ADMIN`。
+  - 公開APIでのユーザー登録は存在しない。ユーザー追加は管理者画面（`/admin/groups` の「ユーザーを追加」）または`scripts/seed-users.mjs` / 直接SQL投入で行う。作成時の role は `USER` 固定。ロール変更もアプリUIからは行わず、D1 で `UPDATE users SET role = 'ADMIN' WHERE email = '...';` する。既存ユーザーのデフォルトは `USER`。ローカル seed の `admin@example.com` のみ `ADMIN`。
   - アバターはアップロード不可。プリセット選択のみ（キー一覧は`shared/avatars.ts`の`AVATAR_KEYS`）。未設定（`null`）は `UserAvatar` コンポーネントで Lucide アイコン表示。プリセット選択時は `getAvatarUrl(avatarKey)` で番号付き PNG パスを取得する。

@@ -27,7 +27,8 @@ export default function HeaderNotifications() {
         open={isModalOpen}
         onClose={closeModal}
         items={controller.items}
-        controller={controller}
+        pwa={controller.pwa}
+        dismiss={controller.dismiss}
       />
     </div>
   );

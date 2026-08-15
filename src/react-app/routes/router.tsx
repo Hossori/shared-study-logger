@@ -6,6 +6,7 @@
  * - `/users/:userId`: 認証必須のユーザーページ（自分=マイページ、他人=閲覧のみ）。
  * - `/mypage`: 自分のユーザーページへ Navigate。
  * - `/admin/notifications`: 管理者専用のアプリ内通知管理。USER は 403 画面。
+ * - `/admin/groups`: 管理者専用のグループ・ユーザー管理。USER は 403 画面。
  * - それ以外の全パス: 404画面。
  */
 import { createBrowserRouter } from "react-router";
@@ -18,6 +19,7 @@ import AdminRoute from "./AdminRoute";
 import HomePage from "./HomePage";
 import NotFoundPage from "./NotFoundPage";
 import AdminNotificationsPage from "../features/notifications/AdminNotificationsPage";
+import AdminDirectoryPage from "../features/groups/AdminDirectoryPage";
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +38,10 @@ export const router = createBrowserRouter([
           {
             path: "/admin/notifications",
             element: <AdminNotificationsPage />,
+          },
+          {
+            path: "/admin/groups",
+            element: <AdminDirectoryPage />,
           },
         ],
       },

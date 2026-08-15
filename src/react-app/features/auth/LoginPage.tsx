@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center px-4">
+    <div className="bg-background flex min-h-screen items-center justify-center pt-[max(1rem,var(--safe-area-inset-top))] pr-[max(1rem,var(--safe-area-inset-right))] pb-[max(1rem,var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))]">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <h1 className="font-heading text-2xl font-medium">学習記録シェア</h1>

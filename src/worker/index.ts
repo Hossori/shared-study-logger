@@ -6,6 +6,10 @@ import { usersRoutes } from "./routes/users";
 import { pushRoutes } from "./routes/push";
 import { notificationsRoutes } from "./routes/notifications";
 import { adminNotificationsRoutes } from "./routes/admin-notifications";
+import {
+  adminGroupsRoutes,
+  adminUsersRoutes,
+} from "./routes/admin-directory";
 import { requireAuth, type AuthVariables } from "./middleware/requireAuth";
 import { requireClientApiVersion } from "./middleware/requireClientApiVersion";
 import { getPushSubscriptionsForUser } from "./lib/db";
@@ -21,7 +25,7 @@ app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 
 // 認証必須: POST /api/auth/login と GET /api/push/vapid-public-key のみ公開。
 // それ以外の /api/auth/*（logout, me, PATCH /me, POST /password）と /api/push/subscribe、
-// /api/users/*、/api/notifications、/api/admin/notifications は各ルートファイル内で
+// /api/users/*、/api/notifications、/api/admin/* は各ルートファイル内で
 // requireAuth を個別に適用し、/api/groups 以下は丸ごと requireAuth 必須にする。
 // /api/admin/* はさらに requireAdmin（USER は 403）。
 app.route("/api/auth", authRoutes);
@@ -31,6 +35,8 @@ app.route("/api/groups", groupsRoutes);
 app.route("/api/groups", recordsRoutes);
 app.route("/api/push", pushRoutes);
 app.route("/api/notifications", notificationsRoutes);
+app.route("/api/admin/users", adminUsersRoutes);
+app.route("/api/admin/groups", adminGroupsRoutes);
 app.route("/api/admin/notifications", adminNotificationsRoutes);
 
 interface PushQueueDependencies {

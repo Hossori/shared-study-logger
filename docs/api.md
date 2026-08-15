@@ -21,6 +21,12 @@
 | POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
 | GET | `/api/notifications` | 必要 | 有効なアプリ内通知一覧（全ユーザー） |
+| GET | `/api/admin/users` | 必要+ADMIN | 全ユーザー一覧（email 含む） |
+| POST | `/api/admin/users` | 必要+ADMIN | ユーザー作成（`{ email, password, displayName }`。role は USER 固定） |
+| GET | `/api/admin/groups` | 必要+ADMIN | 全グループ一覧（所属不問。各グループに `members` を含む） |
+| POST | `/api/admin/groups` | 必要+ADMIN | グループ作成（`{ name }`） |
+| POST | `/api/admin/groups/:groupId/members` | 必要+ADMIN | グループへユーザーを所属追加（`{ userId }`） |
+| DELETE | `/api/admin/groups/:groupId/members/:userId` | 必要+ADMIN | グループからユーザーの所属を削除 |
 | GET | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の全件一覧 |
 | POST | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の作成 |
 | PATCH | `/api/admin/notifications/:id` | 必要+ADMIN | 有効/無効の切替（`{ enabled }`） |
@@ -30,10 +36,14 @@
 
 認証必須の適用箇所: `src/worker/index.ts` で `/api/groups/*` 全体に `requireAuth` を一括適用し、
 `/api/auth/logout`・`/me`・`PATCH /me`・`POST /password`、`/api/users/:userId`、
-`/api/push/subscribe`、`/api/notifications`、`/api/admin/notifications` は各ルートファイル内で
+`/api/push/subscribe`、`/api/notifications`、`/api/admin/users`、`/api/admin/groups`、
+`/api/admin/notifications` は各ルートファイル内で
 個別に `requireAuth` を適用している。
 `POST /api/auth/login` と `GET /api/auth/me` の `user` には `role`（`ADMIN` | `USER`）が含まれる。
-管理者専用 API（`/api/admin/notifications`）は `requireAuth` の後に `requireAdmin`（`src/worker/middleware/requireAdmin.ts`）を重ねる。USER は 403 `{ error: "forbidden" }`。
+管理者専用 API（`/api/admin/users`・`/api/admin/groups`・`/api/admin/notifications`）は
+`requireAuth` の後に `requireAdmin`（`src/worker/middleware/requireAdmin.ts`）を重ねる。USER は 403 `{ error: "forbidden" }`。
+`POST /api/admin/users` の email 重複は 409 `{ error: "email_taken" }`。既にメンバーなら 409 `{ error: "already_member" }`。
+所属削除でメンバーでない場合は 404 `{ error: "not_member" }`。グループ/ユーザー不存在は 404 `{ error: "not_found" }`。
 新しいエンドポイントを追加する際はどちらの方式にするか `index.ts` を確認すること。
 
 ## クライアントAPI版

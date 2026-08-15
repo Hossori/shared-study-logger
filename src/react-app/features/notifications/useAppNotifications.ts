@@ -15,7 +15,6 @@ export const PUSH_OPT_IN_NOTIFICATION_ID = "local:push-opt-in";
 export interface AppNotificationsController {
   items: AppNotificationItem[];
   badgeCount: number;
-  push: ReturnType<typeof useNotificationOptIn>;
   pwa: ReturnType<typeof usePwaInstall>;
   dismiss: (id: string) => void;
 }
@@ -64,7 +63,7 @@ export function useAppNotifications(): AppNotificationsController {
         id: PUSH_OPT_IN_NOTIFICATION_ID,
         kind: "push-opt-in",
         title: "通知を有効にする",
-        body: "グループメンバーの学習記録を Push で受け取れます。",
+        body: "グループメンバーの学習記録を Push で受け取れます。マイページから設定できます。",
         countsTowardBadge: true,
       });
     }
@@ -80,5 +79,5 @@ export function useAppNotifications(): AppNotificationsController {
 
   const badgeCount = items.filter((item) => item.countsTowardBadge).length;
 
-  return { items, badgeCount, push, pwa, dismiss };
+  return { items, badgeCount, pwa, dismiss };
 }
