@@ -94,14 +94,17 @@ jobs:
         env:
           CI: true
 
-  # Worker のロールバックは D1 のスキーマ変更を戻さないため、
-  # wrangler d1 migrations apply はここではなく d1-migrate.yml（手動承認）で行う。
-  deploy:
-    name: Deploy
+  # D1 と Worker は同じ承認済みリリースで直列に更新する。
+  # Time Travel の復旧ポイントを記録してから migrate し、同じコミットを deploy する。
+  release:
+    name: Release production
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [quality, unit, worker, e2e]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+    # GitHub Settings > Environments の production に Required reviewers と
+    # Cloudflare の本番用シークレットを設定する。
+    environment: production
     permissions:
       contents: read
     steps:
@@ -112,8 +115,52 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Required reviewer の承認待ち中に新しい main が push された場合、
+      # 古いコミットで migration / deploy することを防ぐ。
+      - name: Confirm this is the latest main commit
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+      # D1 Time Travel はデータを含む復旧履歴を Cloudflare 内に継続保存する。
+      # migration 前の bookmark を記録し、成功後に Worker だけを戻す必要がある場合も
+      # どの時点へ D1 を復元するか追跡できるようにする。
+      - name: Record pre-migration D1 recovery point
+        id: d1-recovery-point
+        shell: bash
+        run: |
+          timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          recovery_point="$(pnpm exec wrangler d1 time-travel info shared-study-logger-db --timestamp "$timestamp" --json)"
+          bookmark="$(jq -er '.bookmark // .result.bookmark' <<< "$recovery_point")"
+
+          {
+            echo "## D1 recovery point"
+            echo
+            echo "- Timestamp: \`$timestamp\`"
+            echo "- Bookmark: \`$bookmark\`"
+            echo "- Restore: \`wrangler d1 time-travel restore shared-study-logger-db --bookmark=$bookmark\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: List pending remote D1 migrations
+        run: pnpm exec wrangler d1 migrations list shared-study-logger-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Apply remote D1 migrations
+        # Wrangler は migration 成功後にも D1 バックアップを取得する。
+        run: pnpm exec wrangler d1 migrations apply shared-study-logger-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify remote D1 migrations
+        run: pnpm exec wrangler d1 migrations list shared-study-logger-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Build and deploy Worker
-        # pnpm deploy は pnpm 本体の CLI のため、スクリプトは pnpm run deploy を使う
+        # pnpm deploy は pnpm 本体の CLI のため、スクリプトは pnpm run deploy を使う。
         run: pnpm build && pnpm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
