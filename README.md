@@ -188,8 +188,23 @@ E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 
 ## デプロイ手順（概要）
 
-本番環境へのデプロイは以下の手順で行います。実行にはCloudflareアカウントへの
-`wrangler login`（認証）が必要です。
+`main` への push 後、CI（`.github/workflows/ci.yml`）が Quality / Unit / Worker / E2E に
+成功すると、承認済みの production release が D1 と Worker を次の順で更新します。
+
+1. D1 Time Travel のデータを含む migration 前の復旧ポイントを記録する
+2. リモート D1 マイグレーションを適用し、未適用がないことを確認する
+3. 同じコミットの Worker と静的アセットをデプロイする（`pnpm build && pnpm run deploy`）
+
+Time Travel の復旧ポイントと、Wrangler が migration 成功後に作成するバックアップを利用するため、
+通常のリリースでは SQL dump の外部保管は行いません。
+
+GitHub リポジトリの Secrets に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
+トークンは対象アカウントに限定し、Worker デプロイには Workers Scripts: Edit、
+D1 適用には D1 Edit を付与します（既存バインディング利用時に不足すれば KV / Queues の
+必要最小権限を追加）。これらは GitHub Environment `production` のシークレットとして設定し、
+Required reviewers を有効にしてください。
+
+ローカルから直接デプロイする場合は Cloudflare への `wrangler login` が必要です。
 
 ### 1. 本番シークレットの設定
 
@@ -205,11 +220,24 @@ pnpm exec wrangler secret put VAPID_ADMIN_CONTACT
 公開鍵（Push購読時の`applicationServerKey`。`GET /api/push/vapid-public-key`経由で
 サーバーから取得しているため、フロントのコード変更は不要）も本番用に切り替わることを確認してください。
 
-### 2. 本番D1マイグレーションの適用
+### 2. production release の設定と実行
+
+GitHub Settings → Environments に `production` を作成し、Required reviewers と
+`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を設定します。`develop` から `main` への
+マージ後、CI の **Release production** ジョブは承認を待機し、承認されると D1 migration と
+Worker deploy を同じコミットで直列実行します。
+承認待ち中に新しい `main` が push された古い release は、D1 を変更せず失敗します。
+
+Release summary には migration 前の Time Travel bookmark と復元コマンドが記録されます。
+復元は破壊的操作のため、Worker のロールバックだけで復旧できない場合に、影響範囲を確認して
+実行してください。
 
 ```bash
-pnpm exec wrangler d1 migrations apply shared-study-logger-db --remote
+pnpm exec wrangler d1 time-travel restore shared-study-logger-db --bookmark=<bookmark>
 ```
+
+緊急時にローカルから D1 を直接操作する場合も、事前に Time Travel の復旧ポイントを確認し、
+自動 release と並行させないでください。
 
 ### 3. 本番シードの投入（任意）
 
@@ -222,10 +250,15 @@ node scripts/seed-users.mjs --remote
 
 ### 4. デプロイ
 
+通常は `develop` → `main` のマージ（`main` への push）で、承認後に D1 migration と
+Worker deploy が順に実行されます。
+ローカルから出す場合:
+
 ```bash
-pnpm deploy
+pnpm build && pnpm run deploy
 ```
 
+（`pnpm deploy` は pnpm 本体の CLI のため、スクリプト実行は `pnpm run deploy` を使います。）
 内部的に `wrangler deploy` を実行し、Workerと静的アセット（`dist/client`）をまとめて
 Cloudflareにアップロードします。デプロイ後は発行されたURLで、ログイン〜記録投稿〜
 Push通知有効化までのE2E動作確認を行うことを推奨します。
