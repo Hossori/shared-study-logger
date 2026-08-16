@@ -45,8 +45,7 @@ export default function PushSettingsCard() {
         {status === "ios-add-to-home" ? (
           <Alert>
             <AlertDescription>
-              通知を受け取るには、Safari
-              の共有ボタンから「ホーム画面に追加」し、追加したアイコンからこのアプリを開いてください。
+              通知を受け取るには、ブラウザの共有ボタンから「ホーム画面に追加」し、追加したアイコンからこのアプリを開いてください。
             </AlertDescription>
           </Alert>
         ) : null}

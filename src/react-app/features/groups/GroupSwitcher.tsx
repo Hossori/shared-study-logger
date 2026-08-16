@@ -1,14 +1,21 @@
 /**
- * 所属グループの切替UI（記録一覧ツールバー用セレクトボックス）。
+ * 所属グループの切替UI（記録一覧ツールバー用）。
+ * 複数所属時はドロップダウン、1件のみならグループ名の表示だけにする。
  */
 import { useEffect } from "react";
 import { useGroupsQuery } from "../../queries/useGroups";
 import { useUiStore } from "../../stores/uiStore";
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronsUpDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 export default function GroupSwitcher() {
   const { data: groups, isLoading } = useGroupsQuery();
@@ -33,26 +40,40 @@ export default function GroupSwitcher() {
     );
   }
 
-  if (groups.length === 1) {
-    return (
-      <span className="truncate text-sm font-semibold sm:text-base">
-        {groups[0].name}
-      </span>
-    );
-  }
+  const selectedGroupName =
+    (selectedGroupId
+      ? groups.find((group) => group.id === selectedGroupId)?.name
+      : groups[0].name) ?? "";
 
   return (
-    <NativeSelect
-      value={selectedGroupId ?? ""}
-      onChange={(e) => setSelectedGroupId(e.target.value)}
-      aria-label="グループ切替"
-      className="w-full max-w-xs"
-    >
-      {groups.map((group) => (
-        <NativeSelectOption key={group.id} value={group.id}>
-          {group.name}
-        </NativeSelectOption>
-      ))}
-    </NativeSelect>
+    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+      <span className="truncate">{selectedGroupName}</span>
+      {groups.length > 1 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger aria-label="グループ切替">
+            <Badge variant="outline">
+              <span className="text-muted-foreground">切り替え</span>
+              <ChevronsUpDown className="text-muted-foreground" />
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-w-4/5 min-w-fit">
+            <DropdownMenuGroup>
+              <DropdownMenuRadioGroup
+                value={selectedGroupId ?? groups[0].id}
+                onValueChange={(value: string) => {
+                  if (value) setSelectedGroupId(value);
+                }}
+              >
+                {groups.map((group) => (
+                  <DropdownMenuRadioItem key={group.id} value={group.id}>
+                    {group.name}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </span>
   );
 }

@@ -29,3 +29,8 @@
 - **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
   Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
   ログイン画面で使い、通常の padding と inset の大きい方を取る。
+- **テーマ**: `html.dark` クラスで切替（`prefers-color-scheme` メディアクエリだけにしない）。
+  未保存時は OS 設定に従い、明示選択は `localStorage` の `theme` キー。FOUC 防止のため
+  `index.html` 先頭のインラインスクリプトが React 起動前にクラスと `theme-color` を合わせる。
+  実装の正本は `src/react-app/lib/theme.ts`。`manifest.webmanifest` の `theme_color` は
+  インストール時の初期値で、実行中のバー色は `theme-color` メタが優先される。

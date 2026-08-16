@@ -14,6 +14,7 @@
 - 固定アカウント方式のログイン／ログアウト（事前に管理者が登録したユーザーのみ利用可能）
 - 所属グループの切り替え（複数グループに所属している場合）
 - 学習記録の投稿（勉強日時・タイトル・メモ）とカーソルページネーションによる一覧表示
+- ライト / ダークテーマ切替（未保存時は OS の `prefers-color-scheme` に従う）
 - 記録投稿時、同じグループの他メンバーへ Web Push 通知を送信（Cloudflare Queues 経由）
 - PWA 対応（ホーム画面への追加、Service Worker によるオフラインキャッシュ、Push 通知受信）
 
@@ -55,9 +56,9 @@ shared-study-logger/
       queries/           # TanStack Queryフック
       features/          # 認証・グループ切替・記録一覧/投稿・通知UI（ドメイン固有ロジック）
       routes/            # react-router定義・認証ガード(ProtectedRoute/GuestRoute)・404/HomePage
-      components/        # 横断的なUI（Layout, LoadingScreen）
+      components/        # 横断的なUI（Layout, LoadingScreen, ThemeToggle）
       components/ui/     # ドメイン非依存の汎用UI部品（Button, FormField, ErrorMessage）
-      lib/               # api.ts(axios) / push.ts / cn.ts(clsxラッパー)
+      lib/               # api.ts(axios) / push.ts / cn.ts(clsxラッパー) / theme.ts
   shared/
     schemas.ts         # Zodスキーマ（Worker/フロント共通）
   migrations/           # D1マイグレーション

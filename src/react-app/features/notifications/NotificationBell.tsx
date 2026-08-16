@@ -26,7 +26,7 @@ export default function NotificationBell({
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="icon-lg"
       className="relative rounded-full"
       aria-label={label}
