@@ -177,6 +177,21 @@ E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 生成されます。ビルド時に `sw.mjs`（コンパイル後の生ソース）と `sw.js`（マニフェスト注入後の最終版）の
 両方が出力されますが、実際に登録されるのは `sw.js` です（`src/react-app/main.tsx`参照）。
 
+## PWA更新とAPI互換性
+
+クライアントの変更で新しいService Workerが待機状態になると、アプリは「更新して再読み込み」を
+表示します。更新操作は新SWを有効化してから再読み込みするため、ログインの `session` Cookie は
+維持されたまま最新画面へ戻ります。通常のブラウザ再読み込みだけでは待機中のSWは有効化されません。
+
+API互換性を壊す変更では、`shared/client-api-version.ts` の
+`CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を同じ新しい値へ更新します。
+Workerは旧版・版ヘッダなしのAPI呼び出しを426 `client_update_required`で副作用前に拒否します。
+
+初回はブリッジリリースとして最小受け入れ版を `null`（強制なし）のままデプロイし、既存PWAへ更新UIを配布します。
+移行マーカーを持たない既存PWAだけは自動再読み込みされるため、未保存入力が失われる可能性があります。
+以後は利用者の明示操作でのみ更新します。問題時は、Workerを後方互換な版へ戻すか、
+`MIN_SUPPORTED_CLIENT_API_VERSION` を下げて旧クライアントを再許可します。
+
 ## サンプルログイン情報（開発用）
 
 - email: `admin@example.com`

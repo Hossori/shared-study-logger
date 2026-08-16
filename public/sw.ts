@@ -8,8 +8,15 @@
  */
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import type { PrecacheEntry } from "workbox-precaching";
-import { NOTIFICATION_CLICK_MESSAGE_TYPE } from "../shared/sw-messages";
+import {
+  isSkipWaitingMessage,
+  NOTIFICATION_CLICK_MESSAGE_TYPE,
+} from "../shared/sw-messages";
 import { getStudyRecordNotificationTag } from "../shared/notification-tags";
+import {
+  CLIENT_API_VERSION,
+  CLIENT_API_VERSION_HEADER,
+} from "../shared/client-api-version";
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;
@@ -18,12 +25,67 @@ declare const self: ServiceWorkerGlobalScope & {
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+// 旧版PWAだけを一度だけ即時更新するための Cache Storage マーカー。
+// 通常更新は待機させ、クライアントの明示操作でのみ有効化する。
+const PWA_UPDATE_MIGRATION_CACHE = "shared-study-logger:pwa-update-bridge";
+const PWA_UPDATE_MIGRATION_MARKER_URL = new URL(
+  "/__pwa-update-bridge-complete__",
+  self.location.origin,
+).toString();
+
+async function hasPwaUpdateMigrationMarker(): Promise<boolean> {
+  const cache = await caches.open(PWA_UPDATE_MIGRATION_CACHE);
+  return Boolean(await cache.match(PWA_UPDATE_MIGRATION_MARKER_URL));
+}
+
+async function savePwaUpdateMigrationMarker(): Promise<void> {
+  const cache = await caches.open(PWA_UPDATE_MIGRATION_CACHE);
+  await cache.put(
+    PWA_UPDATE_MIGRATION_MARKER_URL,
+    new Response("pwa-update-bridge-complete"),
+  );
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    hasPwaUpdateMigrationMarker().then((hasMarker) => {
+      if (!hasMarker) return self.skipWaiting();
+    }),
+  );
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const requiresMigration = !(await hasPwaUpdateMigrationMarker());
+      await self.clients.claim();
+
+      if (requiresMigration) {
+        const windowClients = await self.clients.matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        });
+        await Promise.all(
+          windowClients.map((client) => {
+            if (!("navigate" in client)) return Promise.resolve(null);
+            return (client as WindowClient).navigate(client.url).catch(
+              () => null,
+            );
+          }),
+        );
+
+        // 旧PWAのブリッジが完了してから通常更新を waiting に戻す。
+        await savePwaUpdateMigrationMarker();
+      }
+    })(),
+  );
+});
+
+// 待機中の Worker はクライアントが明示的に要求した時だけ有効化する。
+self.addEventListener("message", (event) => {
+  if (isSkipWaitingMessage(event.data)) {
+    event.waitUntil(self.skipWaiting());
+  }
 });
 
 interface PushNotificationPayload {
@@ -114,9 +176,12 @@ self.addEventListener("pushsubscriptionchange", (event) => {
   pushEvent.waitUntil(
     (async () => {
       try {
-        const { publicKey } = await fetch("/api/push/vapid-public-key").then(
-          (res) => res.json() as Promise<{ publicKey: string }>,
-        );
+        const { publicKey } = await fetch("/api/push/vapid-public-key", {
+          headers: { [CLIENT_API_VERSION_HEADER]: CLIENT_API_VERSION },
+        }).then((res) => {
+          if (!res.ok) throw new Error("Failed to get VAPID public key");
+          return res.json() as Promise<{ publicKey: string }>;
+        });
         const newSubscription = await self.registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -125,7 +190,10 @@ self.addEventListener("pushsubscriptionchange", (event) => {
         await fetch("/api/push/subscribe", {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            [CLIENT_API_VERSION_HEADER]: CLIENT_API_VERSION,
+          },
           body: JSON.stringify({
             endpoint: newSubscription.endpoint,
             keys: {
@@ -135,7 +203,10 @@ self.addEventListener("pushsubscriptionchange", (event) => {
           }),
         });
       } catch (error) {
-        console.error("Failed to resubscribe after pushsubscriptionchange", error);
+        console.error(
+          "Failed to resubscribe after pushsubscriptionchange",
+          error,
+        );
       }
     })(),
   );

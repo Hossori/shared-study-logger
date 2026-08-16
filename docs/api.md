@@ -45,3 +45,24 @@
 `POST /api/admin/users` の email 重複は 409 `{ error: "email_taken" }`。既にメンバーなら 409 `{ error: "already_member" }`。
 所属削除でメンバーでない場合は 404 `{ error: "not_member" }`。グループ/ユーザー不存在は 404 `{ error: "not_found" }`。
 新しいエンドポイントを追加する際はどちらの方式にするか `index.ts` を確認すること。
+
+## クライアントAPI版
+
+ブラウザアプリとService Workerは、全APIリクエストに
+`X-Client-Api-Version` を付与する。値の正本は
+`shared/client-api-version.ts` の `CLIENT_API_VERSION` である。
+
+API互換性を壊すリリースでは、同ファイルの
+`MIN_SUPPORTED_CLIENT_API_VERSION` を現行クライアント版まで引き上げる。値が最小版未満、
+欠落、または不正なリクエストは、認証・ルートハンドラより前に次を返し、DBなどの副作用を
+実行しない。
+
+```json
+{
+  "error": "client_update_required",
+  "minimumClientApiVersion": "2.0.0"
+}
+```
+
+ステータスは `426 Upgrade Required`、レスポンスは `Cache-Control: no-store` とする。
+ブリッジリリースでは最小版を `null` にして版検証を無効化し、更新UIを配布してから強制する。
