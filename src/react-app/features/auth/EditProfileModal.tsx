@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
+  DialogButtonArea,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -188,7 +188,7 @@ export default function EditProfileModal({
             )}
           </FieldGroup>
 
-          <DialogFooter>
+          <DialogButtonArea>
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
@@ -202,7 +202,7 @@ export default function EditProfileModal({
                 "保存"
               )}
             </Button>
-          </DialogFooter>
+          </DialogButtonArea>
         </form>
       </DialogContent>
     </Dialog>

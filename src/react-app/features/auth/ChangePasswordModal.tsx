@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
+  DialogButtonArea,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -228,7 +228,7 @@ export default function ChangePasswordModal({
             )}
           </FieldGroup>
 
-          <DialogFooter>
+          <DialogButtonArea>
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
@@ -242,7 +242,7 @@ export default function ChangePasswordModal({
                 "変更する"
               )}
             </Button>
-          </DialogFooter>
+          </DialogButtonArea>
         </form>
       </DialogContent>
     </Dialog>

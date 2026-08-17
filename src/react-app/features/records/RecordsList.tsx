@@ -6,7 +6,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { NotebookPen, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
 import { useMeQuery } from "../../queries/useAuth";
 import {
@@ -27,7 +27,6 @@ import {
   Empty,
   EmptyDescription,
   EmptyHeader,
-  EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -132,9 +131,6 @@ function EmptyRecordsMessage() {
   return (
     <Empty>
       <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <NotebookPen />
-        </EmptyMedia>
         <EmptyTitle>まだ学習記録がありません</EmptyTitle>
         <EmptyDescription className="sm:hidden">
           右下の追加ボタンから最初の記録を投稿しましょう。
@@ -149,19 +145,22 @@ function EmptyRecordsMessage() {
 
 function RecordsToolbar() {
   const openPostModal = useUiStore((state) => state.openPostModal);
+  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
       <div className="min-w-0 flex-1">
         <GroupSwitcher />
       </div>
-      <Button
-        onClick={openPostModal}
-        className="hidden shrink-0 sm:inline-flex"
-      >
-        <Plus data-icon="inline-start" aria-hidden />
-        記録を追加
-      </Button>
+      {selectedGroupId && (
+        <Button
+          onClick={openPostModal}
+          className="hidden shrink-0 sm:inline-flex"
+        >
+          <Plus data-icon="inline-start" aria-hidden />
+          記録を追加
+        </Button>
+      )}
     </div>
   );
 }

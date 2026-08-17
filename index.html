@@ -1,22 +1,53 @@
 <!doctype html>
 <html lang="ja">
-	<head>
-		<meta charset="UTF-8" />
-		<link rel="icon" type="image/png" href="/icons/icon-192.png" />
-		<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-		<link rel="manifest" href="/manifest.webmanifest" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-		<meta name="theme-color" content="#171717" />
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-		<meta name="apple-mobile-web-app-title" content="学習記録" />
-		<meta name="description" content="グループで学習記録を共有し、投稿をPush通知でお知らせするアプリ" />
-		<title>学習記録シェア</title>
-	</head>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // src/react-app/lib/theme.ts の THEME_STORAGE_KEY と同じキー
+      // 未保存時は prefers-color-scheme に従う
+      (function () {
+        var stored = null;
+        try {
+          stored = localStorage.getItem("theme");
+        } catch {}
+        var preferDark = false;
+        try {
+          preferDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+        } catch {}
+        var isDark = stored === "dark" || (stored !== "light" && preferDark);
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+        }
+        var themeColor = document.querySelector('meta[name="theme-color"]');
+        if (themeColor) {
+          // src/react-app/lib/theme.ts の THEME_COLOR_HEX と同じ値
+          themeColor.setAttribute("content", isDark ? "#1c252d" : "#f4f7f8");
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f4f7f8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="学習記録" />
+    <meta
+      name="description"
+      content="グループで学習記録を共有し、投稿をPush通知でお知らせするアプリ"
+    />
+    <title>学習記録シェア</title>
+  </head>
 
-	<body>
-		<div id="root"></div>
-		<script type="module" src="/src/react-app/main.tsx"></script>
-	</body>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/react-app/main.tsx"></script>
+  </body>
 </html>
