@@ -210,8 +210,16 @@ UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
 
 ## デプロイ手順（概要）
 
-`main` への push 後、CI（`.github/workflows/ci.yml`）が Quality / Unit / Worker / E2E に
-成功すると、承認済みの production release が D1 と Worker を次の順で更新します。
+`main` 上のコミットに SemVer タグ（`vX.Y.Z`）を push すると、CI（`.github/workflows/ci.yml`）が
+Quality / Unit / Worker / E2E に成功したあと、production release が D1 と Worker を次の順で
+更新します。`develop` → `main` のマージだけでは本番は更新されません。
+
+```bash
+git checkout main
+git pull origin main
+git tag -a v1.1.0 -m "Release v1.1.0"
+git push origin v1.1.0
+```
 
 1. D1 Time Travel のデータを含む migration 前の復旧ポイントを記録する
 2. リモート D1 マイグレーションを適用し、未適用がないことを確認する
@@ -223,8 +231,8 @@ Time Travel の復旧ポイントと、Wrangler が migration 成功後に作成
 GitHub リポジトリの Secrets に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
 トークンは対象アカウントに限定し、Worker デプロイには Workers Scripts: Edit、
 D1 適用には D1 Edit を付与します（既存バインディング利用時に不足すれば KV / Queues の
-必要最小権限を追加）。これらは GitHub Environment `production` のシークレットとして設定し、
-Required reviewers を有効にしてください。
+必要最小権限を追加）。これらは GitHub Environment `production` のシークレットとして設定します。
+タグ push がリリース意思になるため、Required reviewers は不要です。
 
 ローカルから直接デプロイする場合は Cloudflare への `wrangler login` が必要です。
 
@@ -244,11 +252,13 @@ pnpm exec wrangler secret put VAPID_ADMIN_CONTACT
 
 ### 2. production release の設定と実行
 
-GitHub Settings → Environments に `production` を作成し、Required reviewers と
-`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を設定します。`develop` から `main` への
-マージ後、CI の **Release production** ジョブは承認を待機し、承認されると D1 migration と
-Worker deploy を同じコミットで直列実行します。
-承認待ち中に新しい `main` が push された古い release は、D1 を変更せず失敗します。
+GitHub Settings → Environments に `production` を作成し、
+`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を設定します。
+`main` 上のコミットへ `vX.Y.Z` タグを push すると、CI の **Release production** ジョブが
+Quality / Unit / Worker / E2E 成功後に D1 migration と Worker deploy を同じコミットで
+直列実行します。タグ先が `origin/main` に含まれない場合、D1 を変更せず失敗します。
+本番デプロイの起点は `git push origin vX.Y.Z` です。Releases UI でリリースノートを付ける場合は、
+先にタグを push してから既存タグで Release を作成してください。
 
 Release summary には migration 前の Time Travel bookmark と復元コマンドが記録されます。
 復元は破壊的操作のため、Worker のロールバックだけで復旧できない場合に、影響範囲を確認して
@@ -272,7 +282,7 @@ node scripts/seed-users.mjs --remote
 
 ### 4. デプロイ
 
-通常は `develop` → `main` のマージ（`main` への push）で、承認後に D1 migration と
+通常は `main` 上のコミットに `vX.Y.Z` タグを push すると、D1 migration と
 Worker deploy が順に実行されます。
 ローカルから出す場合:
 
