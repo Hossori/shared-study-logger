@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
+  DialogButtonArea,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -53,7 +53,7 @@ export default function RecordModalShell({
 
           {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
 
-          <DialogFooter>
+          <DialogButtonArea>
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
@@ -67,7 +67,7 @@ export default function RecordModalShell({
                 submitLabel
               )}
             </Button>
-          </DialogFooter>
+          </DialogButtonArea>
         </form>
       </DialogContent>
     </Dialog>

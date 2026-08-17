@@ -31,7 +31,7 @@ async function loginWith(
 	await page.locator("#email").fill(email);
 	await page.locator("#password").fill(password);
 	await page.getByRole("button", { name: "ログイン" }).click();
-	await expect(page.getByRole("heading", { name: "学習記録" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "📚 学習記録シェア" })).toBeVisible();
 }
 
 export async function openPostModal(page: Page): Promise<void> {

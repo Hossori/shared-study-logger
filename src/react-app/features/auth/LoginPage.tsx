@@ -15,6 +15,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "../../components/ui/ErrorMessage";
+import ThemeToggle from "../../components/ThemeToggle";
 
 function loginErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -37,6 +38,9 @@ export default function LoginPage() {
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center pt-[max(1rem,var(--safe-area-inset-top))] pr-[max(1rem,var(--safe-area-inset-right))] pb-[max(1rem,var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))]">
+      <div className="fixed top-[max(0.75rem,var(--safe-area-inset-top))] right-[max(0.75rem,var(--safe-area-inset-right))] z-20">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <h1 className="font-heading text-2xl font-medium">学習記録シェア</h1>

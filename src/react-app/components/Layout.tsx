@@ -1,7 +1,7 @@
 /**
  * 共通ヘッダーとメイン領域。
  *
- * - ヘッダ: ロゴ（ホームへ）・通知（ベル/バッジ/モーダル）・プロフィールメニュー
+ * - ヘッダ: ロゴ（ホームへ）・テーマ切替・通知（ベル/バッジ/モーダル）・プロフィールメニュー
  * - グループ切替・「記録を追加」は記録一覧画面側に置く
  * - モバイル FAB は `showRecordActions` が true のときのみ（記録一覧表示中）
  *
@@ -9,13 +9,14 @@
  */
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Plus } from "lucide-react";
 import type { User } from "../../../shared/schemas";
 import { Button } from "@/components/ui/button";
 import { useUiStore } from "../stores/uiStore";
 import HeaderNotifications from "../features/notifications/HeaderNotifications";
 import PostRecordModal from "../features/records/PostRecordModal";
 import ProfileMenu from "./ProfileMenu";
+import ThemeToggle from "./ThemeToggle";
+import { Plus } from "lucide-react";
 
 interface LayoutProps {
   user: User;
@@ -39,10 +40,11 @@ export default function Layout({
             to="/"
             className="text-foreground hover:text-primary shrink-0 text-base font-bold transition sm:text-lg"
           >
-            <h1 className="text-inherit">📚 学習記録</h1>
+            <h1 className="text-inherit">📚 学習記録シェア</h1>
           </Link>
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ThemeToggle />
             <HeaderNotifications />
             <ProfileMenu user={user} />
           </div>

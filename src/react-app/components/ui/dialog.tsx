@@ -89,29 +89,22 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DialogFooter({
+function DialogButtonArea({
   className,
-  showCloseButton = false,
   children,
   ...props
-}: React.ComponentProps<"div"> & {
-  showCloseButton?: boolean;
-}) {
+}: React.ComponentProps<"div">) {
   return (
     <div
-      data-slot="dialog-footer"
+      data-slot="dialog-button-area"
       className={cn(
-        "bg-muted/50 -mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t p-4 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex flex-row gap-2 rounded-b-xl p-4",
+        "*:data-[slot=button]:min-w-0 *:data-[slot=button]:flex-1",
         className,
       )}
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
-        </DialogPrimitive.Close>
-      )}
     </div>
   );
 }
@@ -150,7 +143,7 @@ export {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
+  DialogButtonArea,
   DialogHeader,
   DialogOverlay,
   DialogPortal,
