@@ -2,7 +2,11 @@
  * Workers 統合テスト用ヘルパー（seed・Cookie）。
  * 固定アカウント方針は `.cursor/skills/testing-strategy/SKILL.md` を参照。
  */
-import { env } from "cloudflare:workers";
+import { env, exports } from "cloudflare:workers";
+import {
+	CLIENT_API_VERSION,
+	CLIENT_API_VERSION_HEADER,
+} from "../../shared/client-api-version";
 import { hashPassword } from "../../src/worker/lib/auth";
 
 export const SEED = {
@@ -25,6 +29,26 @@ export const SEED = {
 } as const;
 
 const FIXED_SALT = "00112233445566778899aabbccddeeff";
+
+/**
+ * 本番Workerを呼ぶ統合テストは常に現行クライアントとして扱う。
+ * 版不一致を検証するテストだけは、意図してこの関数を使わずに raw fetch を呼ぶ。
+ */
+export function withCurrentClientApiVersion(
+	input: RequestInfo | URL,
+	init?: RequestInit,
+): Request {
+	const request = new Request(input, init);
+	request.headers.set(CLIENT_API_VERSION_HEADER, CLIENT_API_VERSION);
+	return request;
+}
+
+export function workerFetch(
+	input: RequestInfo | URL,
+	init?: RequestInit,
+): Promise<Response> {
+	return exports.default.fetch(withCurrentClientApiVersion(input, init));
+}
 
 export async function seedMinimalDb(): Promise<void> {
 	const adminHash = await hashPassword(SEED.admin.password, FIXED_SALT);
