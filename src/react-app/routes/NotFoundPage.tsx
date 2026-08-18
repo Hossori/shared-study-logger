@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFoundPage() {
   return (
-    <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+    <div className="bg-background flex min-h-dvh flex-col items-center justify-center gap-3 px-4 text-center">
       <p className="text-muted-foreground text-6xl font-bold">404</p>
       <h1 className="text-xl font-semibold">ページが見つかりません</h1>
       <p className="text-muted-foreground text-sm">

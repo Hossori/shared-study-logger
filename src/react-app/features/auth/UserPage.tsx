@@ -118,7 +118,6 @@ export default function UserPage() {
 
       {isSelf && editOpen && (
         <EditProfileModal
-          key={`${me.displayName}|${me.bio ?? ""}|${me.avatarKey ?? ""}`}
           initialDisplayName={me.displayName}
           initialBio={me.bio ?? ""}
           initialAvatarKey={me.avatarKey}

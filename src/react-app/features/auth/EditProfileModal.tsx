@@ -62,7 +62,7 @@ export default function EditProfileModal({
     resetUpdateProfile();
   }, [resetUpdateProfile]);
 
-  const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDisplayNameError(null);
     const trimmedName = displayName.trim();
@@ -71,18 +71,16 @@ export default function EditProfileModal({
       return;
     }
 
-    updateProfileMutation.mutate(
-      {
+    try {
+      await updateProfileMutation.mutateAsync({
         displayName: trimmedName,
         bio: bio.trim() ? bio.trim() : null,
         avatarKey,
-      },
-      {
-        onSuccess: () => {
-          onClose();
-        },
-      },
-    );
+      });
+      onClose();
+    } catch {
+      // エラーメッセージは mutation.isError から表示する
+    }
   };
 
   const displayNameInvalid = Boolean(displayNameError);
