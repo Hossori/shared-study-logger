@@ -1,21 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { env, exports } from "cloudflare:workers";
+import { env } from "cloudflare:workers";
 import { Hono } from "hono";
 import { requireAdmin } from "../../src/worker/middleware/requireAdmin";
 import {
 	requireAuth,
 	type AuthVariables,
 } from "../../src/worker/middleware/requireAuth";
-import { loginAs, SEED, seedMinimalDb } from "./helpers";
-
-const workerFetch = exports.default.fetch.bind(exports.default);
+import { loginAs, SEED, seedMinimalDb, workerFetch } from "./helpers";
 
 describe("auth routes", () => {
 	beforeEach(async () => {
 		await seedMinimalDb();
 	});
 
-	it("login succeeds and me returns user", async () => {
+	it("current client can log in and retrieve the authenticated user", async () => {
 		const { cookie, response: loginRes } = await loginAs(
 			workerFetch,
 			SEED.admin.email,

@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { exports } from "cloudflare:workers";
-import { loginAs, SEED, seedMinimalDb } from "./helpers";
-
-const workerFetch = exports.default.fetch.bind(exports.default);
+import { loginAs, SEED, seedMinimalDb, workerFetch } from "./helpers";
 
 describe("admin directory routes", () => {
 	beforeEach(async () => {

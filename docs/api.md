@@ -60,7 +60,7 @@ API互換性を壊すリリースでは、同ファイルの
 ```json
 {
   "error": "client_update_required",
-  "minimumClientApiVersion": "2.0.0"
+  "minimumClientApiVersion": "<minimum-supported-client-api-version>"
 }
 ```
 

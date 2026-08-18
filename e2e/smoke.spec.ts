@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { loginAsAdmin, loginAsUser, openPostModal, SEED_ADMIN } from "./helpers";
+import {
+	currentClientApiVersionHeaders,
+	loginAsAdmin,
+	loginAsUser,
+	openPostModal,
+	SEED_ADMIN,
+} from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -42,6 +48,7 @@ test("ログイン成功でグループ切替が表示される", async ({ page 
 	await expect(
 		page.getByRole("heading", { name: "アプリの更新が必要です" }),
 	).toBeVisible();
+	await expect(page).toHaveURL(/\/$/);
 });
 
 test("学習記録を投稿できる", async ({ page }) => {
@@ -139,7 +146,9 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 		page.getByRole("heading", { name: "アクセスできません" }),
 	).toBeVisible();
 
-	const forbidden = await page.request.get("/api/admin/notifications");
+	const forbidden = await page.request.get("/api/admin/notifications", {
+		headers: currentClientApiVersionHeaders(),
+	});
 	expect(forbidden.status()).toBe(403);
 	expect(await forbidden.json()).toEqual({ error: "forbidden" });
 
@@ -148,7 +157,9 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 		page.getByRole("heading", { name: "アクセスできません" }),
 	).toBeVisible();
 
-	const forbiddenGroups = await page.request.get("/api/admin/groups");
+	const forbiddenGroups = await page.request.get("/api/admin/groups", {
+		headers: currentClientApiVersionHeaders(),
+	});
 	expect(forbiddenGroups.status()).toBe(403);
 	expect(await forbiddenGroups.json()).toEqual({ error: "forbidden" });
 });

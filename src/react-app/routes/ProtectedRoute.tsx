@@ -8,6 +8,7 @@
  */
 import { Navigate, Outlet } from "react-router";
 import type { User } from "../../../shared/schemas";
+import { getClientApiUpdateRequiredEvent } from "../lib/clientApiUpdateRequired";
 import { useMeQuery } from "../queries/useAuth";
 import LoadingScreen from "../components/LoadingScreen";
 
@@ -18,7 +19,9 @@ export interface AuthenticatedOutletContext {
 export default function ProtectedRoute() {
   const { data: user, isLoading } = useMeQuery();
 
-  if (isLoading) {
+  // 426はセッション失効ではない。App直下の必須更新ダイアログを維持し、/loginへの
+  // リダイレクトでログアウトしたように見せない。
+  if (isLoading || getClientApiUpdateRequiredEvent()) {
     return <LoadingScreen />;
   }
 

@@ -3,13 +3,13 @@
  *
  * pre-release や build metadata は API 互換性の判定対象にしないため受け付けない。
  */
-export const CLIENT_API_VERSION = "1.0.0";
+export const CLIENT_API_VERSION = "2.0.0";
 
 /**
- * `null` は最小対応版の強制を無効にする。
- * 初回ブリッジの間は、旧クライアントを 426 で拒否しない。
+ * 受け入れる最小クライアント API 版。
+ * 旧版・ヘッダ欠落・不正な版は 426 で拒否する。
  */
-export const MIN_SUPPORTED_CLIENT_API_VERSION: string | null = null;
+export const MIN_SUPPORTED_CLIENT_API_VERSION = "2.0.0";
 
 export const CLIENT_API_VERSION_HEADER = "X-Client-Api-Version";
 
@@ -64,7 +64,7 @@ export function compareClientApiVersions(
 }
 
 /**
- * 強制が無効な場合は常に対応済みとする。
+ * 最小対応版が明示されない場合は常に対応済みとする。
  * 強制中に無効なクライアント版が渡された場合は、対応外として扱う。
  */
 export function isClientApiVersionSupported(

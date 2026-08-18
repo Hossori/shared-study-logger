@@ -3,6 +3,10 @@
  * `pnpm seed` 後の admin@example.com / ChangeMe123! を使う。
  */
 import { expect, type Page } from "@playwright/test";
+import {
+	CLIENT_API_VERSION,
+	CLIENT_API_VERSION_HEADER,
+} from "../shared/client-api-version";
 
 export const SEED_ADMIN = {
 	email: "admin@example.com",
@@ -13,6 +17,10 @@ export const SEED_USER = {
 	email: "test@example.com",
 	password: "ChangeMe123!",
 } as const;
+
+export function currentClientApiVersionHeaders(): Record<string, string> {
+	return { [CLIENT_API_VERSION_HEADER]: CLIENT_API_VERSION };
+}
 
 export async function loginAsAdmin(page: Page): Promise<void> {
 	await loginWith(page, SEED_ADMIN.email, SEED_ADMIN.password);
