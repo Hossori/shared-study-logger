@@ -3,13 +3,14 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    tags: ["v*.*.*"]
   pull_request:
     branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  # main では進行中の deploy をキャンセルしない
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # main / リリースタグでは進行中の job をキャンセルしない
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
   quality:
@@ -94,21 +95,38 @@ jobs:
         env:
           CI: true
 
-  # D1 と Worker は同じ承認済みリリースで直列に更新する。
+  # D1 と Worker は同じ SemVer タグのリリースで直列に更新する。
   # Time Travel の復旧ポイントを記録してから migrate し、同じコミットを deploy する。
   release:
     name: Release production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: [quality, unit, worker, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # GitHub Settings > Environments の production に Required reviewers と
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    # GitHub Settings > Environments の production に
     # Cloudflare の本番用シークレットを設定する。
     environment: production
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: release tag must match vMAJOR.MINOR.PATCH (got $GITHUB_REF_NAME)"
+            exit 1
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Error: tag $GITHUB_REF_NAME ($GITHUB_SHA) is not on origin/main"
+            exit 1
+          fi
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -118,13 +136,6 @@ jobs:
       # build 失敗で DB だけを先行させないよう、migration 前に成果物を作成する。
       - name: Build release artifacts
         run: pnpm build
-      # Required reviewer の承認待ち中に新しい main が push された場合、
-      # 古いコミットで migration / deploy することを防ぐ。
-      - name: Confirm this is the latest main commit
-        shell: bash
-        run: |
-          git fetch origin main --depth=1
-          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
       # D1 Time Travel はデータを含む復旧履歴を Cloudflare 内に継続保存する。
       # migration 前の bookmark を記録し、成功後に Worker だけを戻す必要がある場合も
       # どの時点へ D1 を復元するか追跡できるようにする。
