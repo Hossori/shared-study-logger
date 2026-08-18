@@ -6,7 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function LoadingScreen() {
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center">
+    <div className="bg-background flex min-h-dvh items-center justify-center">
       <p className="text-muted-foreground flex items-center gap-2 text-sm">
         <Spinner />
         読み込み中...

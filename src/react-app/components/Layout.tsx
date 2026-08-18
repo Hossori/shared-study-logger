@@ -33,8 +33,8 @@ export default function Layout({
   const openPostModal = useUiStore((state) => state.openPostModal);
 
   return (
-    <div className="bg-background min-h-screen">
-      <header className="bg-background/90 sticky top-0 z-20 border-b backdrop-blur">
+    <div className="bg-background flex min-h-dvh flex-col">
+      <header className="bg-background/90 sticky top-0 z-20 shrink-0 border-b backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-2 pt-[max(0.625rem,var(--safe-area-inset-top))] pr-[max(0.75rem,var(--safe-area-inset-right))] pb-2.5 pl-[max(0.75rem,var(--safe-area-inset-left))] sm:gap-3 sm:pt-[max(0.75rem,var(--safe-area-inset-top))] sm:pr-[max(1.5rem,var(--safe-area-inset-right))] sm:pb-3 sm:pl-[max(1.5rem,var(--safe-area-inset-left))]">
           <Link
             to="/"
@@ -51,7 +51,7 @@ export default function Layout({
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl pt-4 pr-[max(0.75rem,var(--safe-area-inset-right))] pb-[max(1rem,var(--safe-area-inset-bottom))] pl-[max(0.75rem,var(--safe-area-inset-left))] sm:pt-8 sm:pr-[max(1.5rem,var(--safe-area-inset-right))] sm:pb-[max(2rem,var(--safe-area-inset-bottom))] sm:pl-[max(1.5rem,var(--safe-area-inset-left))]">
+      <main className="mx-auto min-h-0 w-full max-w-4xl flex-1 pt-4 pr-[max(0.75rem,var(--safe-area-inset-right))] pb-[max(1rem,var(--safe-area-inset-bottom))] pl-[max(0.75rem,var(--safe-area-inset-left))] sm:pt-8 sm:pr-[max(1.5rem,var(--safe-area-inset-right))] sm:pb-[max(2rem,var(--safe-area-inset-bottom))] sm:pl-[max(1.5rem,var(--safe-area-inset-left))]">
         {children}
       </main>
 

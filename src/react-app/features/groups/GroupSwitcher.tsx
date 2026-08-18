@@ -2,7 +2,7 @@
  * 所属グループの切替UI（記録一覧ツールバー用）。
  * 複数所属時はドロップダウン、1件のみならグループ名の表示だけにする。
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGroupsQuery } from "../../queries/useGroups";
 import { useUiStore } from "../../stores/uiStore";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,7 @@ export default function GroupSwitcher() {
   const { data: groups, isLoading } = useGroupsQuery();
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
   const setSelectedGroupId = useUiStore((state) => state.setSelectedGroupId);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!groups || groups.length === 0) return;
@@ -49,19 +50,20 @@ export default function GroupSwitcher() {
     <span className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
       <span className="truncate">{selectedGroupName}</span>
       {groups.length > 1 && (
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger aria-label="グループ切替">
             <Badge variant="outline">
               <span className="text-muted-foreground">切り替え</span>
               <ChevronsUpDown className="text-muted-foreground" />
             </Badge>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="max-w-4/5 min-w-fit">
+          <DropdownMenuContent className="w-[80dvw] max-w-[80dvw] sm:w-72 sm:max-w-72">
             <DropdownMenuGroup>
               <DropdownMenuRadioGroup
                 value={selectedGroupId ?? groups[0].id}
                 onValueChange={(value: string) => {
                   if (value) setSelectedGroupId(value);
+                  setMenuOpen(false);
                 }}
               >
                 {groups.map((group) => (

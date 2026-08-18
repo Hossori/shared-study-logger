@@ -20,11 +20,12 @@ export default function RecordFormFields({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor={`${idPrefix}-studyDatetime`}>勉強日時</FieldLabel>
+        <FieldLabel htmlFor={`${idPrefix}-studyDatetime`}>学習日時</FieldLabel>
         <Input
           id={`${idPrefix}-studyDatetime`}
           type="datetime-local"
           required
+          className="max-w-full min-w-0"
           value={values.studyDatetime}
           onChange={(e) =>
             onChange({ ...values, studyDatetime: e.target.value })
