@@ -118,9 +118,9 @@ export default function AdminNotificationsPage() {
   return (
     <Layout user={user}>
       <div className="mb-4">
-        <Link to="/" className="text-primary text-sm hover:underline">
-          ← ホームに戻る
-        </Link>
+        <Button variant="default" nativeButton={false} render={<Link to="/" />}>
+          ホームに戻る
+        </Button>
         <h2 className="mt-2 text-xl font-bold">通知管理</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           アプリ内通知の作成・有効/無効・削除ができます。有効な通知は全ユーザーの通知一覧に表示されます。

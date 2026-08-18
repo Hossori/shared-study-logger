@@ -20,7 +20,7 @@ export default function RecordFormFields({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor={`${idPrefix}-studyDatetime`}>勉強日時</FieldLabel>
+        <FieldLabel htmlFor={`${idPrefix}-studyDatetime`}>学習日時</FieldLabel>
         <Input
           id={`${idPrefix}-studyDatetime`}
           type="datetime-local"

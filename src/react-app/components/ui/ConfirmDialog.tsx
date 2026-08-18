@@ -49,12 +49,15 @@ export default function ConfirmDialog({
             {message}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+        <AlertDialogFooter className="flex flex-row gap-2">
+          <AlertDialogCancel className="min-w-0 flex-1">
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             type="button"
             variant={variant === "danger" ? "destructive" : "default"}
             onClick={onConfirm}
+            className="min-w-0 flex-1"
           >
             {confirmLabel}
           </AlertDialogAction>

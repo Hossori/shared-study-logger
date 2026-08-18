@@ -13,28 +13,28 @@
 
 - 固定アカウント方式のログイン／ログアウト（事前に管理者が登録したユーザーのみ利用可能）
 - 所属グループの切り替え（複数グループに所属している場合）
-- 学習記録の投稿（勉強日時・タイトル・メモ）とカーソルページネーションによる一覧表示
+- 学習記録の投稿（学習日時・タイトル・メモ）とカーソルページネーションによる一覧表示
 - ライト / ダークテーマ切替（未保存時は OS の `prefers-color-scheme` に従う）
 - 記録投稿時、同じグループの他メンバーへ Web Push 通知を送信（Cloudflare Queues 経由）
 - PWA 対応（ホーム画面への追加、Service Worker によるオフラインキャッシュ、Push 通知受信）
 
 ## 技術スタック
 
-| 分類 | 技術 |
-| --- | --- |
-| フロントエンド | React 19 + Vite 7、TypeScript |
-| 状態管理 | Zustand（UI状態）、TanStack Query（サーバー状態・キャッシュ） |
-| API通信 | axios（`src/react-app/lib/api.ts`でinterceptorを使い共通エラーハンドリング） |
-| スタイリング | Tailwind CSS v4（`@tailwindcss/vite`）、`clsx`（条件分岐によるクラス名組み立て。`src/react-app/lib/cn.ts`の`cn()`ヘルパー経由で使用） |
-| コード整形 | Prettier + `prettier-plugin-tailwindcss`（Tailwindクラスの並び順を自動統一。`pnpm run format` / `pnpm run format:check`） |
-| バックエンド | Hono（Cloudflare Workers 上で動作するAPIフレームワーク） |
-| インフラ | Cloudflare Workers（単一Worker + Static Assets） |
-| データベース | Cloudflare D1（SQLite互換） |
-| セッションストア | Cloudflare Workers KV |
-| 非同期処理 | Cloudflare Queues（Push通知の非同期配信・DLQ付き） |
-| Push通知 | Web Push（VAPID）、`@pushforge/builder` |
-| PWA | `vite-plugin-pwa`（`injectManifest`戦略）、Workbox |
-| バリデーション | Zod（`shared/schemas.ts`でフロント・バックエンド共通定義） |
+| 分類             | 技術                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| フロントエンド   | React 19 + Vite 7、TypeScript                                                                                                         |
+| 状態管理         | Zustand（UI状態）、TanStack Query（サーバー状態・キャッシュ）                                                                         |
+| API通信          | axios（`src/react-app/lib/api.ts`でinterceptorを使い共通エラーハンドリング）                                                          |
+| スタイリング     | Tailwind CSS v4（`@tailwindcss/vite`）、`clsx`（条件分岐によるクラス名組み立て。`src/react-app/lib/cn.ts`の`cn()`ヘルパー経由で使用） |
+| コード整形       | Prettier + `prettier-plugin-tailwindcss`（Tailwindクラスの並び順を自動統一。`pnpm run format` / `pnpm run format:check`）             |
+| バックエンド     | Hono（Cloudflare Workers 上で動作するAPIフレームワーク）                                                                              |
+| インフラ         | Cloudflare Workers（単一Worker + Static Assets）                                                                                      |
+| データベース     | Cloudflare D1（SQLite互換）                                                                                                           |
+| セッションストア | Cloudflare Workers KV                                                                                                                 |
+| 非同期処理       | Cloudflare Queues（Push通知の非同期配信・DLQ付き）                                                                                    |
+| Push通知         | Web Push（VAPID）、`@pushforge/builder`                                                                                               |
+| PWA              | `vite-plugin-pwa`（`injectManifest`戦略）、Workbox                                                                                    |
+| バリデーション   | Zod（`shared/schemas.ts`でフロント・バックエンド共通定義）                                                                            |
 
 ## データモデル
 
@@ -139,11 +139,11 @@ pnpm dev
 
 ## 環境変数・シークレット一覧
 
-| 名前 | 用途 | ローカルでの設定方法 | 本番での設定方法 |
-| --- | --- | --- | --- |
-| `VAPID_PUBLIC_KEY` | Web Push購読(`applicationServerKey`)およびVAPID署名に使う公開鍵 | `.dev.vars` | `wrangler secret put VAPID_PUBLIC_KEY` |
-| `VAPID_PRIVATE_KEY` | VAPID署名生成に使う秘密鍵（JWK形式、要秘匿） | `.dev.vars` | `wrangler secret put VAPID_PRIVATE_KEY` |
-| `VAPID_ADMIN_CONTACT` | VAPID JWTの`sub`クレームに使う連絡先（`mailto:`形式推奨） | `.dev.vars` | `wrangler secret put VAPID_ADMIN_CONTACT` |
+| 名前                  | 用途                                                            | ローカルでの設定方法 | 本番での設定方法                          |
+| --------------------- | --------------------------------------------------------------- | -------------------- | ----------------------------------------- |
+| `VAPID_PUBLIC_KEY`    | Web Push購読(`applicationServerKey`)およびVAPID署名に使う公開鍵 | `.dev.vars`          | `wrangler secret put VAPID_PUBLIC_KEY`    |
+| `VAPID_PRIVATE_KEY`   | VAPID署名生成に使う秘密鍵（JWK形式、要秘匿）                    | `.dev.vars`          | `wrangler secret put VAPID_PRIVATE_KEY`   |
+| `VAPID_ADMIN_CONTACT` | VAPID JWTの`sub`クレームに使う連絡先（`mailto:`形式推奨）       | `.dev.vars`          | `wrangler secret put VAPID_ADMIN_CONTACT` |
 
 `wrangler.jsonc` が生成する `worker-configuration.d.ts` はこれらのシークレット/varsを
 型付けしないため、`src/worker/types/env.d.ts` でグローバル`interface Env`の宣言マージにより
@@ -297,11 +297,11 @@ Push通知有効化までのE2E動作確認を行うことを推奨します。
 
 ## Cloudflareリソース一覧（本番）
 
-| リソース | 名前 | ID / binding |
-| --- | --- | --- |
-| D1 | `shared-study-logger-db` | `de455ad0-4b51-491f-aaab-92e456e0ed37`（binding: `DB`） |
-| KV | `SESSIONS` | `866cf1c34dda41199499692e4252bb6e`（binding: `SESSIONS`） |
-| Queue（producer/consumer） | `push-notifications` | binding: `PUSH_QUEUE` |
+| リソース                   | 名前                     | ID / binding                                                    |
+| -------------------------- | ------------------------ | --------------------------------------------------------------- |
+| D1                         | `shared-study-logger-db` | `de455ad0-4b51-491f-aaab-92e456e0ed37`（binding: `DB`）         |
+| KV                         | `SESSIONS`               | `866cf1c34dda41199499692e4252bb6e`（binding: `SESSIONS`）       |
+| Queue（producer/consumer） | `push-notifications`     | binding: `PUSH_QUEUE`                                           |
 | Queue（Dead Letter Queue） | `push-notifications-dlq` | `push-notifications`コンシューマの`dead_letter_queue`として設定 |
 
 ## Push通知・VAPID鍵について

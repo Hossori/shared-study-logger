@@ -184,9 +184,9 @@ export default function AdminDirectoryPage() {
   return (
     <Layout user={user}>
       <div className="mb-4">
-        <Link to="/" className="text-primary text-sm hover:underline">
-          ← ホームに戻る
-        </Link>
+        <Button variant="default" nativeButton={false} render={<Link to="/" />}>
+          ホームに戻る
+        </Button>
         <h2 className="mt-2 text-xl font-bold">グループユーザー管理</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           グループとユーザーの追加、グループへの所属の追加・削除ができます。公開の自己登録はありません。

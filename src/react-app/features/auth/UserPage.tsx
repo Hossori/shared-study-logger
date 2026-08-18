@@ -49,12 +49,10 @@ export default function UserPage() {
   return (
     <Layout user={me}>
       <div className="mb-4">
-        <Link to="/" className="text-primary text-sm hover:underline">
-          ← ホームに戻る
-        </Link>
-        <h2 className="mt-2 text-xl font-bold">
-          {isSelf ? "マイページ" : "ユーザー"}
-        </h2>
+        <Button variant="default" nativeButton={false} render={<Link to="/" />}>
+          ホームに戻る
+        </Button>
+        {isSelf ? <h2 className="mt-2 text-xl font-bold">マイページ</h2> : null}
       </div>
 
       <div className="flex flex-col gap-6">
