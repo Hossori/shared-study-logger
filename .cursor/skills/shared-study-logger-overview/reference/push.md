@@ -11,7 +11,8 @@
     `src/worker/lib/db.ts`の`getPushSubscriptionsForUser`/`upsertPushSubscription`/
     `deletePushSubscriptionByEndpoint`/`deletePushSubscriptionById`
   - フロント: `src/react-app/features/push/useNotificationOptIn.ts`（許可リクエスト～購読操作）、
-    `src/react-app/features/notifications/`（ベル一覧・モーダルから enable/disable を呼ぶ）、
+    `src/react-app/features/push/PushSettingsCard.tsx`（マイページの有効/無効 UI）、
+    `src/react-app/features/notifications/`（ベル一覧・未購読時のマイページ誘導）、
     `src/react-app/features/push/NotificationClickRefresh.tsx`（通知タップ時の一覧取り直し）、
     `src/react-app/queries/usePushSubscription.ts`、`src/react-app/lib/push.ts`
     （`urlBase64ToUint8Array`/`isIosNonStandalone`/`isPushSupported`）
@@ -22,7 +23,7 @@
   - 共通: `shared/schemas.ts`の`PushSubscriptionSchema`（ブラウザの`PushSubscription.toJSON()`
     形式に合わせている）
 - **データフロー**:
-  1. 通知モーダル等からの明示操作で`useNotificationOptIn.enable()`（iOSの制約でユーザー操作必須）→
+  1. マイページの Push 設定カードからの明示操作で`useNotificationOptIn.enable()`（iOSの制約でユーザー操作必須）→
      `Notification.requestPermission()` → 許可されたら`navigator.serviceWorker.ready`経由で
      `pushManager.subscribe({ applicationServerKey: VAPID公開鍵 })`
   2. 取得した`endpoint`/`p256dh`/`auth`を`POST /api/push/subscribe`でD1へupsert
@@ -45,7 +46,9 @@
   - **iOSの制約**: PWAをホーム画面に追加（standaloneモード）していないとPush通知を受信
     できない。`isIosNonStandalone()`でUser-Agentベースに判定し、アプリ内通知（ベル一覧）が
     「ホーム画面に追加」の案内を表示する。またiOSでは通知許可リクエストは直接的なユーザー操作の
-    中でのみ機能する（ページ読み込み時の自動リクエストは不可）。
+    中でのみ機能する（ページ読み込み時の自動リクエストは不可）。有効/無効の恒常トグルは
+    マイページの`PushSettingsCard`（Switch の操作から`enable`/`disable`）に置き、
+    通知モーダル下部には置かない。未購読時のベル一覧はマイページへの一度きりの案内にする。
   - Push送信は「ベストエフォート」であり配信保証はない。Cloudflare Queuesの無料枠
     （1万オペレーション/日）を超えると失敗する点に留意。
   - `web-push`（Node製）はWorkers上で動作しないため使えない。VAPID実装は

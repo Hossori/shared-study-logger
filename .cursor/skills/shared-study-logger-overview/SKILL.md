@@ -19,7 +19,7 @@ description: >-
 ```
 ブラウザ(React SPA + Service Worker)
   ├─→ Static Assets (dist/client、SPAフォールバック)
-  └─→ Hono API ──→ D1 (users/groups/group_members/study_records/push_subscriptions)
+  └─→ Hono API ──→ D1 (users/groups/group_members/study_records/push_subscriptions/app_notifications)
                 ├─→ KV (SESSIONS)
                 └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
@@ -43,8 +43,8 @@ wrangler.jsonc / vite.config.ts
 
 | #   | 機能             | 概要                                                       | 詳細                                                           |
 | --- | ---------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| 1   | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更 | [reference/auth.md](reference/auth.md)                         |
-| 2   | グループ         | 所属グループの記録のみ閲覧。作成/招待UIなし                | [reference/groups.md](reference/groups.md)                     |
+| 1   | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更・Push 設定 | [reference/auth.md](reference/auth.md)                         |
+| 2   | グループ         | 所属グループの記録のみ閲覧。作成・所属は管理者画面で操作 | [reference/groups.md](reference/groups.md)                     |
 | 3   | 学習記録         | 投稿・編集・削除、カーソルページネーション                 | [reference/records.md](reference/records.md)                   |
 | 4   | Push通知         | 投稿時に他メンバーへ Web Push（VAPID）                     | [reference/push.md](reference/push.md)                         |
 | 5   | PWA              | ホーム画面追加、SW、Push 受信                              | [reference/pwa.md](reference/pwa.md)                           |
@@ -53,14 +53,15 @@ wrangler.jsonc / vite.config.ts
 
 ## データモデル（D1 / SQLite）
 
-テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` の5つ。
-セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
+テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` / `app_notifications` の6つ。
+`users.role` は `ADMIN` または `USER`（既存行・未指定は `USER`）。セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
 詳細は [docs/data-model.md](/docs/data-model.md)。
 
 ## API
 
 正本は [docs/api.md](/docs/api.md)。`requireAuth` は `index.ts` で `/api/groups/*` に一括適用し、
-auth/push の一部は各ルートファイル内で個別適用する。
+auth/push/notifications の一部は各ルートファイル内で個別適用する。`/api/admin/users`・
+`/api/admin/groups`・`/api/admin/notifications` は `requireAuth` + `requireAdmin`。
 
 ## ビルド・検証
 

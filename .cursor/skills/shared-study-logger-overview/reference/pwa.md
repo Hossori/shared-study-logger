@@ -19,3 +19,18 @@
   前提条件）。認証必須のデータアプリのため完全なオフライン編集は対象外（最小構成のキャッシュ
   のみ）。アイコンやマニフェストの内容を変更した場合、`vite.config.ts`の
   `injectManifest.globPatterns`に含まれているか確認すること。
+- **更新フロー**: `main.tsx` が待機中のSWを検出して更新依頼を表示する。利用者が更新を選ぶと
+  `SKIP_WAITING` を送信し、`controllerchange` 後に再読み込みする。クライアントのみの変更でも
+  新しいプリキャッシュマニフェストを含むSWが生成されるため同じ導線になる。移行マーカーのない
+  旧PWAだけは初回に自動再読み込みして、この更新プロトコルへ移行する。
+- **API非互換変更**: `shared/client-api-version.ts` のクライアント版と最小受け入れ版を同時に
+  更新する。Workerは旧版を426 `client_update_required`でハンドラ実行前に拒否するため、更新前の
+  UIが新APIで副作用を起こさない。ブリッジリリースでは最小受け入れ版を`null`として強制しない。
+- **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
+  Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
+  ログイン画面で使い、通常の padding と inset の大きい方を取る。
+- **テーマ**: `html.dark` クラスで切替（`prefers-color-scheme` メディアクエリだけにしない）。
+  未保存時は OS 設定に従い、明示選択は `localStorage` の `theme` キー。FOUC 防止のため
+  `index.html` 先頭のインラインスクリプトが React 起動前にクラスと `theme-color` を合わせる。
+  実装の正本は `src/react-app/lib/theme.ts`。`manifest.webmanifest` の `theme_color` は
+  インストール時の初期値で、実行中のバー色は `theme-color` メタが優先される。

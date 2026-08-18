@@ -3,12 +3,16 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    tags: ["v*.*.*"]
+  # 機能ブランチの品質ゲート。develop → main の PR ではここでは再実行せず、
+  # branch-restriction.yml だけが main 向け PR を見る。マージ後は push で再テストする。
   pull_request:
-    branches: [main, develop]
+    branches: [develop]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # main / リリースタグでは進行中の job をキャンセルしない
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
   quality:
@@ -92,3 +96,92 @@ jobs:
       - run: pnpm test:e2e
         env:
           CI: true
+
+  # D1 と Worker は同じ SemVer タグのリリースで直列に更新する。
+  # Time Travel の復旧ポイントを記録してから migrate し、同じコミットを deploy する。
+  release:
+    name: Release production
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [quality, unit, worker, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    # GitHub Settings > Environments の production に
+    # Cloudflare の本番用シークレットを設定する。
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: release tag must match vMAJOR.MINOR.PATCH (got $GITHUB_REF_NAME)"
+            exit 1
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Error: tag $GITHUB_REF_NAME ($GITHUB_SHA) is not on origin/main"
+            exit 1
+          fi
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # build 失敗で DB だけを先行させないよう、migration 前に成果物を作成する。
+      - name: Build release artifacts
+        run: pnpm build
+      # D1 Time Travel はデータを含む復旧履歴を Cloudflare 内に継続保存する。
+      # migration 前の bookmark を記録し、成功後に Worker だけを戻す必要がある場合も
+      # どの時点へ D1 を復元するか追跡できるようにする。
+      - name: Record pre-migration D1 recovery point
+        id: d1-recovery-point
+        shell: bash
+        run: |
+          timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          recovery_point="$(pnpm exec wrangler d1 time-travel info shared-study-logger-db --timestamp "$timestamp" --json)"
+          bookmark="$(jq -er '.bookmark // .result.bookmark' <<< "$recovery_point")"
+
+          {
+            echo "## D1 recovery point"
+            echo
+            echo "- Timestamp: \`$timestamp\`"
+            echo "- Bookmark: \`$bookmark\`"
+            echo "- Restore: \`wrangler d1 time-travel restore shared-study-logger-db --bookmark=$bookmark\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: List pending remote D1 migrations
+        run: pnpm exec wrangler d1 migrations list shared-study-logger-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Apply remote D1 migrations
+        # Wrangler は migration 成功後にも D1 バックアップを取得する。
+        run: pnpm exec wrangler d1 migrations apply shared-study-logger-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify remote D1 migrations
+        shell: bash
+        run: |
+          output="$(pnpm exec wrangler d1 migrations list shared-study-logger-db --remote)"
+          printf '%s\n' "$output"
+          grep -Fqx '✅ No migrations to apply!' <<< "$output"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy tested Worker
+        # pnpm deploy は pnpm 本体の CLI のため、スクリプトは pnpm run deploy を使う。
+        run: pnpm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

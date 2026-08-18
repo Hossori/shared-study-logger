@@ -4,24 +4,40 @@ import { groupsRoutes } from "./routes/groups";
 import { recordsRoutes } from "./routes/records";
 import { usersRoutes } from "./routes/users";
 import { pushRoutes } from "./routes/push";
+import { notificationsRoutes } from "./routes/notifications";
+import { adminNotificationsRoutes } from "./routes/admin-notifications";
+import {
+  adminGroupsRoutes,
+  adminUsersRoutes,
+} from "./routes/admin-directory";
 import { requireAuth, type AuthVariables } from "./middleware/requireAuth";
+import { requireClientApiVersion } from "./middleware/requireClientApiVersion";
 import { getPushSubscriptionsForUser } from "./lib/db";
 import { sendPushNotification, type PushQueueMessage } from "./lib/push";
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
+// API ルートの最初にクライアント API 版を検証する。
+// 認証・Pushを含め、古いクライアントは他のミドルウェアやルートへ到達させない。
+app.use("/api/*", requireClientApiVersion);
+
 app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 
 // 認証必須: POST /api/auth/login と GET /api/push/vapid-public-key のみ公開。
 // それ以外の /api/auth/*（logout, me, PATCH /me, POST /password）と /api/push/subscribe、
-// /api/users/* は各ルートファイル内で requireAuth を個別に適用し、
-// /api/groups 以下は丸ごと requireAuth 必須にする。
+// /api/users/*、/api/notifications、/api/admin/* は各ルートファイル内で
+// requireAuth を個別に適用し、/api/groups 以下は丸ごと requireAuth 必須にする。
+// /api/admin/* はさらに requireAdmin（USER は 403）。
 app.route("/api/auth", authRoutes);
 app.route("/api/users", usersRoutes);
 app.use("/api/groups/*", requireAuth);
 app.route("/api/groups", groupsRoutes);
 app.route("/api/groups", recordsRoutes);
 app.route("/api/push", pushRoutes);
+app.route("/api/notifications", notificationsRoutes);
+app.route("/api/admin/users", adminUsersRoutes);
+app.route("/api/admin/groups", adminGroupsRoutes);
+app.route("/api/admin/notifications", adminNotificationsRoutes);
 
 interface PushQueueDependencies {
 	getPushSubscriptionsForUser: typeof getPushSubscriptionsForUser;

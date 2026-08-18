@@ -1,7 +1,11 @@
 /**
  * 学習記録フォームの日時変換・ペイロード組み立て（コンポーネント非依存）。
  */
-import type { RecordFormValues } from "./RecordFormFields";
+export interface RecordFormValues {
+  studyDatetime: string;
+  title: string;
+  memo: string;
+}
 
 /** datetime-local 入力値を ISO 文字列に変換。不正なら null。 */
 export function parseDatetimeLocalToIso(datetimeLocal: string): string | null {

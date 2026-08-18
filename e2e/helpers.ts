@@ -9,12 +9,29 @@ export const SEED_ADMIN = {
 	password: "ChangeMe123!",
 } as const;
 
+export const SEED_USER = {
+	email: "test@example.com",
+	password: "ChangeMe123!",
+} as const;
+
 export async function loginAsAdmin(page: Page): Promise<void> {
+	await loginWith(page, SEED_ADMIN.email, SEED_ADMIN.password);
+}
+
+export async function loginAsUser(page: Page): Promise<void> {
+	await loginWith(page, SEED_USER.email, SEED_USER.password);
+}
+
+async function loginWith(
+	page: Page,
+	email: string,
+	password: string,
+): Promise<void> {
 	await page.goto("/login");
-	await page.locator("#email").fill(SEED_ADMIN.email);
-	await page.locator("#password").fill(SEED_ADMIN.password);
+	await page.locator("#email").fill(email);
+	await page.locator("#password").fill(password);
 	await page.getByRole("button", { name: "ログイン" }).click();
-	await expect(page.getByRole("heading", { name: "学習記録" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "📚 学習記録シェア" })).toBeVisible();
 }
 
 export async function openPostModal(page: Page): Promise<void> {

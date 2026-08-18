@@ -6,11 +6,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { StudyRecord } from "../../../../shared/schemas";
 import { useUiStore } from "../../stores/uiStore";
 import { useUpdateRecordMutation } from "../../queries/useRecords";
-import RecordFormFields, { type RecordFormValues } from "./RecordFormFields";
+import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
   buildRecordRequestPayload,
   toDatetimeLocalString,
+  type RecordFormValues,
 } from "./recordFormUtils";
 
 interface EditRecordModalProps {
@@ -59,6 +60,7 @@ export default function EditRecordModal({
 
   return (
     <RecordModalShell
+      open
       title="学習記録を編集"
       onClose={onClose}
       onSubmit={handleSubmit}

@@ -1,12 +1,21 @@
 /**
- * 所属グループの切替UI（記録一覧ツールバー用セレクトボックス）。
+ * 所属グループの切替UI（記録一覧ツールバー用）。
+ * 複数所属時はドロップダウン、1件のみならグループ名の表示だけにする。
  */
 import { useEffect } from "react";
 import { useGroupsQuery } from "../../queries/useGroups";
 import { useUiStore } from "../../stores/uiStore";
-
-const selectClassName =
-  "w-full max-w-xs cursor-pointer truncate rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronsUpDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 export default function GroupSwitcher() {
   const { data: groups, isLoading } = useGroupsQuery();
@@ -22,33 +31,49 @@ export default function GroupSwitcher() {
   }, [groups, selectedGroupId, setSelectedGroupId]);
 
   if (isLoading) {
-    return <span className="text-sm text-gray-400">読み込み中...</span>;
+    return <Skeleton className="h-8 w-40" />;
   }
 
   if (!groups || groups.length === 0) {
-    return <span className="text-sm text-gray-400">所属グループなし</span>;
-  }
-
-  if (groups.length === 1) {
     return (
-      <span className="truncate text-sm font-semibold text-gray-800 sm:text-base">
-        {groups[0].name}
-      </span>
+      <span className="text-muted-foreground text-sm">所属グループなし</span>
     );
   }
 
+  const selectedGroupName =
+    (selectedGroupId
+      ? groups.find((group) => group.id === selectedGroupId)?.name
+      : groups[0].name) ?? "";
+
   return (
-    <select
-      value={selectedGroupId ?? ""}
-      onChange={(e) => setSelectedGroupId(e.target.value)}
-      className={selectClassName}
-      aria-label="グループ切替"
-    >
-      {groups.map((group) => (
-        <option key={group.id} value={group.id}>
-          {group.name}
-        </option>
-      ))}
-    </select>
+    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+      <span className="truncate">{selectedGroupName}</span>
+      {groups.length > 1 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger aria-label="グループ切替">
+            <Badge variant="outline">
+              <span className="text-muted-foreground">切り替え</span>
+              <ChevronsUpDown className="text-muted-foreground" />
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-w-4/5 min-w-fit">
+            <DropdownMenuGroup>
+              <DropdownMenuRadioGroup
+                value={selectedGroupId ?? groups[0].id}
+                onValueChange={(value: string) => {
+                  if (value) setSelectedGroupId(value);
+                }}
+              >
+                {groups.map((group) => (
+                  <DropdownMenuRadioItem key={group.id} value={group.id}>
+                    {group.name}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </span>
   );
 }

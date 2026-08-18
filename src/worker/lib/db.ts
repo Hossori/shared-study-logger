@@ -1,15 +1,18 @@
 /**
  * D1(`DB`バインディング)へのクエリヘルパー。
- * ユーザー/グループ取得、記録一覧のカーソルページネーション、記録の作成/更新/削除、
- * push_subscriptions CRUDをまとめる。
+ * ユーザー/グループ取得、管理者向けユーザー・グループ・所属の作成、
+ * 記録一覧のカーソルページネーション、記録の作成/更新/削除、
+ * push_subscriptions / app_notifications CRUDをまとめる。
  */
 import type {
   AvatarKey,
+  Group,
+  InAppNotification,
   PublicUser,
   StudyRecord,
   User,
 } from "../../../shared/schemas";
-import { AvatarKeySchema } from "../../../shared/schemas";
+import { AvatarKeySchema, parseUserRole } from "../../../shared/schemas";
 
 export interface UserRow {
   id: string;
@@ -17,6 +20,7 @@ export interface UserRow {
   password_hash: string;
   password_salt: string;
   display_name: string;
+  role: string | null;
   bio: string | null;
   avatar_key: string | null;
   created_at: string;
@@ -80,12 +84,13 @@ function parseAvatarKey(value: string | null | undefined): AvatarKey | null {
   return parsed.success ? parsed.data : null;
 }
 
-/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。 */
+/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。未知の role は USER。 */
 export function toUser(row: UserRow): User {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
+    role: parseUserRole(row.role),
     bio: row.bio ?? null,
     avatarKey: parseAvatarKey(row.avatar_key),
     createdAt: row.created_at,
@@ -157,6 +162,53 @@ export async function updateUserPassword(
     .run();
 }
 
+/** 全ユーザーを作成順で返す（管理用。password は UserRow に含まれるが API では toUser する）。 */
+export async function listUsers(db: D1Database): Promise<UserRow[]> {
+  const { results } = await db
+    .prepare(
+      "SELECT * FROM users ORDER BY created_at ASC, id ASC",
+    )
+    .all<UserRow>();
+  return results ?? [];
+}
+
+export interface CreateUserInput {
+  id: string;
+  email: string;
+  passwordHash: string;
+  passwordSalt: string;
+  displayName: string;
+}
+
+/** ユーザーを作成する。role は USER 固定、bio / avatar_key は NULL。 */
+export async function createUser(
+  db: D1Database,
+  input: CreateUserInput,
+): Promise<UserRow> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO users
+        (id, email, password_hash, password_salt, display_name, bio, avatar_key, role, created_at)
+       VALUES (?, ?, ?, ?, ?, NULL, NULL, 'USER', ?)`,
+    )
+    .bind(
+      input.id,
+      input.email,
+      input.passwordHash,
+      input.passwordSalt,
+      input.displayName,
+      now,
+    )
+    .run();
+
+  const row = await getUserById(db, input.id);
+  if (!row) {
+    throw new Error("failed_to_create_user");
+  }
+  return row;
+}
+
 // ---- groups -------------------------------------------------------------
 
 export async function getGroupsForUser(
@@ -202,6 +254,120 @@ export async function getOtherGroupMemberUserIds(
     .bind(groupId, excludeUserId)
     .all<{ user_id: string }>();
   return (results ?? []).map((r) => r.user_id);
+}
+
+export function toGroup(row: GroupRow): Group {
+  return {
+    id: row.id,
+    name: row.name,
+    createdAt: row.created_at,
+  };
+}
+
+export async function getGroupById(
+  db: D1Database,
+  id: string,
+): Promise<GroupRow | null> {
+  const row = await db
+    .prepare("SELECT * FROM groups WHERE id = ?")
+    .bind(id)
+    .first<GroupRow>();
+  return row ?? null;
+}
+
+export async function listAllGroups(db: D1Database): Promise<GroupRow[]> {
+  const { results } = await db
+    .prepare("SELECT * FROM groups ORDER BY created_at ASC, id ASC")
+    .all<GroupRow>();
+  return results ?? [];
+}
+
+export interface GroupWithMembers {
+  group: GroupRow;
+  members: UserRow[];
+}
+
+interface GroupMemberJoinRow extends UserRow {
+  group_id: string;
+}
+
+/** 全グループをメンバー付きで返す（管理用。所属不問）。 */
+export async function listAllGroupsWithMembers(
+  db: D1Database,
+): Promise<GroupWithMembers[]> {
+  const groups = await listAllGroups(db);
+  const { results } = await db
+    .prepare(
+      `SELECT gm.group_id,
+              u.id, u.email, u.password_hash, u.password_salt, u.display_name,
+              u.role, u.bio, u.avatar_key, u.created_at
+       FROM group_members gm
+       INNER JOIN users u ON u.id = gm.user_id
+       ORDER BY gm.joined_at ASC, u.id ASC`,
+    )
+    .all<GroupMemberJoinRow>();
+
+  const membersByGroup = new Map<string, UserRow[]>();
+  for (const row of results ?? []) {
+    const { group_id: groupId, ...user } = row;
+    const members = membersByGroup.get(groupId);
+    if (members) {
+      members.push(user);
+    } else {
+      membersByGroup.set(groupId, [user]);
+    }
+  }
+
+  return groups.map((group) => ({
+    group,
+    members: membersByGroup.get(group.id) ?? [],
+  }));
+}
+
+export interface CreateGroupInput {
+  id: string;
+  name: string;
+}
+
+export async function createGroup(
+  db: D1Database,
+  input: CreateGroupInput,
+): Promise<GroupRow> {
+  const now = new Date().toISOString();
+  await db
+    .prepare("INSERT INTO groups (id, name, created_at) VALUES (?, ?, ?)")
+    .bind(input.id, input.name, now)
+    .run();
+  return { id: input.id, name: input.name, created_at: now };
+}
+
+export async function addGroupMember(
+  db: D1Database,
+  groupId: string,
+  userId: string,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      "INSERT INTO group_members (group_id, user_id, joined_at) VALUES (?, ?, ?)",
+    )
+    .bind(groupId, userId, now)
+    .run();
+}
+
+/** 所属を削除する。削除できたら true。 */
+export async function removeGroupMember(
+  db: D1Database,
+  groupId: string,
+  userId: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      "DELETE FROM group_members WHERE group_id = ? AND user_id = ?",
+    )
+    .bind(groupId, userId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }
 
 // ---- study_records --------------------------------------------------------
@@ -527,4 +693,142 @@ export async function deletePushSubscriptionById(
   id: string,
 ): Promise<void> {
   await db.prepare("DELETE FROM push_subscriptions WHERE id = ?").bind(id).run();
+}
+
+// ---- app_notifications ------------------------------------------------
+
+export interface AppNotificationRow {
+  id: string;
+  title: string;
+  body: string;
+  enabled: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function toInAppNotification(row: AppNotificationRow): InAppNotification {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    enabled: Number(row.enabled) === 1,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listAppNotifications(
+  db: D1Database,
+): Promise<InAppNotification[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+       FROM app_notifications
+       ORDER BY created_at DESC, id DESC`,
+    )
+    .all<AppNotificationRow>();
+  return (results ?? []).map(toInAppNotification);
+}
+
+export async function listEnabledAppNotifications(
+  db: D1Database,
+): Promise<InAppNotification[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+       FROM app_notifications
+       WHERE enabled = 1
+       ORDER BY created_at DESC, id DESC`,
+    )
+    .all<AppNotificationRow>();
+  return (results ?? []).map(toInAppNotification);
+}
+
+export async function getAppNotification(
+  db: D1Database,
+  id: string,
+): Promise<InAppNotification | null> {
+  const row = await db
+    .prepare(
+      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+       FROM app_notifications
+       WHERE id = ?`,
+    )
+    .bind(id)
+    .first<AppNotificationRow>();
+  return row ? toInAppNotification(row) : null;
+}
+
+export interface CreateAppNotificationInput {
+  id: string;
+  title: string;
+  body: string;
+  enabled: boolean;
+  createdBy: string;
+}
+
+export async function createAppNotification(
+  db: D1Database,
+  input: CreateAppNotificationInput,
+): Promise<InAppNotification> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO app_notifications
+        (id, title, body, enabled, created_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      input.id,
+      input.title,
+      input.body,
+      input.enabled ? 1 : 0,
+      input.createdBy,
+      now,
+      now,
+    )
+    .run();
+
+  return {
+    id: input.id,
+    title: input.title,
+    body: input.body,
+    enabled: input.enabled,
+    createdBy: input.createdBy,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export async function setAppNotificationEnabled(
+  db: D1Database,
+  id: string,
+  enabled: boolean,
+): Promise<InAppNotification | null> {
+  const now = new Date().toISOString();
+  const result = await db
+    .prepare(
+      `UPDATE app_notifications
+       SET enabled = ?, updated_at = ?
+       WHERE id = ?`,
+    )
+    .bind(enabled ? 1 : 0, now, id)
+    .run();
+
+  if ((result.meta.changes ?? 0) === 0) return null;
+
+  return getAppNotification(db, id);
+}
+
+export async function deleteAppNotification(
+  db: D1Database,
+  id: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare("DELETE FROM app_notifications WHERE id = ?")
+    .bind(id)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }

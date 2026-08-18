@@ -11,12 +11,14 @@ export const SEED = {
 		email: "admin@example.com",
 		password: "ChangeMe123!",
 		displayName: "管理者",
+		role: "ADMIN",
 	},
 	testUser: {
 		id: "00000000-0000-4000-a000-000000000005",
 		email: "test@example.com",
 		password: "ChangeMe123!",
 		displayName: "テストユーザー",
+		role: "USER",
 	},
 	groupMember: "00000000-0000-4000-a000-000000000002",
 	groupOther: "00000000-0000-4000-a000-000000000003",
@@ -31,16 +33,18 @@ export async function seedMinimalDb(): Promise<void> {
 
 	await env.DB.batch([
 		env.DB.prepare(
-			`INSERT OR REPLACE INTO users (id, email, password_hash, password_salt, display_name, bio, avatar_key, created_at)
-       VALUES (?, ?, ?, ?, ?, NULL, NULL, ?)`,
+			`INSERT OR REPLACE INTO users (id, email, password_hash, password_salt, display_name, bio, avatar_key, role, created_at)
+       VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?)`,
 		).bind(
 			SEED.admin.id,
 			SEED.admin.email,
 			adminHash,
 			FIXED_SALT,
 			SEED.admin.displayName,
+			SEED.admin.role,
 			now,
 		),
+		// role 列を省略し、DEFAULT 'USER' を検証する
 		env.DB.prepare(
 			`INSERT OR REPLACE INTO users (id, email, password_hash, password_salt, display_name, bio, avatar_key, created_at)
        VALUES (?, ?, ?, ?, ?, NULL, NULL, ?)`,

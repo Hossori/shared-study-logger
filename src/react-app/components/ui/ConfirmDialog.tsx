@@ -1,9 +1,16 @@
 /**
- * 確認モーダルの見た目。オーバーレイクリック / Escape でキャンセル扱い。
- * 開閉状態と結果の受け渡しは ConfirmProvider / useConfirm 側が担う。
+ * 確認モーダル。開閉状態と結果の受け渡しは ConfirmProvider / useConfirm 側が担う。
  */
-import { useEffect, useId, useRef } from "react";
-import Button from "./Button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type ConfirmVariant = "default" | "danger";
 
@@ -18,11 +25,6 @@ export interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-const overlayClassName =
-  "fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center";
-const panelClassName =
-  "w-full rounded-t-2xl bg-white p-5 shadow-xl sm:mx-4 sm:max-w-sm sm:rounded-2xl sm:p-6";
-
 export default function ConfirmDialog({
   open,
   title,
@@ -33,67 +35,31 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const titleId = useId();
-  const messageId = useId();
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    cancelButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCancel();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, onCancel]);
-
-  if (!open) return null;
-
   return (
-    <div className={overlayClassName} onClick={onCancel} role="presentation">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={messageId}
-        className={panelClassName}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2 id={titleId} className="text-lg font-bold text-gray-900">
-          {title}
-        </h2>
-        <p
-          id={messageId}
-          className="mt-2 text-sm whitespace-pre-wrap text-gray-600"
-        >
-          {message}
-        </p>
-        <div className="mt-5 flex gap-2">
-          <Button
-            ref={cancelButtonRef}
-            variant="secondary"
-            onClick={onCancel}
-            className="flex-1 py-2.5"
-          >
-            {cancelLabel}
-          </Button>
-          <Button
-            variant={variant === "danger" ? "danger" : "primary"}
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onCancel();
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription className="whitespace-pre-wrap">
+            {message}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction
+            type="button"
+            variant={variant === "danger" ? "destructive" : "default"}
             onClick={onConfirm}
-            className="flex-1 py-2.5"
           >
             {confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

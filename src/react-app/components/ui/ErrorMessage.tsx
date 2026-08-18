@@ -1,8 +1,8 @@
 /**
- * フォームエラー表示用の汎用部品。`LoginPage`/`PostRecordModal`で完全に同一だった
- * エラーボックスのTailwindクラスをここに集約する。
+ * フォーム全体のエラー表示。見た目は shadcn の Alert に委譲する。
  */
 import type { ReactNode } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ErrorMessageProps {
   children: ReactNode;
@@ -10,8 +10,8 @@ interface ErrorMessageProps {
 
 export default function ErrorMessage({ children }: ErrorMessageProps) {
   return (
-    <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-      {children}
-    </p>
+    <Alert variant="destructive">
+      <AlertDescription>{children}</AlertDescription>
+    </Alert>
   );
 }

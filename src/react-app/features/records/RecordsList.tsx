@@ -14,22 +14,27 @@ import {
   useRecordsQuery,
 } from "../../queries/useRecords";
 import { type StudyRecord } from "../../../../shared/schemas";
-import Button from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
-
-const cardClassName =
-  "rounded-xl border border-gray-200 bg-white p-4 shadow-sm";
-const toolbarClassName = "mb-4 flex flex-wrap items-center gap-2 sm:gap-3";
-const toolbarGroupClassName = "min-w-0 flex-1";
-const addRecordButtonClassName =
-  "hidden shrink-0 items-center gap-1.5 px-4 py-1.5 text-sm sm:inline-flex";
-const authorAvatarLinkClassName =
-  "inline-flex shrink-0 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
-const iconActionButtonClassName =
-  "inline-flex h-9 w-9 items-center justify-center p-0";
 
 function formatStudyDatetime(studyDatetime: string): string {
   const date = new Date(studyDatetime);
@@ -62,85 +67,100 @@ function RecordCard({
   const authorName = record.authorDisplayName ?? "不明なユーザー";
 
   return (
-    <li className={cardClassName}>
-      <div className="flex items-start justify-between gap-x-3">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <Link
-            to={`/users/${record.userId}`}
-            className={authorAvatarLinkClassName}
-            aria-label={`${authorName}のユーザーページ`}
-          >
-            <UserAvatar
-              avatarKey={record.authorAvatarKey ?? null}
-              className="h-6 w-6"
-            />
-          </Link>
-          <span className="truncate text-xs text-gray-500">{authorName}</span>
-        </div>
-        {isOwner && (
-          <div className="-mt-1 -mr-1 flex shrink-0 gap-1">
-            <Button
-              variant="ghost"
-              onClick={() => onEdit(record)}
-              aria-label="編集"
-              title="編集"
-              className={iconActionButtonClassName}
+    <li>
+      <Card size="sm">
+        <CardHeader>
+          <CardDescription className="flex min-w-0 items-center gap-1.5">
+            <Link
+              to={`/users/${record.userId}`}
+              className="focus-visible:ring-ring inline-flex shrink-0 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
+              aria-label={`${authorName}のユーザーページ`}
             >
-              <Pencil className="h-4 w-4" aria-hidden />
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => onDelete(record)}
-              disabled={isDeleting}
-              aria-label="削除"
-              title="削除"
-              className={`${iconActionButtonClassName} text-red-600 hover:bg-red-50 hover:text-red-700`}
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </Button>
-          </div>
-        )}
-      </div>
-      <span className="mt-1.5 block text-xs font-medium text-gray-500">
-        {formatStudyDatetime(record.studyDatetime)}
-      </span>
-      <h3 className="mt-1.5 text-base font-semibold text-gray-900 sm:text-lg">
-        {record.title}
-      </h3>
-      {record.memo && (
-        <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">
-          {record.memo}
-        </p>
-      )}
+              <UserAvatar
+                avatarKey={record.authorAvatarKey ?? null}
+                className="size-6"
+              />
+            </Link>
+            <span className="truncate">{authorName}</span>
+          </CardDescription>
+          {isOwner && (
+            <CardAction className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(record)}
+                aria-label="編集"
+                title="編集"
+              >
+                <Pencil aria-hidden />
+                <span className="sr-only">編集</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(record)}
+                disabled={isDeleting}
+                aria-label="削除"
+                title="削除"
+              >
+                <Trash2 aria-hidden />
+                <span className="sr-only">削除</span>
+              </Button>
+            </CardAction>
+          )}
+          <CardDescription>
+            {formatStudyDatetime(record.studyDatetime)}
+          </CardDescription>
+          <CardTitle>
+            <h3 className="text-inherit">{record.title}</h3>
+          </CardTitle>
+        </CardHeader>
+        {record.memo ? (
+          <CardContent>
+            <p className="text-muted-foreground text-sm whitespace-pre-wrap">
+              {record.memo}
+            </p>
+          </CardContent>
+        ) : null}
+      </Card>
     </li>
   );
 }
 
 function EmptyRecordsMessage() {
   return (
-    <div className="py-12 text-center text-sm text-gray-400">
-      <p className="sm:hidden">
-        まだ学習記録がありません。右下の追加ボタンから最初の記録を投稿しましょう。
-      </p>
-      <p className="hidden sm:block">
-        まだ学習記録がありません。「記録を追加」ボタンから最初の記録を投稿しましょう。
-      </p>
-    </div>
+    <Empty>
+      <EmptyHeader>
+        <EmptyTitle>まだ学習記録がありません</EmptyTitle>
+        <EmptyDescription className="sm:hidden">
+          右下の追加ボタンから最初の記録を投稿しましょう。
+        </EmptyDescription>
+        <EmptyDescription className="hidden sm:block">
+          「記録を追加」ボタンから最初の記録を投稿しましょう。
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 }
 
 function RecordsToolbar() {
   const openPostModal = useUiStore((state) => state.openPostModal);
+  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
 
   return (
-    <div className={toolbarClassName}>
-      <div className={toolbarGroupClassName}>
+    <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="min-w-0 flex-1">
         <GroupSwitcher />
       </div>
-      <Button onClick={openPostModal} className={addRecordButtonClassName}>
-        <Plus className="h-4 w-4" aria-hidden />
-        記録を追加
-      </Button>
+      {selectedGroupId && (
+        <Button
+          onClick={openPostModal}
+          className="hidden shrink-0 sm:inline-flex"
+        >
+          <Plus data-icon="inline-start" aria-hidden />
+          記録を追加
+        </Button>
+      )}
     </div>
   );
 }
@@ -192,9 +212,11 @@ export default function RecordsList() {
   if (!selectedGroupId) {
     return (
       <RecordsListFrame>
-        <p className="py-12 text-center text-sm text-gray-400">
-          グループを選択してください。
-        </p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>グループを選択してください。</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </RecordsListFrame>
     );
   }
@@ -202,9 +224,11 @@ export default function RecordsList() {
   if (isInitialLoading) {
     return (
       <RecordsListFrame>
-        <p className="py-12 text-center text-sm text-gray-400">
-          学習記録を読み込み中...
-        </p>
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       </RecordsListFrame>
     );
   }
@@ -212,9 +236,11 @@ export default function RecordsList() {
   if (isError) {
     return (
       <RecordsListFrame>
-        <p className="py-12 text-center text-sm text-red-500">
-          学習記録の取得に失敗しました。
-        </p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </RecordsListFrame>
     );
   }
@@ -231,7 +257,7 @@ export default function RecordsList() {
 
   return (
     <RecordsListFrame>
-      <ul className="space-y-3">
+      <ul className="flex flex-col gap-3">
         {records.map((record) => (
           <RecordCard
             key={record.id}
@@ -250,12 +276,18 @@ export default function RecordsList() {
       {hasNextPage && (
         <div className="mt-4 flex justify-center">
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="px-5 py-2 text-sm"
           >
-            {isFetchingNextPage ? "読み込み中..." : "もっと見る"}
+            {isFetchingNextPage ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                読み込み中...
+              </>
+            ) : (
+              "もっと見る"
+            )}
           </Button>
         </div>
       )}

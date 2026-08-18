@@ -5,9 +5,12 @@
 - **Zustand（`src/react-app/stores/uiStore.ts`）**: クライアント状態専用。
   `selectedGroupId`（選択中グループ）、`isPostModalOpen`（投稿モーダル開閉）、
   `notificationStatus`を管理。サーバーから取得したデータをZustandに複製して持たない。
+  ライト / ダークの明示選択は Zustand ではなく `localStorage`（`src/react-app/lib/theme.ts`）
+  に保存する。未保存時は `prefers-color-scheme` に従う。
 - **TanStack Query（`src/react-app/queries/*.ts`）**: サーバー状態専用。認証状態
   （`useAuth.ts`）、グループ一覧（`useGroups.ts`）、記録一覧・投稿
-  （`useRecords.ts`、`useInfiniteQuery`）、Push購読状態（`usePushSubscription.ts`）の
+  （`useRecords.ts`、`useInfiniteQuery`）、Push購読状態（`usePushSubscription.ts`）、
+  アプリ内通知（`useNotifications.ts`）の
   fetch・キャッシュ・invalidateをすべてここに集約する。ミューテーション成功時は関連する
   クエリキーを`invalidateQueries`して再取得させる方式で、キャッシュを手動で書き換える箇所は
   ログイン/ログアウト時およびプロフィール更新時の`authQueryKeys.me`への`setQueryData`のみ。

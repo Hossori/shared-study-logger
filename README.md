@@ -14,6 +14,7 @@
 - 固定アカウント方式のログイン／ログアウト（事前に管理者が登録したユーザーのみ利用可能）
 - 所属グループの切り替え（複数グループに所属している場合）
 - 学習記録の投稿（勉強日時・タイトル・メモ）とカーソルページネーションによる一覧表示
+- ライト / ダークテーマ切替（未保存時は OS の `prefers-color-scheme` に従う）
 - 記録投稿時、同じグループの他メンバーへ Web Push 通知を送信（Cloudflare Queues 経由）
 - PWA 対応（ホーム画面への追加、Service Worker によるオフラインキャッシュ、Push 通知受信）
 
@@ -55,9 +56,9 @@ shared-study-logger/
       queries/           # TanStack Queryフック
       features/          # 認証・グループ切替・記録一覧/投稿・通知UI（ドメイン固有ロジック）
       routes/            # react-router定義・認証ガード(ProtectedRoute/GuestRoute)・404/HomePage
-      components/        # 横断的なUI（Layout, LoadingScreen）
+      components/        # 横断的なUI（Layout, LoadingScreen, ThemeToggle）
       components/ui/     # ドメイン非依存の汎用UI部品（Button, FormField, ErrorMessage）
-      lib/               # api.ts(axios) / push.ts / cn.ts(clsxラッパー)
+      lib/               # api.ts(axios) / push.ts / cn.ts(clsxラッパー) / theme.ts
   shared/
     schemas.ts         # Zodスキーマ（Worker/フロント共通）
   migrations/           # D1マイグレーション
@@ -177,6 +178,21 @@ E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 生成されます。ビルド時に `sw.mjs`（コンパイル後の生ソース）と `sw.js`（マニフェスト注入後の最終版）の
 両方が出力されますが、実際に登録されるのは `sw.js` です（`src/react-app/main.tsx`参照）。
 
+## PWA更新とAPI互換性
+
+クライアントの変更で新しいService Workerが待機状態になると、アプリは「更新して再読み込み」を
+表示します。更新操作は新SWを有効化してから再読み込みするため、ログインの `session` Cookie は
+維持されたまま最新画面へ戻ります。通常のブラウザ再読み込みだけでは待機中のSWは有効化されません。
+
+API互換性を壊す変更では、`shared/client-api-version.ts` の
+`CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を同じ新しい値へ更新します。
+Workerは旧版・版ヘッダなしのAPI呼び出しを426 `client_update_required`で副作用前に拒否します。
+
+初回はブリッジリリースとして最小受け入れ版を `null`（強制なし）のままデプロイし、既存PWAへ更新UIを配布します。
+移行マーカーを持たない既存PWAだけは自動再読み込みされるため、未保存入力が失われる可能性があります。
+以後は利用者の明示操作でのみ更新します。問題時は、Workerを後方互換な版へ戻すか、
+`MIN_SUPPORTED_CLIENT_API_VERSION` を下げて旧クライアントを再許可します。
+
 ## サンプルログイン情報（開発用）
 
 - email: `admin@example.com`
@@ -185,11 +201,40 @@ E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 このアプリは固定アカウント方式（自己登録なし）のため、実運用では管理者が
 `scripts/seed-users.mjs` を参考にしたスクリプトやSQLでユーザーを事前登録する必要があります。
 上記のサンプルパスワードは開発用です。本番投入時は必ず変更してください。
+ロールは `users.role`（`ADMIN` / `USER`）。既存ユーザーのデフォルトは `USER` です。
+管理者にする場合は D1 で次を実行します。
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
+```
 
 ## デプロイ手順（概要）
 
-本番環境へのデプロイは以下の手順で行います。実行にはCloudflareアカウントへの
-`wrangler login`（認証）が必要です。
+`main` 上のコミットに SemVer タグ（`vX.Y.Z`）を push すると、CI（`.github/workflows/ci.yml`）が
+Quality / Unit / Worker / E2E に成功したあと、production release が D1 と Worker を次の順で
+更新します。`develop` → `main` のマージだけでは本番は更新されません。
+
+```bash
+git checkout main
+git pull origin main
+git tag -a v1.1.0 -m "Release v1.1.0"
+git push origin v1.1.0
+```
+
+1. D1 Time Travel のデータを含む migration 前の復旧ポイントを記録する
+2. リモート D1 マイグレーションを適用し、未適用がないことを確認する
+3. 同じコミットの Worker と静的アセットをデプロイする（`pnpm build && pnpm run deploy`）
+
+Time Travel の復旧ポイントと、Wrangler が migration 成功後に作成するバックアップを利用するため、
+通常のリリースでは SQL dump の外部保管は行いません。
+
+GitHub リポジトリの Secrets に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
+トークンは対象アカウントに限定し、Worker デプロイには Workers Scripts: Edit、
+D1 適用には D1 Edit を付与します（既存バインディング利用時に不足すれば KV / Queues の
+必要最小権限を追加）。これらは GitHub Environment `production` のシークレットとして設定します。
+タグ push がリリース意思になるため、Required reviewers は不要です。
+
+ローカルから直接デプロイする場合は Cloudflare への `wrangler login` が必要です。
 
 ### 1. 本番シークレットの設定
 
@@ -205,11 +250,26 @@ pnpm exec wrangler secret put VAPID_ADMIN_CONTACT
 公開鍵（Push購読時の`applicationServerKey`。`GET /api/push/vapid-public-key`経由で
 サーバーから取得しているため、フロントのコード変更は不要）も本番用に切り替わることを確認してください。
 
-### 2. 本番D1マイグレーションの適用
+### 2. production release の設定と実行
+
+GitHub Settings → Environments に `production` を作成し、
+`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を設定します。
+`main` 上のコミットへ `vX.Y.Z` タグを push すると、CI の **Release production** ジョブが
+Quality / Unit / Worker / E2E 成功後に D1 migration と Worker deploy を同じコミットで
+直列実行します。タグ先が `origin/main` に含まれない場合、D1 を変更せず失敗します。
+本番デプロイの起点は `git push origin vX.Y.Z` です。Releases UI でリリースノートを付ける場合は、
+先にタグを push してから既存タグで Release を作成してください。
+
+Release summary には migration 前の Time Travel bookmark と復元コマンドが記録されます。
+復元は破壊的操作のため、Worker のロールバックだけで復旧できない場合に、影響範囲を確認して
+実行してください。
 
 ```bash
-pnpm exec wrangler d1 migrations apply shared-study-logger-db --remote
+pnpm exec wrangler d1 time-travel restore shared-study-logger-db --bookmark=<bookmark>
 ```
+
+緊急時にローカルから D1 を直接操作する場合も、事前に Time Travel の復旧ポイントを確認し、
+自動 release と並行させないでください。
 
 ### 3. 本番シードの投入（任意）
 
@@ -222,10 +282,15 @@ node scripts/seed-users.mjs --remote
 
 ### 4. デプロイ
 
+通常は `main` 上のコミットに `vX.Y.Z` タグを push すると、D1 migration と
+Worker deploy が順に実行されます。
+ローカルから出す場合:
+
 ```bash
-pnpm deploy
+pnpm build && pnpm run deploy
 ```
 
+（`pnpm deploy` は pnpm 本体の CLI のため、スクリプト実行は `pnpm run deploy` を使います。）
 内部的に `wrangler deploy` を実行し、Workerと静的アセット（`dist/client`）をまとめて
 Cloudflareにアップロードします。デプロイ後は発行されたURLで、ログイン〜記録投稿〜
 Push通知有効化までのE2E動作確認を行うことを推奨します。

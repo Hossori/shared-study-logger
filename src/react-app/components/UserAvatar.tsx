@@ -1,6 +1,7 @@
 import { UserRound } from "lucide-react";
 import { getAvatarUrl } from "../../../shared/schemas";
-import { cn } from "../lib/cn";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface UserAvatarProps {
   avatarKey: string | null | undefined;
@@ -15,29 +16,13 @@ export default function UserAvatar({
 }: UserAvatarProps) {
   const url = getAvatarUrl(avatarKey);
 
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt={alt}
-        className={cn(
-          "rounded-full object-cover ring-1 ring-gray-200",
-          className,
-        )}
-      />
-    );
-  }
-
   return (
-    <span
-      role="img"
-      aria-label={alt || "デフォルトアバター"}
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full bg-gray-100 ring-1 ring-gray-200",
-        className,
-      )}
-    >
-      <UserRound className="size-[55%] text-gray-400" aria-hidden />
-    </span>
+    <Avatar className={cn(className)}>
+      {url ? <AvatarImage src={url} alt={alt} /> : null}
+      <AvatarFallback>
+        <UserRound aria-hidden />
+        <span className="sr-only">{alt || "デフォルトアバター"}</span>
+      </AvatarFallback>
+    </Avatar>
   );
 }
