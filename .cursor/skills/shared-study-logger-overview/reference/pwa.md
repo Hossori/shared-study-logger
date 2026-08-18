@@ -25,7 +25,8 @@
   旧PWAだけは初回に自動再読み込みして、この更新プロトコルへ移行する。
 - **API非互換変更**: `shared/client-api-version.ts` のクライアント版と最小受け入れ版を同時に
   更新する。Workerは旧版を426 `client_update_required`でハンドラ実行前に拒否するため、更新前の
-  UIが新APIで副作用を起こさない。ブリッジリリースでは最小受け入れ版を`null`として強制しない。
+  UIが新APIで副作用を起こさない。強制版では両者を同じ現行版に設定する。ブリッジリリースだけは
+  最小受け入れ版を`null`として強制しない。
 - **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
   Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
   ログイン画面で使い、通常の padding と inset の大きい方を取る。

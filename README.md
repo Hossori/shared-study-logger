@@ -186,11 +186,11 @@ E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
 
 API互換性を壊す変更では、`shared/client-api-version.ts` の
 `CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を同じ新しい値へ更新します。
-Workerは旧版・版ヘッダなしのAPI呼び出しを426 `client_update_required`で副作用前に拒否します。
+強制版ではWorkerが旧版・版ヘッダなしのAPI呼び出しを426 `client_update_required`で副作用前に拒否します。
 
-初回はブリッジリリースとして最小受け入れ版を `null`（強制なし）のままデプロイし、既存PWAへ更新UIを配布します。
-移行マーカーを持たない既存PWAだけは自動再読み込みされるため、未保存入力が失われる可能性があります。
-以後は利用者の明示操作でのみ更新します。問題時は、Workerを後方互換な版へ戻すか、
+強制化の前には、ブリッジリリースで更新UIを既存PWAへ配布します。移行マーカーを持たない
+既存PWAだけは自動再読み込みされ、未保存入力が失われる可能性があります。以後の更新は利用者の
+明示操作でのみ行います。問題時は、Workerを後方互換な版へ戻すか、
 `MIN_SUPPORTED_CLIENT_API_VERSION` を下げて旧クライアントを再許可します。
 
 ## サンプルログイン情報（開発用）
