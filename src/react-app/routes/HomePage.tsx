@@ -13,7 +13,7 @@ import { useGroupsQuery } from "@/queries/useGroups";
 export default function HomePage() {
   const { user } = useOutletContext<AuthenticatedOutletContext>();
   const { data: groups } = useGroupsQuery();
-  const showRecordActions = groups && groups.length > 1;
+  const showRecordActions = groups && groups.length > 0;
 
   return (
     <Layout user={user} showRecordActions={showRecordActions}>
