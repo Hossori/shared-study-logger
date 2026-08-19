@@ -29,7 +29,9 @@
   最小受け入れ版を`null`として強制しない。
 - **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
   Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
-  ログイン画面で使い、通常の padding と inset の大きい方を取る。
+  ログイン画面で使い、通常の padding と inset の大きい方を取る。`sm` 未満の Dialog は
+  画面下端のボトムシート（ハーフモーダル）で、下端 inset をシート内パディングに含める。
+  AlertDialog はビューポート中央のまま。
 - **テーマ**: `html.dark` クラスで切替（`prefers-color-scheme` メディアクエリだけにしない）。
   未保存時は OS 設定に従い、明示選択は `localStorage` の `theme` キー。FOUC 防止のため
   `index.html` 先頭のインラインスクリプトが React 起動前にクラスと `theme-color` を合わせる。

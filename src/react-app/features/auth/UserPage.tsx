@@ -28,7 +28,9 @@ export default function UserPage() {
   } = useUserQuery(isSelf ? undefined : userId);
 
   const [editOpen, setEditOpen] = useState(false);
+  const [editSession, setEditSession] = useState(0);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordSession, setPasswordSession] = useState(0);
 
   const profile = isSelf
     ? {
@@ -100,12 +102,21 @@ export default function UserPage() {
               <>
                 <Separator />
                 <CardFooter className="justify-start gap-2 border-0 bg-transparent">
-                  <Button variant="outline" onClick={() => setEditOpen(true)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditSession((session) => session + 1);
+                      setEditOpen(true);
+                    }}
+                  >
                     編集
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => setPasswordOpen(true)}
+                    onClick={() => {
+                      setPasswordSession((session) => session + 1);
+                      setPasswordOpen(true);
+                    }}
                   >
                     パスワード変更
                   </Button>
@@ -116,18 +127,23 @@ export default function UserPage() {
         )}
       </div>
 
-      {isSelf && editOpen && (
-        <EditProfileModal
-          initialDisplayName={me.displayName}
-          initialBio={me.bio ?? ""}
-          initialAvatarKey={me.avatarKey}
-          onClose={() => setEditOpen(false)}
-        />
-      )}
-
-      {isSelf && passwordOpen && (
-        <ChangePasswordModal onClose={() => setPasswordOpen(false)} />
-      )}
+      {isSelf ? (
+        <>
+          <EditProfileModal
+            key={editSession}
+            open={editOpen}
+            initialDisplayName={me.displayName}
+            initialBio={me.bio ?? ""}
+            initialAvatarKey={me.avatarKey}
+            onClose={() => setEditOpen(false)}
+          />
+          <ChangePasswordModal
+            key={passwordSession}
+            open={passwordOpen}
+            onClose={() => setPasswordOpen(false)}
+          />
+        </>
+      ) : null}
     </Layout>
   );
 }

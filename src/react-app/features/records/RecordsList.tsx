@@ -189,6 +189,7 @@ export default function RecordsList() {
   const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
+  const [editSession, setEditSession] = useState(0);
 
   // isLoading(= isPending && isFetching) だけだと fetch 開始前や retry 待ちで
   // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
@@ -263,7 +264,10 @@ export default function RecordsList() {
             key={record.id}
             record={record}
             isOwner={me?.id === record.userId}
-            onEdit={setEditingRecord}
+            onEdit={(record) => {
+              setEditSession((session) => session + 1);
+              setEditingRecord(record);
+            }}
             onDelete={handleDelete}
             isDeleting={
               deleteRecordMutation.isPending &&
@@ -292,12 +296,12 @@ export default function RecordsList() {
         </div>
       )}
 
-      {editingRecord && (
-        <EditRecordModal
-          record={editingRecord}
-          onClose={() => setEditingRecord(null)}
-        />
-      )}
+      <EditRecordModal
+        key={editSession}
+        record={editingRecord}
+        open={editingRecord !== null}
+        onClose={() => setEditingRecord(null)}
+      />
     </RecordsListFrame>
   );
 }
