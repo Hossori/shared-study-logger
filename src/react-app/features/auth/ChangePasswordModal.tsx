@@ -38,10 +38,12 @@ type PasswordFieldErrors = {
 };
 
 interface ChangePasswordModalProps {
+  open: boolean;
   onClose: () => void;
 }
 
 export default function ChangePasswordModal({
+  open,
   onClose,
 }: ChangePasswordModalProps) {
   const changePasswordMutation = useChangePasswordMutation();
@@ -121,7 +123,7 @@ export default function ChangePasswordModal({
 
   return (
     <Dialog
-      open
+      open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}

@@ -36,6 +36,7 @@ function profileErrorMessage(error: unknown): string {
 }
 
 interface EditProfileModalProps {
+  open: boolean;
   initialDisplayName: string;
   initialBio: string;
   initialAvatarKey: AvatarKey | null;
@@ -43,6 +44,7 @@ interface EditProfileModalProps {
 }
 
 export default function EditProfileModal({
+  open,
   initialDisplayName,
   initialBio,
   initialAvatarKey,
@@ -87,7 +89,7 @@ export default function EditProfileModal({
 
   return (
     <Dialog
-      open
+      open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
