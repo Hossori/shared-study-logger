@@ -56,6 +56,7 @@ function DialogContent({
           "bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fill-mode-forwards fixed z-50 grid w-full min-w-0 gap-4 overflow-x-hidden overflow-y-auto p-4 pb-[max(1rem,var(--safe-area-inset-bottom))] text-sm outline-none *:min-w-0",
           "max-sm:data-open:slide-in-from-bottom max-sm:data-closed:slide-out-to-bottom inset-x-0 bottom-0 max-h-[calc(100dvh-1rem-var(--safe-area-inset-top))] rounded-t-2xl rounded-b-none shadow-lg duration-200",
           "sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] sm:max-w-[min(24rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-none sm:ring-1 sm:duration-100",
+          "data-[nested-dialog-open]:pointer-events-none",
           className,
         )}
         {...props}
