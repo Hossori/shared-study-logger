@@ -24,11 +24,21 @@ export function useUnsavedCloseGuard(open: boolean, onClose: () => void) {
   const confirmingRef = useRef(false);
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    setConfirmOpen(false);
+  }
 
   useEffect(() => {
     if (open) {
       dirtyRef.current = false;
+      return;
     }
+    confirmingRef.current = false;
+    resolveRef.current?.(false);
+    resolveRef.current = null;
   }, [open]);
 
   useEffect(() => {
@@ -87,7 +97,7 @@ export function useUnsavedCloseGuard(open: boolean, onClose: () => void) {
 
   const confirmNode: ReactNode = (
     <ConfirmDialog
-      open={confirmOpen}
+      open={open && confirmOpen}
       title={UNSAVED_CLOSE_CONFIRM.title}
       message={UNSAVED_CLOSE_CONFIRM.message}
       confirmLabel={UNSAVED_CLOSE_CONFIRM.confirmLabel}
