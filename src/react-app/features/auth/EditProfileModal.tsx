@@ -24,7 +24,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "../../components/UserAvatar";
 import ErrorMessage from "../../components/ui/ErrorMessage";
-import { useUnsavedCloseGuard } from "../../components/useUnsavedCloseGuard";
 import { useUpdateProfileMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
 import { cn } from "@/lib/utils";
@@ -59,13 +58,6 @@ export default function EditProfileModal({
     initialAvatarKey,
   );
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
-  const {
-    requestClose,
-    handleOpenChange,
-    formGuardProps,
-    confirmNode,
-    markDirty,
-  } = useUnsavedCloseGuard(open, onClose);
 
   // 前回オープン時の isSuccess / isError が残らないようにする
   useEffect(() => {
@@ -96,16 +88,17 @@ export default function EditProfileModal({
   const displayNameInvalid = Boolean(displayNameError);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
       <DialogContent
         className="sm:max-w-md"
         aria-labelledby="edit-profile-title"
       >
-        <form
-          onSubmit={handleProfileSubmit}
-          className="contents"
-          {...formGuardProps}
-        >
+        <form onSubmit={handleProfileSubmit} className="contents">
           <DialogHeader>
             <DialogTitle id="edit-profile-title">
               プロフィールを編集
@@ -124,10 +117,7 @@ export default function EditProfileModal({
                 <Button
                   type="button"
                   variant="link"
-                  onClick={() => {
-                    markDirty();
-                    setAvatarKey(null);
-                  }}
+                  onClick={() => setAvatarKey(null)}
                 >
                   デフォルトに戻す
                 </Button>
@@ -139,10 +129,7 @@ export default function EditProfileModal({
                     <button
                       key={key}
                       type="button"
-                      onClick={() => {
-                        markDirty();
-                        setAvatarKey(key);
-                      }}
+                      onClick={() => setAvatarKey(key)}
                       aria-label={`アバター ${key}`}
                       aria-pressed={selected}
                       className={cn(
@@ -202,7 +189,7 @@ export default function EditProfileModal({
           </FieldGroup>
 
           <DialogButtonArea>
-            <Button type="button" variant="outline" onClick={requestClose}>
+            <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
             <Button type="submit" disabled={updateProfileMutation.isPending}>
@@ -218,7 +205,6 @@ export default function EditProfileModal({
           </DialogButtonArea>
         </form>
       </DialogContent>
-      {confirmNode}
     </Dialog>
   );
 }

@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "../../components/ui/ErrorMessage";
-import { useUnsavedCloseGuard } from "../../components/useUnsavedCloseGuard";
 import { useChangePasswordMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
 
@@ -53,8 +52,6 @@ export default function ChangePasswordModal({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<PasswordFieldErrors>({});
-  const { requestClose, handleOpenChange, formGuardProps, confirmNode } =
-    useUnsavedCloseGuard(open, onClose);
 
   // 前回オープン時の isError が残らないようにする
   useEffect(() => {
@@ -125,16 +122,17 @@ export default function ChangePasswordModal({
     !fieldErrors.confirmPassword;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
       <DialogContent
         className="sm:max-w-md"
         aria-labelledby="change-password-title"
       >
-        <form
-          onSubmit={handlePasswordSubmit}
-          className="contents"
-          {...formGuardProps}
-        >
+        <form onSubmit={handlePasswordSubmit} className="contents">
           <DialogHeader>
             <DialogTitle id="change-password-title">パスワード変更</DialogTitle>
           </DialogHeader>
@@ -233,7 +231,7 @@ export default function ChangePasswordModal({
           </FieldGroup>
 
           <DialogButtonArea>
-            <Button type="button" variant="outline" onClick={requestClose}>
+            <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
             <Button type="submit" disabled={changePasswordMutation.isPending}>
@@ -249,7 +247,6 @@ export default function ChangePasswordModal({
           </DialogButtonArea>
         </form>
       </DialogContent>
-      {confirmNode}
     </Dialog>
   );
 }
