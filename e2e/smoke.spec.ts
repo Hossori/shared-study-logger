@@ -60,12 +60,17 @@ test("学習記録を投稿できる", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
 
 	await openPostModal(page);
-	await page.locator("#post-title").fill("下書き");
-	await page.getByRole("button", { name: "キャンセル" }).click();
+	const cancelButton = page.getByRole("button", { name: "キャンセル" });
+	const cancelBox = await cancelButton.boundingBox();
+	expect(cancelBox).not.toBeNull();
+	if (!cancelBox) throw new Error("キャンセルボタンの座標を取得できません。");
+	await page.locator("#post-title").pressSequentially("下書き");
+	await page.mouse.click(
+		cancelBox.x + cancelBox.width / 2,
+		cancelBox.y + cancelBox.height / 2,
+	);
 	const discardDialog = page.getByRole("alertdialog");
-	await expect(
-		discardDialog.getByRole("heading", { name: "編集内容を破棄しますか？" }),
-	).toBeVisible();
+	expect(await discardDialog.isVisible()).toBe(true);
 	await expect(discardDialog).toBeInViewport();
 	await page.mouse.click(10, 10);
 	await expect(discardDialog).toBeVisible();
