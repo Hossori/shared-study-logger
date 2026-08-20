@@ -39,22 +39,31 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  overlay,
+  container,
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
   size?: "default" | "sm";
+  overlay?: AlertDialogPrimitive.Backdrop.Props;
+  container?: AlertDialogPrimitive.Portal.Props["container"];
 }) {
   return (
-    <AlertDialogPortal>
-      <AlertDialogOverlay />
-      <AlertDialogPrimitive.Popup
-        data-slot="alert-dialog-content"
-        data-size={size}
-        className={cn(
-          "group/alert-dialog-content bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full max-w-[min(20rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl p-4 ring-1 duration-100 outline-none data-[size=default]:sm:max-w-[min(24rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))]",
-          className,
-        )}
-        {...props}
-      />
+    <AlertDialogPortal container={container}>
+      <AlertDialogOverlay {...overlay} />
+      <AlertDialogPrimitive.Viewport
+        data-slot="alert-dialog-viewport"
+        className="pointer-events-none fixed inset-0 z-50"
+      >
+        <AlertDialogPrimitive.Popup
+          data-slot="alert-dialog-content"
+          data-size={size}
+          className={cn(
+            "group/alert-dialog-content bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 pointer-events-auto fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full max-w-[min(20rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl p-4 ring-1 duration-100 outline-none data-[size=default]:sm:max-w-[min(24rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))]",
+            className,
+          )}
+          {...props}
+        />
+      </AlertDialogPrimitive.Viewport>
     </AlertDialogPortal>
   );
 }
