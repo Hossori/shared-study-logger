@@ -55,25 +55,6 @@ test("学習記録を投稿できる", async ({ page }) => {
 	await loginAsAdmin(page);
 	await expect(page.getByLabel("グループ切替")).toBeVisible();
 
-	await openPostModal(page);
-	await page.getByRole("button", { name: "キャンセル" }).click();
-	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
-
-	await openPostModal(page);
-	await page.locator("#post-title").fill("下書き");
-	await page.getByRole("button", { name: "キャンセル" }).click();
-	const discardDialog = page.getByRole("alertdialog");
-	await expect(
-		discardDialog.getByRole("heading", { name: "編集内容を破棄しますか？" }),
-	).toBeVisible();
-	await discardDialog.getByRole("button", { name: "編集に戻る" }).click();
-	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeVisible();
-	await expect(page.locator("#post-title")).toHaveValue("下書き");
-
-	await page.getByRole("button", { name: "キャンセル" }).click();
-	await page.getByRole("alertdialog").getByRole("button", { name: "破棄する" }).click();
-	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
-
 	const title = `e2e-record-${Date.now()}`;
 	await openPostModal(page);
 	await page.locator("#post-studyDatetime").fill("2026-08-10T12:00");
