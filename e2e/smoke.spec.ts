@@ -55,6 +55,34 @@ test("学習記録を投稿できる", async ({ page }) => {
 	await loginAsAdmin(page);
 	await expect(page.getByLabel("グループ切替")).toBeVisible();
 
+	await openPostModal(page);
+	await page.getByRole("button", { name: "キャンセル" }).click();
+	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
+
+	await openPostModal(page);
+	const cancelButton = page.getByRole("button", { name: "キャンセル" });
+	const cancelBox = await cancelButton.boundingBox();
+	expect(cancelBox).not.toBeNull();
+	if (!cancelBox) throw new Error("キャンセルボタンの座標を取得できません。");
+	await page.locator("#post-title").pressSequentially("下書き");
+	await page.mouse.click(
+		cancelBox.x + cancelBox.width / 2,
+		cancelBox.y + cancelBox.height / 2,
+	);
+	const discardDialog = page.getByRole("alertdialog");
+	expect(await discardDialog.isVisible()).toBe(true);
+	await expect(discardDialog).toBeInViewport();
+	await page.mouse.click(10, 10);
+	await expect(discardDialog).toBeVisible();
+	await expect(discardDialog).toBeInViewport();
+	await discardDialog.getByRole("button", { name: "編集に戻る" }).click();
+	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeVisible();
+	await expect(page.locator("#post-title")).toHaveValue("下書き");
+
+	await page.getByRole("button", { name: "キャンセル" }).click();
+	await page.getByRole("alertdialog").getByRole("button", { name: "破棄する" }).click();
+	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
+
 	const title = `e2e-record-${Date.now()}`;
 	await openPostModal(page);
 	await page.locator("#post-studyDatetime").fill("2026-08-10T12:00");

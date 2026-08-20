@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "../../components/ui/ErrorMessage";
+import { useUnsavedCloseGuard } from "../../components/useUnsavedCloseGuard";
 
 interface RecordModalShellProps {
   open: boolean;
@@ -36,15 +37,13 @@ export default function RecordModalShell({
   pendingLabel,
   children,
 }: RecordModalShellProps) {
+  const { requestClose, handleOpenChange, formGuardProps, confirmNode } =
+    useUnsavedCloseGuard(open, onClose);
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) onClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={onSubmit} className="contents">
+        <form onSubmit={onSubmit} className="contents" {...formGuardProps}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
@@ -54,7 +53,7 @@ export default function RecordModalShell({
           {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
 
           <DialogButtonArea>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={requestClose}>
               キャンセル
             </Button>
             <Button type="submit" disabled={isPending}>
@@ -70,6 +69,7 @@ export default function RecordModalShell({
           </DialogButtonArea>
         </form>
       </DialogContent>
+      {confirmNode}
     </Dialog>
   );
 }
