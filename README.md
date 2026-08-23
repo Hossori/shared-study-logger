@@ -68,17 +68,96 @@ shared-study-logger/
     manifest.webmanifest
     icons/
   wrangler.jsonc        # D1 / KV / Queue バインディング設定
+  Dockerfile            # ローカル開発用イメージ
+  docker-compose.yml    # Vite + wrangler ローカルエミュレーション
+  docker/entrypoint.sh  # install / migrate / seed
 ```
 
 ## セットアップ手順（ローカル開発）
 
-### 1. 依存関係のインストール
+開発環境は **Docker Compose** と、ホストに Node / pnpm を入れる方法のどちらかを選べます。
+Windows で `wrangler d1` やローカル SQLite が不安定な場合は Docker を推奨します
+（コンテナ内は CI と同じ Linux）。本番デプロイ先は Cloudflare Workers のままです。
+
+### 選択肢 A: Docker Compose（推奨）
+
+必要なもの: Docker Desktop（Compose v2）。ホスト側の Node は不要です。
+
+#### 1. `.dev.vars` を用意する
+
+プロジェクトルートに `.dev.vars` を作成します（`.gitignore` 済み。イメージには焼き込みません）。
+ホストに pnpm がある場合:
+
+```bash
+cp .dev.vars.example .dev.vars
+pnpm exec pushforge vapid
+```
+
+生成した鍵を `.dev.vars` に貼ります。Push 通知を試さないなら、次のダミーでも起動できます
+（実送信には使えません）。
+
+```ini
+VAPID_PUBLIC_KEY=BOqplaceholderPublicKeyForCiOnlyDoNotUseInProd0123456789abcdef
+VAPID_PRIVATE_KEY={"kty":"EC","crv":"P-256","x":"ci","y":"ci","d":"ci"}
+VAPID_ADMIN_CONTACT=mailto:ci@example.com
+```
+
+`docker compose up` の前に **ファイルとして** 存在している必要があります。無いと Docker が `.dev.vars` というディレクトリを作ることがあり、エントリポイントが失敗します。
+
+#### 2. 開発サーバーを起動する
+
+ソースはイメージ内の Linux ファイルシステムで動かします（Windows のプロジェクト bind mount だと
+Vite / workerd の起動がタイムアウトするため）。ホストの編集を反映するには `--watch` を付けます。
+
+```bash
+docker compose up --build --watch
+```
+
+`http://localhost:5173` でアクセスできます。起動時にコンテナ内で `pnpm install`、
+ローカル D1 マイグレーション、`pnpm seed` が走ります。サンプルアカウント:
+
+- email: `admin@example.com`
+- password: `ChangeMe123!`
+
+コードをイメージ時点のまま試すだけなら `docker compose up --build` でも起動します。
+`package.json` / lockfile / Dockerfile の変更はイメージの rebuild が走ります。
+
+#### 3. テスト・品質チェック（コンテナ内）
+
+サーバー起動中:
+
+```bash
+docker compose exec app pnpm lint
+docker compose exec app pnpm run typecheck
+docker compose exec app pnpm test
+docker compose exec app pnpm test:worker
+```
+
+Playwright E2E は日常イメージに Chromium を入れないため、v1 ではホスト側
+（`pnpm playwright:install` → `pnpm test:e2e`）で実行してください。
+
+#### 4. ローカル D1 のリセット
+
+named volume に `.wrangler`（ローカル D1）と `node_modules` が残ります。消してやり直す場合:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+`down -v` は D1・依存関係キャッシュも破棄します。再起動時に migrate と seed が再実行されます。
+
+本番デプロイや `wrangler login` はコンテナの責務ではありません。ホストから実行してください。
+
+### 選択肢 B: ホストで直接動かす
+
+#### 1. 依存関係のインストール
 
 ```bash
 pnpm install
 ```
 
-### 2. Cloudflareリソースの準備
+#### 2. Cloudflareリソースの準備
 
 このプロジェクトは D1（`shared-study-logger-db`）・KV（`SESSIONS`）・Queue（`push-notifications` /
 `push-notifications-dlq`）を利用します。`wrangler.jsonc` に既に本番リソースのIDが設定されていますが、
@@ -93,13 +172,13 @@ pnpm exec wrangler queues create push-notifications-dlq
 # wrangler.jsonc の database_id / kv id を出力内容に置き換える
 ```
 
-### 3. ローカルD1へのマイグレーション適用
+#### 3. ローカルD1へのマイグレーション適用
 
 ```bash
 pnpm exec wrangler d1 migrations apply shared-study-logger-db --local
 ```
 
-### 4. 環境変数（`.dev.vars`）の設定
+#### 4. 環境変数（`.dev.vars`）の設定
 
 プロジェクトルートに `.dev.vars` ファイルを作成し、以下の3つの環境変数を設定します
 （`.gitignore` で除外済みのためコミットされません）。
@@ -118,7 +197,7 @@ pnpm exec pushforge vapid
 
 > 環境変数についての詳細は「環境変数・シークレット一覧」を参照してください。
 
-### 5. サンプルユーザー・グループの投入
+#### 5. サンプルユーザー・グループの投入
 
 ```bash
 pnpm seed
@@ -128,7 +207,7 @@ pnpm seed
 「サンプル学習グループ」がローカルD1に1件ずつ投入されます。再実行するとメールアドレスの
 UNIQUE制約でエラーになるため、再投入したい場合はローカルD1をリセットしてください。
 
-### 6. 開発サーバーの起動
+#### 6. 開発サーバーの起動
 
 ```bash
 pnpm dev
