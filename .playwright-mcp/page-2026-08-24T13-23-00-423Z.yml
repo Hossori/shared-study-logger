@@ -1,0 +1,279 @@
+- generic [ref=e1]:
+  - generic [ref=e26]:
+    - banner [ref=e27]:
+      - generic [ref=e28]:
+        - link [ref=e350] [cursor=pointer]:
+          - /url: /
+          - heading [level=1] [ref=e351]: 📚 学習記録シェア
+        - generic [ref=e31]:
+          - button [ref=e352] [cursor=pointer]:
+            - generic [ref=e33]: ダークモードに切り替え
+          - button [ref=e353] [cursor=pointer]:
+            - generic [ref=e36]: 通知（10件）
+            - generic [ref=e37]: "10"
+          - button [ref=e354] [cursor=pointer]:
+            - generic [ref=e40]: プロフィールメニュー
+    - main [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: サンプル学習グループ
+            - button [ref=e355] [cursor=pointer]:
+              - generic [ref=e48]: 切り替え
+          - button [ref=e356] [cursor=pointer]: 記録を追加
+        - list [ref=e51]:
+          - listitem [ref=e52]:
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - link [ref=e357] [cursor=pointer]:
+                  - /url: /users/00000000-0000-4000-a000-000000000001
+                  - generic [ref=e58]: 管理者
+                - generic [ref=e59]:
+                  - button [ref=e358] [cursor=pointer]:
+                    - generic [ref=e61]: 編集
+                  - button [ref=e359] [cursor=pointer]:
+                    - generic [ref=e63]: 削除
+                - generic [ref=e64]: 2026年8月12日(水) 00:43
+                - heading [level=3] [ref=e360]: こんにちは2
+              - paragraph [ref=e68]: yeahaa
+          - listitem [ref=e69]:
+            - generic [ref=e71]:
+              - link [ref=e361] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e75]: 管理者
+              - generic [ref=e76]:
+                - button [ref=e362] [cursor=pointer]:
+                  - generic [ref=e78]: 編集
+                - button [ref=e363] [cursor=pointer]:
+                  - generic [ref=e80]: 削除
+              - generic [ref=e81]: 2026年8月12日(水) 00:42
+              - heading [level=3] [ref=e364]: こんにちは
+          - listitem [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - link [ref=e365] [cursor=pointer]:
+                  - /url: /users/00000000-0000-4000-a000-000000000001
+                  - generic [ref=e90]: 管理者
+                - generic [ref=e91]:
+                  - button [ref=e366] [cursor=pointer]:
+                    - generic [ref=e93]: 編集
+                  - button [ref=e367] [cursor=pointer]:
+                    - generic [ref=e95]: 削除
+                - generic [ref=e96]: 2026年8月10日(月) 21:56
+                - heading [level=3] [ref=e368]: 管理者ポストa
+              - paragraph [ref=e100]: admin post
+          - listitem [ref=e101]:
+            - generic [ref=e103]:
+              - link [ref=e369] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000005
+                - generic [ref=e107]: テストユーザー
+              - generic [ref=e108]: 2026年8月10日(月) 21:56
+              - heading [level=3] [ref=e370]: test user post2
+          - listitem [ref=e111]:
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - link [ref=e371] [cursor=pointer]:
+                  - /url: /users/00000000-0000-4000-a000-000000000005
+                  - generic [ref=e117]: テストユーザー
+                - generic [ref=e118]: 2026年8月10日(月) 21:52
+                - heading [level=3] [ref=e372]: test user post
+              - paragraph [ref=e122]: yeah
+          - listitem [ref=e123]:
+            - generic [ref=e125]:
+              - link [ref=e373] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e129]: 管理者
+              - generic [ref=e130]:
+                - button [ref=e374] [cursor=pointer]:
+                  - generic [ref=e132]: 編集
+                - button [ref=e375] [cursor=pointer]:
+                  - generic [ref=e134]: 削除
+              - generic [ref=e135]: 2026年8月10日(月) 19:41
+              - heading [level=3] [ref=e376]: api-debug
+          - listitem [ref=e138]:
+            - generic [ref=e140]:
+              - link [ref=e377] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e144]: 管理者
+              - generic [ref=e145]:
+                - button [ref=e378] [cursor=pointer]:
+                  - generic [ref=e147]: 編集
+                - button [ref=e379] [cursor=pointer]:
+                  - generic [ref=e149]: 削除
+              - generic [ref=e150]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e380]: e2e-record-1787225885876
+          - listitem [ref=e153]:
+            - generic [ref=e155]:
+              - link [ref=e381] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e159]: 管理者
+              - generic [ref=e160]:
+                - button [ref=e382] [cursor=pointer]:
+                  - generic [ref=e162]: 編集
+                - button [ref=e383] [cursor=pointer]:
+                  - generic [ref=e164]: 削除
+              - generic [ref=e165]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e384]: e2e-record-1787199827475
+          - listitem [ref=e168]:
+            - generic [ref=e170]:
+              - link [ref=e385] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e174]: 管理者
+              - generic [ref=e175]:
+                - button [ref=e386] [cursor=pointer]:
+                  - generic [ref=e177]: 編集
+                - button [ref=e387] [cursor=pointer]:
+                  - generic [ref=e179]: 削除
+              - generic [ref=e180]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e388]: e2e-record-1787199210820
+          - listitem [ref=e183]:
+            - generic [ref=e185]:
+              - link [ref=e389] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e189]: 管理者
+              - generic [ref=e190]:
+                - button [ref=e390] [cursor=pointer]:
+                  - generic [ref=e192]: 編集
+                - button [ref=e391] [cursor=pointer]:
+                  - generic [ref=e194]: 削除
+              - generic [ref=e195]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e392]: e2e-record-1787136316702
+          - listitem [ref=e198]:
+            - generic [ref=e200]:
+              - link [ref=e393] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e204]: 管理者
+              - generic [ref=e205]:
+                - button [ref=e394] [cursor=pointer]:
+                  - generic [ref=e207]: 編集
+                - button [ref=e395] [cursor=pointer]:
+                  - generic [ref=e209]: 削除
+              - generic [ref=e210]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e396]: e2e-record-1787135616983
+          - listitem [ref=e213]:
+            - generic [ref=e215]:
+              - link [ref=e397] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e219]: 管理者
+              - generic [ref=e220]:
+                - button [ref=e398] [cursor=pointer]:
+                  - generic [ref=e222]: 編集
+                - button [ref=e399] [cursor=pointer]:
+                  - generic [ref=e224]: 削除
+              - generic [ref=e225]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e400]: e2e-record-1787066465569
+          - listitem [ref=e228]:
+            - generic [ref=e230]:
+              - link [ref=e401] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e234]: 管理者
+              - generic [ref=e235]:
+                - button [ref=e402] [cursor=pointer]:
+                  - generic [ref=e237]: 編集
+                - button [ref=e403] [cursor=pointer]:
+                  - generic [ref=e239]: 削除
+              - generic [ref=e240]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e404]: e2e-record-1787065479746
+          - listitem [ref=e243]:
+            - generic [ref=e245]:
+              - link [ref=e405] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e249]: 管理者
+              - generic [ref=e250]:
+                - button [ref=e406] [cursor=pointer]:
+                  - generic [ref=e252]: 編集
+                - button [ref=e407] [cursor=pointer]:
+                  - generic [ref=e254]: 削除
+              - generic [ref=e255]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e408]: e2e-record-1787063576079
+          - listitem [ref=e258]:
+            - generic [ref=e260]:
+              - link [ref=e409] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e264]: 管理者
+              - generic [ref=e265]:
+                - button [ref=e410] [cursor=pointer]:
+                  - generic [ref=e267]: 編集
+                - button [ref=e411] [cursor=pointer]:
+                  - generic [ref=e269]: 削除
+              - generic [ref=e270]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e412]: e2e-record-1787062911349
+          - listitem [ref=e273]:
+            - generic [ref=e275]:
+              - link [ref=e413] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e279]: 管理者
+              - generic [ref=e280]:
+                - button [ref=e414] [cursor=pointer]:
+                  - generic [ref=e282]: 編集
+                - button [ref=e415] [cursor=pointer]:
+                  - generic [ref=e284]: 削除
+              - generic [ref=e285]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e416]: e2e-record-1787037926611
+          - listitem [ref=e288]:
+            - generic [ref=e290]:
+              - link [ref=e417] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e294]: 管理者
+              - generic [ref=e295]:
+                - button [ref=e418] [cursor=pointer]:
+                  - generic [ref=e297]: 編集
+                - button [ref=e419] [cursor=pointer]:
+                  - generic [ref=e299]: 削除
+              - generic [ref=e300]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e420]: e2e-record-1787035708401
+          - listitem [ref=e303]:
+            - generic [ref=e305]:
+              - link [ref=e421] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e309]: 管理者
+              - generic [ref=e310]:
+                - button [ref=e422] [cursor=pointer]:
+                  - generic [ref=e312]: 編集
+                - button [ref=e423] [cursor=pointer]:
+                  - generic [ref=e314]: 削除
+              - generic [ref=e315]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e424]: e2e-record-1787035323684
+          - listitem [ref=e318]:
+            - generic [ref=e320]:
+              - link [ref=e425] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e324]: 管理者
+              - generic [ref=e325]:
+                - button [ref=e426] [cursor=pointer]:
+                  - generic [ref=e327]: 編集
+                - button [ref=e427] [cursor=pointer]:
+                  - generic [ref=e329]: 削除
+              - generic [ref=e330]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e428]: e2e-record-1787035321993
+          - listitem [ref=e333]:
+            - generic [ref=e335]:
+              - link [ref=e429] [cursor=pointer]:
+                - /url: /users/00000000-0000-4000-a000-000000000001
+                - generic [ref=e339]: 管理者
+              - generic [ref=e340]:
+                - button [ref=e430] [cursor=pointer]:
+                  - generic [ref=e342]: 編集
+                - button [ref=e431] [cursor=pointer]:
+                  - generic [ref=e344]: 削除
+              - generic [ref=e345]: 2026年8月10日(月) 12:00
+              - heading [level=3] [ref=e432]: e2e-record-1786966757150
+        - button [ref=e433] [cursor=pointer]: もっと見る
+  - dialog [ref=e437]:
+    - generic [ref=e438]:
+      - heading "学習記録を投稿" [level=2] [ref=e440]
+      - generic [ref=e441]:
+        - group [ref=e442]:
+          - generic [ref=e443]: 学習日時
+          - textbox "学習日時" [active] [ref=e444]: 2026-08-24T22:22
+        - group [ref=e445]:
+          - generic [ref=e446]: タイトル・学習内容
+          - textbox "タイトル・学習内容" [ref=e447]
+        - group [ref=e448]:
+          - generic [ref=e449]: メモ
+          - textbox "メモ" [ref=e450]:
+            - /placeholder: 振り返りや気づきなど
+      - generic [ref=e451]:
+        - button "キャンセル" [ref=e452] [cursor=pointer]
+        - button "投稿する" [ref=e453] [cursor=pointer]
+    - button "Close" [ref=e454] [cursor=pointer]
