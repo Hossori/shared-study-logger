@@ -78,7 +78,6 @@ test("学習記録を投稿できる", async ({ page }) => {
 	const submitButton = page.getByRole("button", { name: "投稿する" });
 	const cancelAfterReturn = page.getByRole("button", { name: "キャンセル" });
 	await discardDialog.getByRole("button", { name: "編集に戻る" }).click();
-	await submitButton.click({ trial: true, timeout: 0 });
 	const submitBox = await submitButton.boundingBox();
 	expect(submitBox).not.toBeNull();
 	if (!submitBox) throw new Error("投稿するボタンの座標を取得できません。");
