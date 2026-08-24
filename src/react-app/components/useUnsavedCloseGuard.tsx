@@ -62,6 +62,7 @@ export function useUnsavedCloseGuard(open: boolean, onClose: () => void) {
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
   const debugEnabledRef = useRef(isUnsavedCloseDebugEnabled());
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMounted, setConfirmMounted] = useState(false);
   const [prevOpen, setPrevOpen] = useState(open);
   const debug = useCallback(
     (message: string, details: Record<string, unknown> = {}) => {
@@ -79,6 +80,13 @@ export function useUnsavedCloseGuard(open: boolean, onClose: () => void) {
   if (open !== prevOpen) {
     setPrevOpen(open);
     setConfirmOpen(false);
+    if (!open) {
+      setConfirmMounted(false);
+    }
+  }
+
+  if (open && confirmOpen && !confirmMounted) {
+    setConfirmMounted(true);
   }
 
   useEffect(() => {
@@ -210,43 +218,46 @@ export function useUnsavedCloseGuard(open: boolean, onClose: () => void) {
     [debug, requestClose],
   );
 
-  const confirmNode: ReactNode = (
-    <AlertDialog
-      open={open && confirmOpen}
-      onOpenChange={(nextOpen, eventDetails) => {
-        debug("confirmation open change", {
-          nextOpen,
-          reason: eventDetails.reason,
-          target: describeEventTarget(eventDetails.event.target),
-        });
-        if (!nextOpen) finishConfirm(false);
-      }}
-    >
-      <AlertDialogContent
-        container={typeof document === "undefined" ? undefined : document.body}
-        overlay={{ forceRender: true }}
+  const confirmNode: ReactNode =
+    open && (confirmMounted || confirmOpen) ? (
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(nextOpen, eventDetails) => {
+          debug("confirmation open change", {
+            nextOpen,
+            reason: eventDetails.reason,
+            target: describeEventTarget(eventDetails.event.target),
+          });
+          if (!nextOpen) finishConfirm(false);
+        }}
       >
-        <AlertDialogHeader>
-          <AlertDialogTitle>{UNSAVED_CLOSE_CONFIRM.title}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {UNSAVED_CLOSE_CONFIRM.message}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>
-            {UNSAVED_CLOSE_CONFIRM.cancelLabel}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            type="button"
-            variant="destructive"
-            onClick={() => finishConfirm(true)}
-          >
-            {UNSAVED_CLOSE_CONFIRM.confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
+        <AlertDialogContent
+          container={
+            typeof document === "undefined" ? undefined : document.body
+          }
+          overlay={{ forceRender: true }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>{UNSAVED_CLOSE_CONFIRM.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {UNSAVED_CLOSE_CONFIRM.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {UNSAVED_CLOSE_CONFIRM.cancelLabel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              variant="destructive"
+              onClick={() => finishConfirm(true)}
+            >
+              {UNSAVED_CLOSE_CONFIRM.confirmLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    ) : null;
 
   return {
     markDirty,

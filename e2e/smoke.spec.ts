@@ -75,11 +75,38 @@ test("学習記録を投稿できる", async ({ page }) => {
 	await page.mouse.click(10, 10);
 	await expect(discardDialog).toBeVisible();
 	await expect(discardDialog).toBeInViewport();
+	const submitButton = page.getByRole("button", { name: "投稿する" });
+	const cancelAfterReturn = page.getByRole("button", { name: "キャンセル" });
 	await discardDialog.getByRole("button", { name: "編集に戻る" }).click();
+	await submitButton.click({ trial: true, timeout: 0 });
+	const submitBox = await submitButton.boundingBox();
+	expect(submitBox).not.toBeNull();
+	if (!submitBox) throw new Error("投稿するボタンの座標を取得できません。");
+	const overlayStealsClick = await page.evaluate(
+		({ x, y }) => {
+			const el = document.elementFromPoint(x, y);
+			return Boolean(el?.closest('[data-slot="alert-dialog-overlay"]'));
+		},
+		{
+			x: submitBox.x + submitBox.width / 2,
+			y: submitBox.y + submitBox.height / 2,
+		},
+	);
+	expect(overlayStealsClick).toBe(false);
+
 	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeVisible();
 	await expect(page.locator("#post-title")).toHaveValue("下書き");
 
-	await page.getByRole("button", { name: "キャンセル" }).click();
+	const cancelAfterReturnBox = await cancelAfterReturn.boundingBox();
+	expect(cancelAfterReturnBox).not.toBeNull();
+	if (!cancelAfterReturnBox) {
+		throw new Error("キャンセルボタンの座標を取得できません。");
+	}
+	await page.mouse.click(
+		cancelAfterReturnBox.x + cancelAfterReturnBox.width / 2,
+		cancelAfterReturnBox.y + cancelAfterReturnBox.height / 2,
+	);
+	await expect(page.getByRole("alertdialog")).toBeVisible();
 	await page.getByRole("alertdialog").getByRole("button", { name: "破棄する" }).click();
 	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
 
