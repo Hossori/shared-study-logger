@@ -25,7 +25,7 @@ export default function RecordFormFields({
           id={`${idPrefix}-studyDatetime`}
           type="datetime-local"
           required
-          className="max-w-full min-w-0"
+          className="max-w-full min-w-0 px-2"
           value={values.studyDatetime}
           onChange={(e) =>
             onChange({ ...values, studyDatetime: e.target.value })

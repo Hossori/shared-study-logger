@@ -153,11 +153,45 @@ body {
       scrollbar-gutter: stable;
     }
   }
-  /* iOS の datetime-local は intrinsic min-width が大きく、ダイアログからはみ出しやすい */
+  /*
+   * datetime-local は UA 内部（::-webkit-datetime-edit とカレンダーアイコン）が
+   * nowrap の固有幅を持つ。作者の min-width: 0 だけでは縮まず、モバイルの
+   * ダイアログ内で右端（時刻・ピッカー）が見切れる。
+   */
   input[type="datetime-local"] {
     box-sizing: border-box;
     width: 100%;
     max-width: 100%;
     min-width: 0;
+  }
+
+  input[type="datetime-local"]::-webkit-datetime-edit,
+  input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-minute-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-second-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
+    padding-inline: 0;
+  }
+
+  input[type="datetime-local"]::-webkit-datetime-edit-text {
+    padding-inline: 1px;
+  }
+
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
   }
 }
