@@ -20,7 +20,7 @@ export default function UserAvatar({
     <Avatar className={cn(className)}>
       {url ? <AvatarImage src={url} alt={alt} /> : null}
       <AvatarFallback>
-        <UserRound aria-hidden />
+        <UserRound className="size-2/3" aria-hidden />
         <span className="sr-only">{alt || "デフォルトアバター"}</span>
       </AvatarFallback>
     </Avatar>

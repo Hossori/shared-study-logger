@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { env, exports } from "cloudflare:workers";
-import { loginAs, SEED, seedMinimalDb } from "./helpers";
-
-const workerFetch = exports.default.fetch.bind(exports.default);
+import { env } from "cloudflare:workers";
+import { loginAs, SEED, seedMinimalDb, workerFetch } from "./helpers";
 
 describe("records routes", () => {
 	beforeEach(async () => {
 		await seedMinimalDb();
 	});
 
-	it("CRUD study record in member group", async () => {
+	it("current client can CRUD a study record in a member group", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,

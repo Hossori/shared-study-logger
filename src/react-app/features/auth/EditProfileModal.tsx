@@ -24,6 +24,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "../../components/UserAvatar";
 import ErrorMessage from "../../components/ui/ErrorMessage";
+import { useUnsavedCloseGuard } from "../../components/useUnsavedCloseGuard";
 import { useUpdateProfileMutation } from "../../queries/useAuth";
 import { ApiError } from "../../lib/api";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ function profileErrorMessage(error: unknown): string {
 }
 
 interface EditProfileModalProps {
+  open: boolean;
   initialDisplayName: string;
   initialBio: string;
   initialAvatarKey: AvatarKey | null;
@@ -43,6 +45,7 @@ interface EditProfileModalProps {
 }
 
 export default function EditProfileModal({
+  open,
   initialDisplayName,
   initialBio,
   initialAvatarKey,
@@ -56,13 +59,20 @@ export default function EditProfileModal({
     initialAvatarKey,
   );
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
+  const {
+    requestClose,
+    handleOpenChange,
+    formGuardProps,
+    confirmNode,
+    markDirty,
+  } = useUnsavedCloseGuard(open, onClose);
 
   // 前回オープン時の isSuccess / isError が残らないようにする
   useEffect(() => {
     resetUpdateProfile();
   }, [resetUpdateProfile]);
 
-  const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDisplayNameError(null);
     const trimmedName = displayName.trim();
@@ -71,34 +81,31 @@ export default function EditProfileModal({
       return;
     }
 
-    updateProfileMutation.mutate(
-      {
+    try {
+      await updateProfileMutation.mutateAsync({
         displayName: trimmedName,
         bio: bio.trim() ? bio.trim() : null,
         avatarKey,
-      },
-      {
-        onSuccess: () => {
-          onClose();
-        },
-      },
-    );
+      });
+      onClose();
+    } catch {
+      // エラーメッセージは mutation.isError から表示する
+    }
   };
 
   const displayNameInvalid = Boolean(displayNameError);
 
   return (
-    <Dialog
-      open
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) onClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="sm:max-w-md"
         aria-labelledby="edit-profile-title"
       >
-        <form onSubmit={handleProfileSubmit} className="contents">
+        <form
+          onSubmit={handleProfileSubmit}
+          className="contents"
+          {...formGuardProps}
+        >
           <DialogHeader>
             <DialogTitle id="edit-profile-title">
               プロフィールを編集
@@ -117,7 +124,10 @@ export default function EditProfileModal({
                 <Button
                   type="button"
                   variant="link"
-                  onClick={() => setAvatarKey(null)}
+                  onClick={() => {
+                    markDirty();
+                    setAvatarKey(null);
+                  }}
                 >
                   デフォルトに戻す
                 </Button>
@@ -129,7 +139,10 @@ export default function EditProfileModal({
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setAvatarKey(key)}
+                      onClick={() => {
+                        markDirty();
+                        setAvatarKey(key);
+                      }}
                       aria-label={`アバター ${key}`}
                       aria-pressed={selected}
                       className={cn(
@@ -189,7 +202,7 @@ export default function EditProfileModal({
           </FieldGroup>
 
           <DialogButtonArea>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={requestClose}>
               キャンセル
             </Button>
             <Button type="submit" disabled={updateProfileMutation.isPending}>
@@ -205,6 +218,7 @@ export default function EditProfileModal({
           </DialogButtonArea>
         </form>
       </DialogContent>
+      {confirmNode}
     </Dialog>
   );
 }

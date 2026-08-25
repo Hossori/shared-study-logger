@@ -1,8 +1,8 @@
 /**
- * 学習記録の編集モーダル（勉強日時・タイトル・メモ(任意)）。
+ * 学習記録の編集モーダル（学習日時・タイトル・メモ(任意)）。
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { StudyRecord } from "../../../../shared/schemas";
 import { useUiStore } from "../../stores/uiStore";
 import { useUpdateRecordMutation } from "../../queries/useRecords";
@@ -15,35 +15,32 @@ import {
 } from "./recordFormUtils";
 
 interface EditRecordModalProps {
-  record: StudyRecord;
+  record: StudyRecord | null;
+  open: boolean;
   onClose: () => void;
 }
 
 export default function EditRecordModal({
   record,
+  open,
   onClose,
 }: EditRecordModalProps) {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
   const updateRecordMutation = useUpdateRecordMutation(selectedGroupId);
 
-  const [values, setValues] = useState<RecordFormValues>(() => ({
-    studyDatetime: toDatetimeLocalString(record.studyDatetime),
-    title: record.title,
-    memo: record.memo ?? "",
-  }));
-
-  useEffect(() => {
-    setValues({
-      studyDatetime: toDatetimeLocalString(record.studyDatetime),
-      title: record.title,
-      memo: record.memo ?? "",
-    });
-    updateRecordMutation.reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [record.id]);
+  const [values, setValues] = useState<RecordFormValues>(() =>
+    record
+      ? {
+          studyDatetime: toDatetimeLocalString(record.studyDatetime),
+          title: record.title,
+          memo: record.memo ?? "",
+        }
+      : { studyDatetime: "", title: "", memo: "" },
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!record) return;
     const payload = buildRecordRequestPayload(values);
     if (!payload) return;
 
@@ -60,7 +57,7 @@ export default function EditRecordModal({
 
   return (
     <RecordModalShell
-      open
+      open={open}
       title="学習記録を編集"
       onClose={onClose}
       onSubmit={handleSubmit}

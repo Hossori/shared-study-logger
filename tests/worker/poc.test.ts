@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exports } from "cloudflare:workers";
+import { workerFetch } from "./helpers";
 
 /**
  * Phase 2 進入条件: 最小 PoC（未認証 /api/auth/me → 401）。
@@ -7,7 +7,7 @@ import { exports } from "cloudflare:workers";
  */
 describe("worker PoC", () => {
 	it("GET /api/auth/me without cookie returns 401", async () => {
-		const response = await exports.default.fetch(
+		const response = await workerFetch(
 			new Request("http://example.com/api/auth/me"),
 		);
 		expect(response.status).toBe(401);
@@ -16,7 +16,7 @@ describe("worker PoC", () => {
 	});
 
 	it("GET /api/ returns health JSON", async () => {
-		const response = await exports.default.fetch(
+		const response = await workerFetch(
 			new Request("http://example.com/api/"),
 		);
 		expect(response.status).toBe(200);

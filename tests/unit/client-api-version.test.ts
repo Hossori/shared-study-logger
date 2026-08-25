@@ -54,8 +54,10 @@ describe("client API version contract", () => {
     expect(compareClientApiVersions("invalid", "1.0.0")).toBeNull();
   });
 
-  it("does not enforce a minimum version during the initial bridge", () => {
-    expect(isClientApiVersionSupported("invalid")).toBe(true);
+  it("enforces the current minimum while allowing an explicit bridge opt-out", () => {
+    expect(isClientApiVersionSupported(CLIENT_API_VERSION)).toBe(true);
+    expect(isClientApiVersionSupported("1.9.9")).toBe(false);
+    expect(isClientApiVersionSupported("invalid", null)).toBe(true);
     expect(isClientApiVersionSupported("1.1.0", "1.0.0")).toBe(true);
     expect(isClientApiVersionSupported("0.9.9", "1.0.0")).toBe(false);
     expect(isClientApiVersionSupported("invalid", "1.0.0")).toBe(false);

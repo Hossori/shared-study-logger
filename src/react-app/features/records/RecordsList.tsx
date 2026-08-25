@@ -1,5 +1,5 @@
 /**
- * 選択中グループの学習記録一覧（勉強日時・投稿者・タイトル・メモを表示）。
+ * 選択中グループの学習記録一覧（学習日時・投稿者・タイトル・メモを表示）。
  * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
@@ -70,18 +70,18 @@ function RecordCard({
     <li>
       <Card size="sm">
         <CardHeader>
-          <CardDescription className="flex min-w-0 items-center gap-1.5">
+          <CardDescription>
             <Link
               to={`/users/${record.userId}`}
-              className="focus-visible:ring-ring inline-flex shrink-0 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
+              className="focus-visible:ring-ring inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
               aria-label={`${authorName}のユーザーページ`}
             >
               <UserAvatar
                 avatarKey={record.authorAvatarKey ?? null}
                 className="size-6"
               />
+              <span className="truncate">{authorName}</span>
             </Link>
-            <span className="truncate">{authorName}</span>
           </CardDescription>
           {isOwner && (
             <CardAction className="flex gap-1">
@@ -189,6 +189,7 @@ export default function RecordsList() {
   const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
+  const [editSession, setEditSession] = useState(0);
 
   // isLoading(= isPending && isFetching) だけだと fetch 開始前や retry 待ちで
   // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
@@ -263,7 +264,10 @@ export default function RecordsList() {
             key={record.id}
             record={record}
             isOwner={me?.id === record.userId}
-            onEdit={setEditingRecord}
+            onEdit={(record) => {
+              setEditSession((session) => session + 1);
+              setEditingRecord(record);
+            }}
             onDelete={handleDelete}
             isDeleting={
               deleteRecordMutation.isPending &&
@@ -292,12 +296,12 @@ export default function RecordsList() {
         </div>
       )}
 
-      {editingRecord && (
-        <EditRecordModal
-          record={editingRecord}
-          onClose={() => setEditingRecord(null)}
-        />
-      )}
+      <EditRecordModal
+        key={editSession}
+        record={editingRecord}
+        open={editingRecord !== null}
+        onClose={() => setEditingRecord(null)}
+      />
     </RecordsListFrame>
   );
 }

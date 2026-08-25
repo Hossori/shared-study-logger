@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { loginAsAdmin, loginAsUser, openPostModal, SEED_ADMIN } from "./helpers";
+import {
+	currentClientApiVersionHeaders,
+	loginAsAdmin,
+	loginAsUser,
+	openPostModal,
+	SEED_ADMIN,
+} from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -42,11 +48,40 @@ test("ログイン成功でグループ切替が表示される", async ({ page 
 	await expect(
 		page.getByRole("heading", { name: "アプリの更新が必要です" }),
 	).toBeVisible();
+	await expect(page).toHaveURL(/\/$/);
 });
 
 test("学習記録を投稿できる", async ({ page }) => {
 	await loginAsAdmin(page);
 	await expect(page.getByLabel("グループ切替")).toBeVisible();
+
+	await openPostModal(page);
+	await page.getByRole("button", { name: "キャンセル" }).click();
+	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
+
+	await openPostModal(page);
+	const cancelButton = page.getByRole("button", { name: "キャンセル" });
+	const cancelBox = await cancelButton.boundingBox();
+	expect(cancelBox).not.toBeNull();
+	if (!cancelBox) throw new Error("キャンセルボタンの座標を取得できません。");
+	await page.locator("#post-title").pressSequentially("下書き");
+	await page.mouse.click(
+		cancelBox.x + cancelBox.width / 2,
+		cancelBox.y + cancelBox.height / 2,
+	);
+	const discardDialog = page.getByRole("alertdialog");
+	expect(await discardDialog.isVisible()).toBe(true);
+	await expect(discardDialog).toBeInViewport();
+	await page.mouse.click(10, 10);
+	await expect(discardDialog).toBeVisible();
+	await expect(discardDialog).toBeInViewport();
+	await discardDialog.getByRole("button", { name: "編集に戻る" }).click();
+	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeVisible();
+	await expect(page.locator("#post-title")).toHaveValue("下書き");
+
+	await page.getByRole("button", { name: "キャンセル" }).click();
+	await page.getByRole("alertdialog").getByRole("button", { name: "破棄する" }).click();
+	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeHidden();
 
 	const title = `e2e-record-${Date.now()}`;
 	await openPostModal(page);
@@ -139,7 +174,9 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 		page.getByRole("heading", { name: "アクセスできません" }),
 	).toBeVisible();
 
-	const forbidden = await page.request.get("/api/admin/notifications");
+	const forbidden = await page.request.get("/api/admin/notifications", {
+		headers: currentClientApiVersionHeaders(),
+	});
 	expect(forbidden.status()).toBe(403);
 	expect(await forbidden.json()).toEqual({ error: "forbidden" });
 
@@ -148,7 +185,9 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
 		page.getByRole("heading", { name: "アクセスできません" }),
 	).toBeVisible();
 
-	const forbiddenGroups = await page.request.get("/api/admin/groups");
+	const forbiddenGroups = await page.request.get("/api/admin/groups", {
+		headers: currentClientApiVersionHeaders(),
+	});
 	expect(forbiddenGroups.status()).toBe(403);
 	expect(await forbiddenGroups.json()).toEqual({ error: "forbidden" });
 });

@@ -1,16 +1,16 @@
 /**
  * 確認モーダル。開閉状態と結果の受け渡しは ConfirmProvider / useConfirm 側が担う。
+ * Dialog を使い、外側クリック / Escape でキャンセル扱いにする。
  */
+import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogButtonArea,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export type ConfirmVariant = "default" | "danger";
 
@@ -36,30 +36,32 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <AlertDialog
+    <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onCancel();
       }}
     >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription className="whitespace-pre-wrap">
+      <DialogContent showCloseButton={false} role="alertdialog">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription className="whitespace-pre-wrap">
             {message}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
-          <AlertDialogAction
+          </DialogDescription>
+        </DialogHeader>
+        <DialogButtonArea>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+          <Button
             type="button"
             variant={variant === "danger" ? "destructive" : "default"}
             onClick={onConfirm}
           >
             {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogButtonArea>
+      </DialogContent>
+    </Dialog>
   );
 }

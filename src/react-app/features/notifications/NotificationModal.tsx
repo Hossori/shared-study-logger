@@ -18,7 +18,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Separator } from "@/components/ui/separator";
 import type { AppNotificationItem } from "./types";
 import type { AppNotificationsController } from "./useAppNotifications";
 import {
@@ -48,37 +47,33 @@ export default function NotificationModal({
         if (!nextOpen) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[min(80vh,calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom)))] flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
-        <DialogHeader className="px-4 py-3">
+      <DialogContent>
+        <DialogHeader>
           <DialogTitle>通知</DialogTitle>
         </DialogHeader>
-        <Separator />
-
-        <div className="overflow-y-auto px-2 py-2">
-          {items.length === 0 ? (
-            <Empty className="py-8">
-              <EmptyHeader>
-                <EmptyTitle>新しい通知はありません</EmptyTitle>
-                <EmptyDescription>
-                  お知らせがあればここに表示されます。
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {items.map((item) => (
-                <li key={item.id}>
-                  <NotificationListItem
-                    item={item}
-                    pwa={pwa}
-                    onDismiss={() => dismiss(item.id)}
-                    onClose={onClose}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {items.length === 0 ? (
+          <Empty className="py-8">
+            <EmptyHeader>
+              <EmptyTitle>新しい通知はありません</EmptyTitle>
+              <EmptyDescription>
+                お知らせがあればここに表示されます。
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {items.map((item) => (
+              <li key={item.id}>
+                <NotificationListItem
+                  item={item}
+                  pwa={pwa}
+                  onDismiss={() => dismiss(item.id)}
+                  onClose={onClose}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
       </DialogContent>
     </Dialog>
   );
