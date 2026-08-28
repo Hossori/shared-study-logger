@@ -3,39 +3,39 @@
  * 本番 `wrangler.jsonc` の assets（dist/client）依存を外し、API のみを Miniflare で検証する。
  */
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "shared-study-logger-test",
-	"main": "./src/worker/index.ts",
-	"compatibility_date": "2025-10-08",
-	"compatibility_flags": ["nodejs_compat"],
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "shared-study-logger-db",
-			"database_id": "00000000-0000-4000-8000-000000000099",
-			"migrations_dir": "migrations"
-		}
-	],
-	"kv_namespaces": [
-		{
-			"binding": "SESSIONS",
-			"id": "00000000-0000-4000-8000-000000000098"
-		}
-	],
-	"queues": {
-		"producers": [
-			{
-				"binding": "PUSH_QUEUE",
-				"queue": "push-notifications-test"
-			}
-		],
-		"consumers": [
-			{
-				"queue": "push-notifications-test",
-				"max_batch_size": 10,
-				"max_batch_timeout": 1,
-				"max_retries": 0
-			}
-		]
-	}
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shared-study-logger-test",
+  "main": "./src/worker/index.ts",
+  "compatibility_date": "2025-10-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "shared-study-logger-db",
+      "database_id": "00000000-0000-4000-8000-000000000099",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "00000000-0000-4000-8000-000000000098",
+    },
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "PUSH_QUEUE",
+        "queue": "push-notifications-test",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "push-notifications-test",
+        "max_batch_size": 10,
+        "max_batch_timeout": 1,
+        "max_retries": 0,
+      },
+    ],
+  },
 }
