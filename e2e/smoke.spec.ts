@@ -4,6 +4,7 @@ import {
 	loginAsAdmin,
 	loginAsUser,
 	openPostModal,
+	fillStudyDatetime,
 	SEED_ADMIN,
 } from "./helpers";
 
@@ -85,7 +86,7 @@ test("学習記録を投稿できる", async ({ page }) => {
 
 	const title = `e2e-record-${Date.now()}`;
 	await openPostModal(page);
-	await page.locator("#post-studyDatetime").fill("2026-08-10T12:00");
+	await fillStudyDatetime(page, "post", "2026-08-10", 12, 0);
 	await page.locator("#post-title").fill(title);
 
 	const responsePromise = page.waitForResponse(
@@ -108,7 +109,7 @@ test("自分の学習記録を削除できる", async ({ page }) => {
 
 	const title = `e2e-delete-${Date.now()}`;
 	await openPostModal(page);
-	await page.locator("#post-studyDatetime").fill("2026-08-10T12:00");
+	await fillStudyDatetime(page, "post", "2026-08-10", 12, 0);
 	await page.locator("#post-title").fill(title);
 
 	const responsePromise = page.waitForResponse(

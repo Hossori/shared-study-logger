@@ -1,5 +1,5 @@
 /**
- * 選択中グループの学習記録一覧（学習日時・投稿者・タイトル・メモを表示）。
+ * 選択中グループの学習記録一覧（学習日時・学習時間・投稿者・タイトル・メモを表示）。
  * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
@@ -14,6 +14,7 @@ import {
   useRecordsQuery,
 } from "../../queries/useRecords";
 import { type StudyRecord } from "../../../../shared/schemas";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,6 +36,7 @@ import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
+import { formatDurationMinutes } from "./recordFormUtils";
 
 function formatStudyDatetime(studyDatetime: string): string {
   const date = new Date(studyDatetime);
@@ -108,8 +110,13 @@ function RecordCard({
               </Button>
             </CardAction>
           )}
-          <CardDescription>
-            {formatStudyDatetime(record.studyDatetime)}
+          <CardDescription className="flex flex-wrap items-center gap-2">
+            <span>{formatStudyDatetime(record.studyDatetime)}</span>
+            {record.durationMinutes != null ? (
+              <Badge variant="secondary">
+                {formatDurationMinutes(record.durationMinutes)}
+              </Badge>
+            ) : null}
           </CardDescription>
           <CardTitle>
             <h3 className="text-inherit">{record.title}</h3>

@@ -33,9 +33,10 @@ describe("records routes", () => {
 		);
 		expect(createRes.status).toBe(201);
 		const created = (await createRes.json()) as {
-			record: { id: string; title: string };
+			record: { id: string; title: string; durationMinutes: number | null };
 		};
 		expect(created.record.title).toBe("Worker CRUD");
+		expect(created.record.durationMinutes).toBeNull();
 
 		const listRes = await workerFetch(
 			new Request(
@@ -62,11 +63,16 @@ describe("records routes", () => {
 						studyDatetime: "2026-08-10T11:00:00.000Z",
 						title: "Worker CRUD edited",
 						memo: "updated",
+						durationMinutes: 40,
 					}),
 				},
 			),
 		);
 		expect(patchRes.status).toBe(200);
+		const patched = (await patchRes.json()) as {
+			record: { durationMinutes: number | null };
+		};
+		expect(patched.record.durationMinutes).toBe(40);
 
 		const deleteRes = await workerFetch(
 			new Request(
@@ -130,5 +136,55 @@ describe("records routes", () => {
 			notification: { title: string };
 		};
 		expect(payload.userId).toBe(SEED.testUser.id);
+	});
+
+	it("accepts durationMinutes on create and rejects non-10-minute values", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const createdRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{
+					method: "POST",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T12:00:00.000Z",
+						title: "With duration",
+						durationMinutes: 50,
+					}),
+				},
+			),
+		);
+		expect(createdRes.status).toBe(201);
+		const created = (await createdRes.json()) as {
+			record: { durationMinutes: number | null };
+		};
+		expect(created.record.durationMinutes).toBe(50);
+
+		const invalidRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{
+					method: "POST",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T12:00:00.000Z",
+						title: "Invalid duration",
+						durationMinutes: 15,
+					}),
+				},
+			),
+		);
+		expect(invalidRes.status).toBe(400);
 	});
 });

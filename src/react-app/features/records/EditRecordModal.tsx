@@ -1,5 +1,5 @@
 /**
- * 学習記録の編集モーダル（学習日時・タイトル・メモ(任意)）。
+ * 学習記録の編集モーダル（学習日時・学習時間(任意)・タイトル・メモ(任意)）。
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useState, type FormEvent } from "react";
@@ -34,8 +34,9 @@ export default function EditRecordModal({
           studyDatetime: toDatetimeLocalString(record.studyDatetime),
           title: record.title,
           memo: record.memo ?? "",
+          durationMinutes: record.durationMinutes ?? null,
         }
-      : { studyDatetime: "", title: "", memo: "" },
+      : { studyDatetime: "", title: "", memo: "", durationMinutes: null },
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

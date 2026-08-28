@@ -46,3 +46,16 @@ export async function openPostModal(page: Page): Promise<void> {
 	await page.getByRole("button", { name: "記録を追加" }).click();
 	await expect(page.getByRole("heading", { name: "学習記録を投稿" })).toBeVisible();
 }
+
+export async function fillStudyDatetime(
+	page: Page,
+	idPrefix: string,
+	date: string,
+	hour: number,
+	minute: number,
+): Promise<void> {
+	await page.locator(`#${idPrefix}-studyDate`).fill(date);
+	const hourLabel = hour === 0 ? 24 : hour;
+	await page.locator(`#${idPrefix}-hour-${hourLabel}`).click();
+	await page.locator(`#${idPrefix}-minute-option-${minute}`).click();
+}

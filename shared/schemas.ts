@@ -131,6 +131,18 @@ export type AdminGroup = z.infer<typeof AdminGroupSchema>;
 
 // ---- 学習記録 ---------------------------------------------------------------
 
+/** 学習時間（分）。任意項目。UI は 10 分刻み。 */
+export const DURATION_MINUTES_STEP = 10;
+export const DURATION_MINUTES_MIN = 10;
+export const DURATION_MINUTES_MAX = 720;
+
+export const DurationMinutesSchema = z
+  .number()
+  .int()
+  .min(DURATION_MINUTES_MIN)
+  .max(DURATION_MINUTES_MAX)
+  .multipleOf(DURATION_MINUTES_STEP);
+
 export const StudyRecordSchema = z.object({
   id: z.string(),
   groupId: z.string(),
@@ -139,6 +151,7 @@ export const StudyRecordSchema = z.object({
   authorAvatarKey: AvatarKeySchema.nullable().optional(),
   studyDatetime: z.string(),
   title: z.string().min(1),
+  durationMinutes: z.number().int().nullable(),
   memo: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -148,6 +161,7 @@ export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 export const CreateStudyRecordRequestSchema = z.object({
   studyDatetime: z.iso.datetime(),
   title: z.string().min(1).max(200),
+  durationMinutes: DurationMinutesSchema.nullable().optional(),
   memo: z.string().max(2000).optional(),
 });
 export type CreateStudyRecordRequest = z.infer<
@@ -157,6 +171,7 @@ export type CreateStudyRecordRequest = z.infer<
 export const UpdateStudyRecordRequestSchema = z.object({
   studyDatetime: z.iso.datetime(),
   title: z.string().min(1).max(200),
+  durationMinutes: DurationMinutesSchema.nullable().optional(),
   memo: z.string().max(2000).optional(),
 });
 export type UpdateStudyRecordRequest = z.infer<

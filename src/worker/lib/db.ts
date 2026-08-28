@@ -40,6 +40,7 @@ export interface StudyRecordRow {
   author_avatar_key: string | null;
   study_datetime: string;
   title: string;
+  duration_minutes: number | null;
   memo: string | null;
   created_at: string;
   updated_at: string;
@@ -425,6 +426,7 @@ function toStudyRecord(row: StudyRecordRow): StudyRecord {
     authorAvatarKey: parseAvatarKey(row.author_avatar_key),
     studyDatetime: row.study_datetime,
     title: row.title,
+    durationMinutes: row.duration_minutes ?? null,
     memo: row.memo,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -446,7 +448,7 @@ export async function listStudyRecords(
   const baseQuery = `
     SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
            u.avatar_key AS author_avatar_key,
-           sr.study_datetime, sr.title, sr.memo,
+           sr.study_datetime, sr.title, sr.duration_minutes, sr.memo,
            sr.created_at, sr.updated_at
     FROM study_records sr
     INNER JOIN users u ON u.id = sr.user_id
@@ -506,6 +508,7 @@ export interface CreateStudyRecordInput {
   userId: string;
   studyDatetime: string;
   title: string;
+  durationMinutes?: number | null;
   memo?: string | null;
 }
 
@@ -517,8 +520,8 @@ export async function createStudyRecord(
   await db
     .prepare(
       `INSERT INTO study_records
-        (id, group_id, user_id, study_datetime, title, memo, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, group_id, user_id, study_datetime, title, duration_minutes, memo, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       input.id,
@@ -526,6 +529,7 @@ export async function createStudyRecord(
       input.userId,
       input.studyDatetime,
       input.title,
+      input.durationMinutes ?? null,
       input.memo ?? null,
       now,
       now,
@@ -542,6 +546,7 @@ export async function createStudyRecord(
     authorAvatarKey: parseAvatarKey(author?.avatar_key),
     studyDatetime: input.studyDatetime,
     title: input.title,
+    durationMinutes: input.durationMinutes ?? null,
     memo: input.memo ?? null,
     createdAt: now,
     updatedAt: now,
@@ -558,7 +563,7 @@ export async function getStudyRecord(
     .prepare(
       `SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
               u.avatar_key AS author_avatar_key,
-              sr.study_datetime, sr.title, sr.memo,
+              sr.study_datetime, sr.title, sr.duration_minutes, sr.memo,
               sr.created_at, sr.updated_at
        FROM study_records sr
        INNER JOIN users u ON u.id = sr.user_id
@@ -572,6 +577,7 @@ export async function getStudyRecord(
 export interface UpdateStudyRecordInput {
   studyDatetime: string;
   title: string;
+  durationMinutes?: number | null;
   memo?: string | null;
 }
 
@@ -586,15 +592,20 @@ export async function updateStudyRecord(
   if (!existing) return null;
 
   const now = new Date().toISOString();
+  const durationMinutes =
+    input.durationMinutes === undefined
+      ? (existing.durationMinutes ?? null)
+      : input.durationMinutes;
   const result = await db
     .prepare(
       `UPDATE study_records
-       SET study_datetime = ?, title = ?, memo = ?, updated_at = ?
+       SET study_datetime = ?, title = ?, duration_minutes = ?, memo = ?, updated_at = ?
        WHERE group_id = ? AND id = ?`,
     )
     .bind(
       input.studyDatetime,
       input.title,
+      durationMinutes,
       input.memo ?? null,
       now,
       groupId,
@@ -609,6 +620,7 @@ export async function updateStudyRecord(
     ...existing,
     studyDatetime: input.studyDatetime,
     title: input.title,
+    durationMinutes,
     memo: input.memo ?? null,
     updatedAt: now,
   };

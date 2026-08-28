@@ -41,6 +41,7 @@ erDiagram
     string user_id FK
     string study_datetime
     string title
+    int duration_minutes "NULL可・分・10分刻み"
     string memo
     string created_at
     string updated_at
@@ -68,7 +69,8 @@ erDiagram
 ## 補足
 
 - `users.email`・`push_subscriptions.endpoint` は UNIQUE 制約あり。`study_records.memo`・
-  `push_subscriptions.user_agent`・`users.bio`・`users.avatar_key` は NULL 許可。
+  `study_records.duration_minutes`・`push_subscriptions.user_agent`・`users.bio`・
+  `users.avatar_key` は NULL 許可。`duration_minutes` は 10 分刻み（10〜720）。
 - `users.avatar_key` はプリセット画像のキー（例: `avoidy` / `lavender`）。許可リストは
   `shared/avatars.ts` の `AVATAR_KEYS`。`NULL` はクライアントで Lucide アイコン（デフォルト表示）。
 - `users.role` は `ADMIN` または `USER`（CHECK 制約）。既存行・列省略時のデフォルトは `USER`。
@@ -85,5 +87,6 @@ erDiagram
   - `0004_user_profile.sql`: `users` に `bio` / `avatar_key` を追加。
   - `0005_user_roles.sql`: `users` に `role`（`ADMIN` / `USER`、DEFAULT `USER`）を追加。
   - `0006_app_notifications.sql`: `app_notifications`（アプリ内通知）を追加。
+  - `0007_optional_duration_minutes.sql`: `study_records.duration_minutes`（任意の学習時間・分）を再追加。
 - 本番 D1 は SemVer タグ（`vX.Y.Z`）push 後の [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) の production release で、Time Travel の migration 前復旧ポイントを記録してから apply する。同じ job が migration 完了後に Worker をデプロイするため、Worker が新スキーマを先行して参照しない。`main` へのマージだけでは本番 D1 は更新されない。
 - rename / drop / NOT NULL 化などの破壊的変更は、旧 Worker と共存できる追加変更（expand）と旧スキーマを削除する変更（contract）を別リリースに分ける。Worker のロールバックでは D1 スキーマは戻らないため、必要時は release summary の Time Travel bookmark を使う。

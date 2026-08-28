@@ -4,6 +4,8 @@
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import DurationMinutesPicker from "./DurationMinutesPicker";
+import StudyDatetimePicker from "./StudyDatetimePicker";
 import type { RecordFormValues } from "./recordFormUtils";
 
 interface RecordFormFieldsProps {
@@ -19,19 +21,17 @@ export default function RecordFormFields({
 }: RecordFormFieldsProps) {
   return (
     <FieldGroup>
-      <Field>
-        <FieldLabel htmlFor={`${idPrefix}-studyDatetime`}>学習日時</FieldLabel>
-        <Input
-          id={`${idPrefix}-studyDatetime`}
-          type="datetime-local"
-          required
-          className="max-w-full min-w-0"
-          value={values.studyDatetime}
-          onChange={(e) =>
-            onChange({ ...values, studyDatetime: e.target.value })
-          }
-        />
-      </Field>
+      <StudyDatetimePicker
+        idPrefix={idPrefix}
+        value={values.studyDatetime}
+        onChange={(studyDatetime) => onChange({ ...values, studyDatetime })}
+      />
+
+      <DurationMinutesPicker
+        idPrefix={idPrefix}
+        value={values.durationMinutes}
+        onChange={(durationMinutes) => onChange({ ...values, durationMinutes })}
+      />
 
       <Field>
         <FieldLabel htmlFor={`${idPrefix}-title`}>
