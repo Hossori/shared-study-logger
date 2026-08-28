@@ -3,6 +3,7 @@ import {
 	buildRecordRequestPayload,
 	formatDurationMinutes,
 	formatRecordDatetime,
+	isRecordDateString,
 	parseDatetimeLocalToIso,
 	parseRecordDatetime,
 	toDatetimeLocalString,
@@ -31,6 +32,10 @@ describe("recordFormUtils", () => {
 		expect(formatRecordDatetime("2026-08-10", 9, 5)).toBe("2026-08-10T09:05");
 		expect(parseRecordDatetime("")).toBeNull();
 		expect(parseRecordDatetime("2026-08-10T24:00")).toBeNull();
+		expect(parseRecordDatetime("T15:58")).toBeNull();
+		expect(isRecordDateString("2026-08-10")).toBe(true);
+		expect(isRecordDateString("")).toBe(false);
+		expect(isRecordDateString("08/28/2026")).toBe(false);
 	});
 
 	it("formatDurationMinutes uses hours and minutes", () => {
@@ -53,6 +58,14 @@ describe("recordFormUtils", () => {
 		expect(
 			buildRecordRequestPayload({
 				studyDatetime: "",
+				title: "x",
+				memo: "",
+				durationMinutes: null,
+			}),
+		).toBeNull();
+		expect(
+			buildRecordRequestPayload({
+				studyDatetime: "T15:58",
 				title: "x",
 				memo: "",
 				durationMinutes: null,

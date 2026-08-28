@@ -42,6 +42,19 @@ export function nowDatetimeLocalString(): string {
   return toDatetimeLocalString(new Date().toISOString());
 }
 
+export function nowRecordDatetimeParts(): RecordDatetimeParts {
+  const now = new Date();
+  return {
+    date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
+    hour: now.getHours(),
+    minute: now.getMinutes(),
+  };
+}
+
+export function isRecordDateString(date: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date);
+}
+
 export function parseRecordDatetime(
   datetimeLocal: string,
 ): RecordDatetimeParts | null {
@@ -51,6 +64,7 @@ export function parseRecordDatetime(
   const hour = Number(match[2]);
   const minute = Number(match[3]);
   if (
+    !isRecordDateString(match[1]) ||
     !Number.isInteger(hour) ||
     !Number.isInteger(minute) ||
     hour < 0 ||
@@ -120,7 +134,9 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
 } | null {
   const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
   const title = values.title.trim();
-  if (!studyDatetime || !title) return null;
+  if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime || !title) {
+    return null;
+  }
   const memo = values.memo.trim();
   return {
     studyDatetime,

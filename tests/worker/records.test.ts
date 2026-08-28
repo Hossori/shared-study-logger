@@ -187,4 +187,77 @@ describe("records routes", () => {
 		);
 		expect(invalidRes.status).toBe(400);
 	});
+
+	it("keeps durationMinutes when omitted on patch and clears it with null", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const createdRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{
+					method: "POST",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T12:00:00.000Z",
+						title: "Keep duration",
+						durationMinutes: 60,
+					}),
+				},
+			),
+		);
+		expect(createdRes.status).toBe(201);
+		const created = (await createdRes.json()) as { record: { id: string } };
+
+		const omitRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records/${created.record.id}`,
+				{
+					method: "PATCH",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T13:00:00.000Z",
+						title: "Keep duration edited",
+					}),
+				},
+			),
+		);
+		expect(omitRes.status).toBe(200);
+		const omitted = (await omitRes.json()) as {
+			record: { durationMinutes: number | null };
+		};
+		expect(omitted.record.durationMinutes).toBe(60);
+
+		const clearRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records/${created.record.id}`,
+				{
+					method: "PATCH",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T13:00:00.000Z",
+						title: "Keep duration edited",
+						durationMinutes: null,
+					}),
+				},
+			),
+		);
+		expect(clearRes.status).toBe(200);
+		const cleared = (await clearRes.json()) as {
+			record: { durationMinutes: number | null };
+		};
+		expect(cleared.record.durationMinutes).toBeNull();
+	});
 });

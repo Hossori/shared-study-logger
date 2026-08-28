@@ -13,7 +13,8 @@ export interface DrumRollOption<T> {
 
 interface DrumRollPickerProps<T> {
   id?: string;
-  "aria-label": string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
   options: readonly DrumRollOption<T>[];
   value: T;
   onChange: (value: T) => void;
@@ -33,6 +34,7 @@ function optionIndex<T>(
 export function DrumRollPicker<T>({
   id,
   "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
   options,
   value,
   onChange,
@@ -126,6 +128,7 @@ export function DrumRollPicker<T>({
         id={id}
         role="listbox"
         aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
         aria-activedescendant={id ? `${id}-option-${selectedIndex}` : undefined}
         tabIndex={0}
         onScroll={handleScroll}

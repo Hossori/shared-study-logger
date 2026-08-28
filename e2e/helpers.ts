@@ -57,5 +57,15 @@ export async function fillStudyDatetime(
 	await page.locator(`#${idPrefix}-studyDate`).fill(date);
 	const hourLabel = hour === 0 ? 24 : hour;
 	await page.locator(`#${idPrefix}-hour-${hourLabel}`).click();
-	await page.locator(`#${idPrefix}-minute-option-${minute}`).click();
+
+	const minuteList = page.locator(`#${idPrefix}-minute`);
+	await minuteList.focus();
+	await page.keyboard.press("Home");
+	for (let step = 0; step < minute; step += 1) {
+		await page.keyboard.press("ArrowDown");
+	}
+	await expect(minuteList).toHaveAttribute(
+		"aria-activedescendant",
+		`${idPrefix}-minute-option-${minute}`,
+	);
 }

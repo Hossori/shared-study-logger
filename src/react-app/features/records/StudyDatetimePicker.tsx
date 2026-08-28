@@ -1,15 +1,17 @@
 /**
  * 学習日時の日付入力 + 24時間アナログ時計 + 分のドラムロール。
  */
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { DrumRollPicker } from "@/components/ui/drum-roll-picker";
 import AnalogHourClock from "./AnalogHourClock";
 import {
   formatRecordDatetime,
+  isRecordDateString,
   MINUTE_DRUM_OPTIONS,
   notifyFormInput,
+  nowRecordDatetimeParts,
   parseRecordDatetime,
   type RecordDatetimeParts,
 } from "./recordFormUtils";
@@ -20,24 +22,25 @@ interface StudyDatetimePickerProps {
   onChange: (next: string) => void;
 }
 
-function fallbackParts(): RecordDatetimeParts {
-  const now = new Date();
-  return {
-    date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
-    hour: now.getHours(),
-    minute: now.getMinutes(),
-  };
-}
-
 export default function StudyDatetimePicker({
   idPrefix,
   value,
   onChange,
 }: StudyDatetimePickerProps) {
-  const parts = parseRecordDatetime(value) ?? fallbackParts();
+  const parsed = parseRecordDatetime(value);
+  const parts = parsed ?? nowRecordDatetimeParts();
   const fieldRef = useRef<HTMLDivElement>(null);
 
+  useLayoutEffect(() => {
+    if (parseRecordDatetime(value)) return;
+    const next = nowRecordDatetimeParts();
+    onChange(formatRecordDatetime(next.date, next.hour, next.minute));
+    // 親の onChange は毎レンダー新しい参照になり得るため、value だけを同期トリガにする。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
   const emit = (next: RecordDatetimeParts) => {
+    if (!isRecordDateString(next.date)) return;
     onChange(formatRecordDatetime(next.date, next.hour, next.minute));
     notifyFormInput(fieldRef.current);
   };
@@ -52,9 +55,12 @@ export default function StudyDatetimePicker({
         lang="ja"
         className="max-w-full min-w-0"
         value={parts.date}
-        onChange={(event) => emit({ ...parts, date: event.target.value })}
+        onChange={(event) => {
+          if (!isRecordDateString(event.target.value)) return;
+          emit({ ...parts, date: event.target.value });
+        }}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
         <AnalogHourClock
           idPrefix={idPrefix}
           hour={parts.hour}

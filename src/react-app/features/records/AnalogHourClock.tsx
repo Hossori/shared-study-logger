@@ -5,6 +5,7 @@ import {
   useCallback,
   useId,
   useRef,
+  useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -94,6 +95,7 @@ export default function AnalogHourClock({
 }: AnalogHourClockProps) {
   const labelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const [capturing, setCapturing] = useState(false);
   const selectedLabel = hourToClockLabel(hour);
   const hourAngle = hourHandAngleDegrees(hour, minute);
   const minuteAngle = minuteHandAngleDegrees(minute);
@@ -116,12 +118,20 @@ export default function AnalogHourClock({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
+    setCapturing(true);
     setHourFromPointer(event);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
     setHourFromPointer(event);
+  };
+
+  const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setCapturing(false);
   };
 
   return (
@@ -135,7 +145,12 @@ export default function AnalogHourClock({
         aria-labelledby={labelId}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        className="relative aspect-square w-full touch-none select-none"
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        className={cn(
+          "relative aspect-square w-full select-none",
+          capturing && "touch-none",
+        )}
       >
         <svg
           viewBox={`0 0 ${ANALOG_CLOCK_SIZE} ${ANALOG_CLOCK_SIZE}`}
