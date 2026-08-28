@@ -49,12 +49,21 @@ export function DrumRollPicker<T>({
 
   useLayoutEffect(() => {
     const scroller = scrollerRef.current;
-    if (!scroller || userScrollingRef.current) return;
-    const nextTop = selectedIndex * itemHeight;
-    if (Math.abs(scroller.scrollTop - nextTop) < 1) return;
-    skipScrollSyncRef.current = true;
-    scroller.scrollTop = nextTop;
-    skipScrollSyncRef.current = false;
+    if (!scroller) return;
+
+    const syncScroll = () => {
+      if (userScrollingRef.current) return;
+      const nextTop = selectedIndex * itemHeight;
+      if (Math.abs(scroller.scrollTop - nextTop) < 1) return;
+      skipScrollSyncRef.current = true;
+      scroller.scrollTop = nextTop;
+      skipScrollSyncRef.current = false;
+    };
+
+    syncScroll();
+    const observer = new ResizeObserver(syncScroll);
+    observer.observe(scroller);
+    return () => observer.disconnect();
   }, [itemHeight, selectedIndex]);
 
   useLayoutEffect(() => {

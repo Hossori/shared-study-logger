@@ -49,6 +49,7 @@ export default function StudyDatetimePicker({
         id={`${idPrefix}-studyDate`}
         type="date"
         required
+        lang="ja"
         className="max-w-full min-w-0"
         value={parts.date}
         onChange={(event) => emit({ ...parts, date: event.target.value })}
