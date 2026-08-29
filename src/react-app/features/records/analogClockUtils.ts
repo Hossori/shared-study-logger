@@ -1,6 +1,6 @@
 /**
  * 24時間アナログ時計（内側 1〜12、外側 13〜24）の幾何計算。
- * 24 は 0 時（真夜中）として扱う。
+ * 24 は 0 時（真夜中）として扱う。分は 5 分刻み。
  */
 
 export const INNER_CLOCK_HOURS = [
@@ -18,6 +18,12 @@ export const OUTER_NUMBER_RADIUS = 118;
 export const INNER_HAND_LENGTH = 62;
 export const OUTER_HAND_LENGTH = 108;
 export const MINUTE_HAND_LENGTH = 98;
+
+export const CLOCK_MINUTE_STEP = 5;
+export const CLOCK_MINUTES = [
+  0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+] as const;
+export const CLOCK_MINUTE_RADIUS = 110;
 
 /** 時計盤ラベル 24 を 0〜23 時へ。 */
 export function clockLabelToHour(label: number): number {
@@ -62,11 +68,30 @@ export function hourHandLength(
 
 export function hourHandAngleDegrees(hour: number, minute: number): number {
   const label = hourToClockLabel(hour);
-  return clockLabelToAngleDegrees(label) + minute * 0.5;
+  return clockLabelToAngleDegrees(label) + snapToClockMinute(minute) * 0.5;
+}
+
+/** 0〜59 分を 5 分刻みに丸める。58〜59 分は 0（時の繰り上げは applyClockMinuteSnap）。 */
+export function snapToClockMinute(minute: number): number {
+  const snapped = Math.round(minute / CLOCK_MINUTE_STEP) * CLOCK_MINUTE_STEP;
+  return snapped === 60 ? 0 : snapped;
+}
+
+/** 分を 5 分刻みに丸める。58〜59 分は次の時の 00 分（日付も繰り上げる）。 */
+export function applyClockMinuteSnap(date: Date): Date {
+  const next = new Date(date.getTime());
+  const snapped =
+    Math.round(next.getMinutes() / CLOCK_MINUTE_STEP) * CLOCK_MINUTE_STEP;
+  if (snapped === 60) {
+    next.setHours(next.getHours() + 1, 0, 0, 0);
+  } else {
+    next.setMinutes(snapped, 0, 0);
+  }
+  return next;
 }
 
 export function minuteHandAngleDegrees(minute: number): number {
-  return minute * 6;
+  return snapToClockMinute(minute) * 6;
 }
 
 /**
@@ -97,4 +122,27 @@ export function hourLabelFromPointer(
     return index === 0 ? 24 : index + 12;
   }
   return index === 0 ? 12 : index;
+}
+
+/**
+ * クリック位置から 5 分刻みの分を返す。中心に近すぎる、または盤面の外なら null。
+ */
+export function minuteFromPointer(
+  x: number,
+  y: number,
+  cx = ANALOG_CLOCK_CENTER,
+  cy = ANALOG_CLOCK_CENTER,
+  numberRadius = CLOCK_MINUTE_RADIUS,
+): number | null {
+  const dx = x - cx;
+  const dy = y - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist < numberRadius * 0.45 || dist > numberRadius + 24) {
+    return null;
+  }
+
+  let degrees = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+  if (degrees < 0) degrees += 360;
+  const index = Math.round(degrees / 30) % 12;
+  return index * CLOCK_MINUTE_STEP;
 }

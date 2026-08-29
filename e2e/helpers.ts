@@ -55,17 +55,8 @@ export async function fillStudyDatetime(
 	minute: number,
 ): Promise<void> {
 	await page.locator(`#${idPrefix}-studyDate`).fill(date);
+	await page.locator(`#${idPrefix}-studyTime`).click();
 	const hourLabel = hour === 0 ? 24 : hour;
 	await page.locator(`#${idPrefix}-hour-${hourLabel}`).click();
-
-	const minuteList = page.locator(`#${idPrefix}-minute`);
-	await minuteList.focus();
-	await page.keyboard.press("Home");
-	for (let step = 0; step < minute; step += 1) {
-		await page.keyboard.press("ArrowDown");
-	}
-	await expect(minuteList).toHaveAttribute(
-		"aria-activedescendant",
-		`${idPrefix}-minute-option-${minute}`,
-	);
+	await page.locator(`#${idPrefix}-minute-${minute}`).click();
 }

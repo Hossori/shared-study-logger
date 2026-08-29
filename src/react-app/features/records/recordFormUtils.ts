@@ -6,6 +6,7 @@ import {
   DURATION_MINUTES_MIN,
   DURATION_MINUTES_STEP,
 } from "../../../../shared/schemas";
+import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {
   studyDatetime: string;
@@ -28,13 +29,21 @@ export function parseDatetimeLocalToIso(datetimeLocal: string): string | null {
   return parsed.toISOString();
 }
 
-/** ISO 日時を datetime-local 用のローカル文字列に変換。 */
+function partsFromDate(date: Date): RecordDatetimeParts {
+  return {
+    date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+    hour: date.getHours(),
+    minute: date.getMinutes(),
+  };
+}
+
+/** ISO 日時を datetime-local 用のローカル文字列に変換。分は 5 分刻み。 */
 export function toDatetimeLocalString(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60 * 1000);
-  return local.toISOString().slice(0, 16);
+  const snapped = applyClockMinuteSnap(date);
+  const parts = partsFromDate(snapped);
+  return formatRecordDatetime(parts.date, parts.hour, parts.minute);
 }
 
 /** 現在時刻を datetime-local 用のローカル文字列で返す。 */
@@ -43,12 +52,7 @@ export function nowDatetimeLocalString(): string {
 }
 
 export function nowRecordDatetimeParts(): RecordDatetimeParts {
-  const now = new Date();
-  return {
-    date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
-    hour: now.getHours(),
-    minute: now.getMinutes(),
-  };
+  return partsFromDate(applyClockMinuteSnap(new Date()));
 }
 
 export function isRecordDateString(date: string): boolean {
@@ -104,12 +108,6 @@ export function durationMinuteValues(): number[] {
   }
   return values;
 }
-
-export const MINUTE_DRUM_OPTIONS: { value: number; label: string }[] =
-  Array.from({ length: 60 }, (_, minute) => ({
-    value: minute,
-    label: String(minute).padStart(2, "0"),
-  }));
 
 export const DURATION_DRUM_OPTIONS: { value: number | null; label: string }[] =
   [

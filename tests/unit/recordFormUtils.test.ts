@@ -23,6 +23,15 @@ describe("recordFormUtils", () => {
 		expect(toDatetimeLocalString("bad")).toBe("");
 	});
 
+	it("toDatetimeLocalString snaps minutes to 5-minute steps", () => {
+		expect(toDatetimeLocalString(new Date(2026, 7, 1, 9, 2, 0).toISOString())).toBe(
+			"2026-08-01T09:00",
+		);
+		expect(
+			toDatetimeLocalString(new Date(2026, 7, 1, 9, 58, 0).toISOString()),
+		).toBe("2026-08-01T10:00");
+	});
+
 	it("parseRecordDatetime and formatRecordDatetime round-trip", () => {
 		expect(parseRecordDatetime("2026-08-10T09:05")).toEqual({
 			date: "2026-08-10",

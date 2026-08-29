@@ -1,15 +1,14 @@
 /**
- * 学習日時の日付入力 + 24時間アナログ時計 + 分のドラムロール。
+ * 学習日時の日付入力 + タップで開くアナログ時計（時のあと分）。
  */
 import { useLayoutEffect, useRef } from "react";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { DrumRollPicker } from "@/components/ui/drum-roll-picker";
-import AnalogHourClock from "./AnalogHourClock";
+import AnalogClock from "./AnalogClock";
+import PickerComboboxTrigger from "./PickerComboboxTrigger";
 import {
   formatRecordDatetime,
   isRecordDateString,
-  MINUTE_DRUM_OPTIONS,
   notifyFormInput,
   nowRecordDatetimeParts,
   parseRecordDatetime,
@@ -20,16 +19,25 @@ interface StudyDatetimePickerProps {
   idPrefix: string;
   value: string;
   onChange: (next: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function formatTimeLabel(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 export default function StudyDatetimePicker({
   idPrefix,
   value,
   onChange,
+  open,
+  onOpenChange,
 }: StudyDatetimePickerProps) {
   const parsed = parseRecordDatetime(value);
   const parts = parsed ?? nowRecordDatetimeParts();
   const fieldRef = useRef<HTMLDivElement>(null);
+  const clockId = `${idPrefix}-clock`;
 
   useLayoutEffect(() => {
     if (parseRecordDatetime(value)) return;
@@ -60,33 +68,29 @@ export default function StudyDatetimePicker({
           emit({ ...parts, date: event.target.value });
         }}
       />
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
-        <AnalogHourClock
-          idPrefix={idPrefix}
-          hour={parts.hour}
-          minute={parts.minute}
-          onHourChange={(hour) => emit({ ...parts, hour })}
-          className="min-w-0 flex-1"
-        />
-        <div className="flex shrink-0 flex-col items-center">
-          <span className="text-muted-foreground text-xs">分</span>
-          <DrumRollPicker
-            id={`${idPrefix}-minute`}
-            aria-label="分"
-            options={MINUTE_DRUM_OPTIONS}
-            value={parts.minute}
-            onChange={(minute) => emit({ ...parts, minute })}
-            className="w-14"
+      <PickerComboboxTrigger
+        id={`${idPrefix}-studyTime`}
+        open={open}
+        onOpenChange={onOpenChange}
+        aria-label="時刻"
+        aria-controls={clockId}
+      >
+        {formatTimeLabel(parts.hour, parts.minute)}
+      </PickerComboboxTrigger>
+      {open ? (
+        <div id={clockId} className="flex flex-col gap-2">
+          <AnalogClock
+            idPrefix={idPrefix}
+            hour={parts.hour}
+            minute={parts.minute}
+            onHourChange={(hour) => emit({ ...parts, hour })}
+            onMinuteChange={(minute) => emit({ ...parts, minute })}
           />
+          <FieldDescription>
+            内側の円が1〜12時、外側の円が13〜24時です。時を選ぶと5分刻みの分に切り替わります。24時は0時です。
+          </FieldDescription>
         </div>
-      </div>
-      <p className="text-foreground text-center text-sm tabular-nums">
-        {String(parts.hour).padStart(2, "0")}:
-        {String(parts.minute).padStart(2, "0")}
-      </p>
-      <FieldDescription>
-        内側の円が1〜12時、外側の円が13〜24時です。24時は0時です。
-      </FieldDescription>
+      ) : null}
     </Field>
   );
 }

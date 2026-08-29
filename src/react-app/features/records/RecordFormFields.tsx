@@ -1,12 +1,15 @@
 /**
  * 学習記録の投稿/編集で共有するフォームフィールド群。
  */
+import { useState } from "react";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import DurationMinutesPicker from "./DurationMinutesPicker";
 import StudyDatetimePicker from "./StudyDatetimePicker";
 import type { RecordFormValues } from "./recordFormUtils";
+
+type OpenPicker = "time" | "duration" | null;
 
 interface RecordFormFieldsProps {
   idPrefix: string;
@@ -19,18 +22,28 @@ export default function RecordFormFields({
   values,
   onChange,
 }: RecordFormFieldsProps) {
+  const [openPicker, setOpenPicker] = useState<OpenPicker>(null);
+
+  const togglePicker = (name: Exclude<OpenPicker, null>) => (open: boolean) => {
+    setOpenPicker(open ? name : null);
+  };
+
   return (
     <FieldGroup>
       <StudyDatetimePicker
         idPrefix={idPrefix}
         value={values.studyDatetime}
         onChange={(studyDatetime) => onChange({ ...values, studyDatetime })}
+        open={openPicker === "time"}
+        onOpenChange={togglePicker("time")}
       />
 
       <DurationMinutesPicker
         idPrefix={idPrefix}
         value={values.durationMinutes}
         onChange={(durationMinutes) => onChange({ ...values, durationMinutes })}
+        open={openPicker === "duration"}
+        onOpenChange={togglePicker("duration")}
       />
 
       <Field>

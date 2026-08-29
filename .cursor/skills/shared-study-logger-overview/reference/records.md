@@ -4,7 +4,8 @@
 
 - **概要**: 学習日時・学習時間（任意・分）・タイトル・メモ（任意）を投稿し、グループ内で学習日時の新しい順に
   一覧表示する。一覧はカーソルページネーション。自分の記録は編集・削除可能。
-  学習時間は 10 分刻みのドラムロール、学習時刻は内側 1〜12 / 外側 13〜24 のアナログ時計で指定する。
+  学習時間はコンボボックスを開くと 10 分刻みのドラムロール、学習時刻はコンボボックスを開くと
+  内側 1〜12 / 外側 13〜24 のアナログ時計（時を選ぶと 5 分刻みの分面）で指定する。
 - **関連ファイル**:
   - Worker: `src/worker/routes/records.ts`（`GET`/`POST /:groupId/records`、
     `PATCH`/`DELETE /:groupId/records/:recordId`）、
@@ -14,7 +15,7 @@
     自分の記録の編集・削除UI）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
-    `src/react-app/features/records/RecordFormFields.tsx`（日時アナログ時計・学習時間ドラムロール）、
+    `src/react-app/features/records/RecordFormFields.tsx`（日時アナログ時計・学習時間ドラムロール。いずれもコンボボックスから開く）、
     `src/react-app/queries/useRecords.ts`（`useInfiniteQuery`ベースの`useRecordsQuery`、
     `useCreateRecordMutation`/`useUpdateRecordMutation`/`useDeleteRecordMutation`）
   - 共通: `shared/schemas.ts`の`StudyRecordSchema`/`CreateStudyRecordRequestSchema`/
