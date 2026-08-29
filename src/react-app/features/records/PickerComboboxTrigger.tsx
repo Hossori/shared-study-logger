@@ -22,7 +22,7 @@ export default function PickerComboboxTrigger({
   children,
   "aria-label": ariaLabel,
   "aria-controls": ariaControls,
-  "aria-haspopup": ariaHasPopup = "dialog",
+  "aria-haspopup": ariaHasPopup,
 }: PickerComboboxTriggerProps) {
   return (
     <Button

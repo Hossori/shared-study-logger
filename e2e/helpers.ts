@@ -55,7 +55,10 @@ export async function fillStudyDatetime(
 	minute: number,
 ): Promise<void> {
 	await page.locator(`#${idPrefix}-studyDate`).fill(date);
-	await page.locator(`#${idPrefix}-studyTime`).click();
+	const timeTrigger = page.locator(`#${idPrefix}-studyTime`);
+	if ((await timeTrigger.getAttribute("aria-expanded")) !== "true") {
+		await timeTrigger.click();
+	}
 	const hourLabel = hour === 0 ? 24 : hour;
 	await page.locator(`#${idPrefix}-hour-${hourLabel}`).click();
 	await page.locator(`#${idPrefix}-minute-${minute}`).click();

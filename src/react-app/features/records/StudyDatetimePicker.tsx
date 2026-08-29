@@ -49,7 +49,9 @@ export default function StudyDatetimePicker({
 
   const emit = (next: RecordDatetimeParts) => {
     if (!isRecordDateString(next.date)) return;
-    onChange(formatRecordDatetime(next.date, next.hour, next.minute));
+    const formatted = formatRecordDatetime(next.date, next.hour, next.minute);
+    if (formatted === value) return;
+    onChange(formatted);
     notifyFormInput(fieldRef.current);
   };
 

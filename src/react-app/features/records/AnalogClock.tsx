@@ -4,7 +4,9 @@
  */
 import {
   useCallback,
+  useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -106,6 +108,8 @@ export default function AnalogClock({
   const labelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const selectedDuringGestureRef = useRef(false);
+  const modeSwitchTimerRef = useRef<number | null>(null);
+  const skipInitialFocusRef = useRef(true);
   const [mode, setMode] = useState<AnalogClockMode>("hour");
   const [capturing, setCapturing] = useState(false);
   const selectedHourLabel = hourToClockLabel(hour);
@@ -113,6 +117,25 @@ export default function AnalogClock({
   const hourAngle = hourHandAngleDegrees(hour, selectedMinute);
   const minuteAngle = minuteHandAngleDegrees(selectedMinute);
   const hourLength = hourHandLength(selectedHourLabel);
+
+  useEffect(() => {
+    return () => {
+      if (modeSwitchTimerRef.current != null) {
+        window.clearTimeout(modeSwitchTimerRef.current);
+      }
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (skipInitialFocusRef.current) {
+      skipInitialFocusRef.current = false;
+      return;
+    }
+    const selected = rootRef.current?.querySelector<HTMLButtonElement>(
+      '[aria-pressed="true"]',
+    );
+    selected?.focus();
+  }, [mode]);
 
   const setValueFromPointer = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -155,7 +178,11 @@ export default function AnalogClock({
     }
     setCapturing(false);
     if (mode === "hour" && selectedDuringGestureRef.current) {
-      setMode("minute");
+      // pointerup 直後の click が新しい分ボタンに落ちないよう、次タスクで切り替える。
+      modeSwitchTimerRef.current = window.setTimeout(() => {
+        modeSwitchTimerRef.current = null;
+        setMode("minute");
+      }, 0);
     }
   };
 
@@ -171,7 +198,7 @@ export default function AnalogClock({
         className,
       )}
     >
-      <p id={labelId} className="sr-only">
+      <p id={labelId} className="sr-only" aria-live="polite">
         {mode === "hour"
           ? "時。内側が1から12時、外側が13から24時です。時を選ぶと分の選択に切り替わります。"
           : "分。5分刻みです。"}
