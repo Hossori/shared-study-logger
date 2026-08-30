@@ -10,6 +10,7 @@ interface PickerComboboxTriggerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: string;
+  className?: string;
   "aria-label": string;
   "aria-controls": string;
   "aria-haspopup"?: "listbox" | "dialog";
@@ -20,6 +21,7 @@ export default function PickerComboboxTrigger({
   open,
   onOpenChange,
   children,
+  className,
   "aria-label": ariaLabel,
   "aria-controls": ariaControls,
   "aria-haspopup": ariaHasPopup,
@@ -34,7 +36,7 @@ export default function PickerComboboxTrigger({
       aria-controls={open ? ariaControls : undefined}
       aria-label={`${ariaLabel} ${children}`}
       onClick={() => onOpenChange(!open)}
-      className="w-full justify-between font-normal"
+      className={cn("w-full justify-between font-normal", className)}
     >
       <span className="tabular-nums">{children}</span>
       <ChevronDownIcon

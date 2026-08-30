@@ -1,8 +1,17 @@
 /**
- * 学習日時の日付入力 + タップで開くアナログ時計（時のあと分）。
+ * 学習日時。日付と時刻を1行に並べ、時刻はアナログ時計のモーダルで選ぶ。
  */
 import { useLayoutEffect, useRef } from "react";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogButtonArea,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import AnalogClock from "./AnalogClock";
 import PickerComboboxTrigger from "./PickerComboboxTrigger";
@@ -57,30 +66,47 @@ export default function StudyDatetimePicker({
 
   return (
     <Field ref={fieldRef}>
-      <FieldLabel htmlFor={`${idPrefix}-studyDate`}>学習日時</FieldLabel>
-      <Input
-        id={`${idPrefix}-studyDate`}
-        type="date"
-        required
-        lang="ja"
-        className="max-w-full min-w-0"
-        value={parts.date}
-        onChange={(event) => {
-          if (!isRecordDateString(event.target.value)) return;
-          emit({ ...parts, date: event.target.value });
-        }}
-      />
-      <PickerComboboxTrigger
-        id={`${idPrefix}-studyTime`}
-        open={open}
-        onOpenChange={onOpenChange}
-        aria-label="時刻"
-        aria-controls={clockId}
-      >
-        {formatTimeLabel(parts.hour, parts.minute)}
-      </PickerComboboxTrigger>
-      {open ? (
-        <div id={clockId} className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <FieldLabel htmlFor={`${idPrefix}-studyDate`} className="shrink-0">
+          学習日時
+        </FieldLabel>
+        <Input
+          id={`${idPrefix}-studyDate`}
+          type="date"
+          required
+          lang="ja"
+          className="min-w-0 flex-1"
+          value={parts.date}
+          onChange={(event) => {
+            if (!isRecordDateString(event.target.value)) return;
+            emit({ ...parts, date: event.target.value });
+          }}
+        />
+        <PickerComboboxTrigger
+          id={`${idPrefix}-studyTime`}
+          open={open}
+          onOpenChange={onOpenChange}
+          aria-label="時刻"
+          aria-controls={clockId}
+          aria-haspopup="dialog"
+          className="w-auto shrink-0"
+        >
+          {formatTimeLabel(parts.hour, parts.minute)}
+        </PickerComboboxTrigger>
+      </div>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          id={clockId}
+          container={
+            typeof document === "undefined" ? undefined : document.body
+          }
+        >
+          <DialogHeader>
+            <DialogTitle>時刻</DialogTitle>
+            <DialogDescription>
+              内側の円が1〜12時、外側の円が13〜24時です。時を選ぶと5分刻みの分に切り替わります。24時は0時です。
+            </DialogDescription>
+          </DialogHeader>
           <AnalogClock
             idPrefix={idPrefix}
             hour={parts.hour}
@@ -88,11 +114,13 @@ export default function StudyDatetimePicker({
             onHourChange={(hour) => emit({ ...parts, hour })}
             onMinuteChange={(minute) => emit({ ...parts, minute })}
           />
-          <FieldDescription>
-            内側の円が1〜12時、外側の円が13〜24時です。時を選ぶと5分刻みの分に切り替わります。24時は0時です。
-          </FieldDescription>
-        </div>
-      ) : null}
+          <DialogButtonArea>
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              完了
+            </Button>
+          </DialogButtonArea>
+        </DialogContent>
+      </Dialog>
     </Field>
   );
 }

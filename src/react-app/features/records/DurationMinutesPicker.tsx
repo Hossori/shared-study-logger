@@ -1,5 +1,5 @@
 /**
- * 任意の学習時間（分）。コンボボックスをタップすると 10 分刻みのドラムロールが出る。
+ * 任意の学習時間（分）。ラベルとコンボボックスを1行に並べ、タップでドラムロールを開く。
  */
 import { useRef } from "react";
 import { Field, FieldDescription, FieldTitle } from "@/components/ui/field";
@@ -32,17 +32,22 @@ export default function DurationMinutesPicker({
 
   return (
     <Field ref={fieldRef}>
-      <FieldTitle id={titleId}>学習時間（任意）</FieldTitle>
-      <PickerComboboxTrigger
-        id={`${idPrefix}-duration-trigger`}
-        open={open}
-        onOpenChange={onOpenChange}
-        aria-label="学習時間"
-        aria-controls={listId}
-        aria-haspopup="listbox"
-      >
-        {value == null ? "未設定" : formatDurationMinutes(value)}
-      </PickerComboboxTrigger>
+      <div className="flex items-center gap-2">
+        <FieldTitle id={titleId} className="shrink-0">
+          学習時間（任意）
+        </FieldTitle>
+        <PickerComboboxTrigger
+          id={`${idPrefix}-duration-trigger`}
+          open={open}
+          onOpenChange={onOpenChange}
+          aria-label="学習時間"
+          aria-controls={listId}
+          aria-haspopup="listbox"
+          className="min-w-0 flex-1"
+        >
+          {value == null ? "未設定" : formatDurationMinutes(value)}
+        </PickerComboboxTrigger>
+      </div>
       {open ? (
         <div className="flex flex-col gap-2">
           <DrumRollPicker

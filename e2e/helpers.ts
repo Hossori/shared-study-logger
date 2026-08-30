@@ -59,7 +59,11 @@ export async function fillStudyDatetime(
 	if ((await timeTrigger.getAttribute("aria-expanded")) !== "true") {
 		await timeTrigger.click();
 	}
+	const clockDialog = page.getByRole("dialog", { name: "時刻" });
+	await expect(clockDialog).toBeVisible();
 	const hourLabel = hour === 0 ? 24 : hour;
-	await page.locator(`#${idPrefix}-hour-${hourLabel}`).click();
-	await page.locator(`#${idPrefix}-minute-${minute}`).click();
+	await clockDialog.locator(`#${idPrefix}-hour-${hourLabel}`).click();
+	await clockDialog.locator(`#${idPrefix}-minute-${minute}`).click();
+	await clockDialog.getByRole("button", { name: "完了" }).click();
+	await expect(clockDialog).toBeHidden();
 }
