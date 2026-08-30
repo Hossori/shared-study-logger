@@ -43,7 +43,7 @@ export default function DurationMinutesPicker({
           aria-label="学習時間"
           aria-controls={listId}
           aria-haspopup="listbox"
-          className="min-w-0 flex-1"
+          className="w-auto min-w-0 flex-1"
         >
           {value == null ? "未設定" : formatDurationMinutes(value)}
         </PickerComboboxTrigger>

@@ -100,6 +100,7 @@ export default function StudyDatetimePicker({
           container={
             typeof document === "undefined" ? undefined : document.body
           }
+          overlay={{ forceRender: true }}
         >
           <DialogHeader>
             <DialogTitle>時刻</DialogTitle>

@@ -44,14 +44,16 @@ function DialogContent({
   children,
   showCloseButton = true,
   container,
+  overlay,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
   container?: DialogPrimitive.Portal.Props["container"];
+  overlay?: DialogPrimitive.Backdrop.Props;
 }) {
   return (
     <DialogPortal container={container}>
-      <DialogOverlay />
+      <DialogOverlay {...overlay} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
@@ -80,7 +82,7 @@ function DialogContent({
             }
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">閉じる</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
