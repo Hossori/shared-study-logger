@@ -1,39 +1,47 @@
 ---
-description: 作業分割と作業用・レビュー用サブエージェントへの委譲、管理者としての統括
+description: 作業分割と work-planner / implementer / reviewer への委譲、管理者としての統括
 alwaysApply: true
 ---
 
 # 作業分割とサブエージェント委譲
 
-- 作業は適切な単位に分割し、可能であれば並行して実施する。分割の目安: 独立して実装・レビューできるまとまり（機能単位、関心の分離、衝突しにくい範囲）。
-- 各作業単位に対し、次の2つのサブエージェントを割り当てる。
-  1. **作業用**: 作業計画を立てた上で実装・調査・修正を行う
-  2. **レビュー用**: 作業結果を検証し、問題があれば指摘する
-- 各作業単位に対し、developから切ったブランチを一つずつ用意する。
-- 作業を分割して委譲した場合、自身は管理者として次を行う。
-  - 分割方針と各単位の受け入れ条件を定義する
-  - サブエージェントへ明確な指示を渡す
-  - 進捗・依存関係・レビュー結果を統合する
-  - 最終的な品質判断と完了判定を行う
-- 小さく単一で完結する作業でも、可能な限り作業用とレビュー用の2役を分ける。
+役割プロンプトは `.cursor/agents/` の `work-planner` / `implementer` / `reviewer` に置く。本ルールと二重管理しない。
+
+- 作業は適切な単位に分割し、可能であれば並行する。分割の目安: 独立して実装・レビューできるまとまり（機能単位、関心の分離、衝突しにくい範囲）。
+- 各作業単位に develop から切ったブランチを一つ用意し、次を割り当てる。
+  1. **work-planner**（`model: inherit`）: 調査と計画。内容を明確にしてから **implementer** へ委譲する。大きな差分は自分で書かない。
+  2. **reviewer**（`model: inherit`、`readonly`）: 完了後に独立検証し、問題があれば指摘する。修正はしない。
+- **implementer**（`composer-2.5[fast=true]`）は work-planner、または計画済みの親だけが起動する。孫は Task を呼べないため、実装とゲート実行は implementer 自身が行う。
+- 小さく単一で完結する作業でも、可能な限り work-planner と reviewer を分ける。
+- Task の `subagent_type` に上記名を指定する。`generalPurpose` で代替しない。
+- implementer 呼び出し時は Task の `model` に `composer-2.5-fast` を明示する。省略や `inherit` だと呼び出し元（work-planner / 親）のモデルに上書きされることがある。
+
+分割して委譲した場合、自身は管理者として次を行う。
+
+- 分割方針と各単位の受け入れ条件を定義する
+- サブエージェントへ明確な指示を渡す（ブランチ名、受け入れ条件、範囲外）
+- 進捗・依存関係・レビュー結果を統合する
+- 最終的な品質判断と完了判定を行う
 
 ## 完了前の静的チェック / テスト（必須）
 
-コード変更を伴う作業では、完了報告・コミットの前にローカル shell で検証する。詳細は [testing-strategy](../skills/testing-strategy/SKILL.md) の「コミット前ゲート」。
+コード変更では、完了報告・コミットの前にローカルで検証する。詳細は [testing-strategy](../skills/testing-strategy/SKILL.md) の「コミット前ゲート」。
 
-- **作業用**: 完了前に少なくとも `pnpm lint`・`pnpm run typecheck`・`pnpm test`（Vitest unit）を実行し、警告・エラーを解消してから完了報告する。UI / 画面契約に触れる変更では `pnpm test:e2e` も必須。結果（成功/失敗と要点）を報告に含める。
-- **レビュー用**: 同様に全量、または変更範囲に対するスポット確認を行い、未解消の lint / type / test 失敗があれば差し戻す。
-- ドキュメントのみ・設定コメントのみなどコードに影響しない変更では省略可。判断に迷う場合は実行する。
+- **implementer**: ゲートを実行し、警告・エラーを解消してから返す。UI / 画面契約に触れる変更では `pnpm test:e2e` も必須。
+- **work-planner**: ゲート結果を受け入れ条件と照合する。不足なら implementer を resume する。
+- **reviewer**: 独立に全量またはスポットで確認する。readonly でコマンドが書けない場合は親へ実行を依頼する。未解消の失敗は差し戻す。
+- ドキュメントのみなどコードに影響しない変更では省略可。判断に迷う場合は実行する。
 
 ## GitHub 操作
 
-`push` / `commit` など git ローカル操作は `shell` でよいが、**GitHub 書き込みは親が MCP で行う**かMCP 利用可能なエージェント（`generalPurpose` 等）に委譲する。（`shell` サブエージェントには MCP が渡らないため）
+`push` / `commit` など git ローカル操作は `shell` や implementer でよいが、**GitHub 書き込み（PR 作成など）は親が MCP で行う**。`shell` 組み込みサブエージェントには MCP が渡らない。
 
 ```text
 # ✅ GOOD
-親 or generalPurpose が user-github MCP で create_pull_request
-shell は git push まで担当し、PR 用パラメータを親へ返す
+親が user-github MCP で create_pull_request
+implementer / shell は git push まで担当し、PR 用パラメータを親へ返す
 
 # ❌ BAD
 shell に「gh pr create」や「MCP で PR 作成」を丸投げする
+implementer が PR を作成する
 ```
