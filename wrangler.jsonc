@@ -12,7 +12,7 @@
     "directory": "./dist/client",
     "not_found_handling": "single-page-application",
   },
-  // D1: users / groups / group_members / study_records / push_subscriptions / app_notifications を格納
+  // D1: users / groups / group_members / study_records / record_reactions / push_subscriptions / app_notifications を格納
   // users.role は ADMIN / USER（DEFAULT USER）。ロール変更は SQL で行う。
   "d1_databases": [
     {

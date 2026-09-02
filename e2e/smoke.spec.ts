@@ -100,6 +100,46 @@ test("学習記録を投稿できる", async ({ page }) => {
 		`POST /records failed: ${response.status()} ${await response.text()}`,
 	).toBeTruthy();
 	await expect(page.getByRole("heading", { name: title })).toBeVisible();
+
+	const card = page.locator("li").filter({ hasText: title });
+	await card.getByRole("button", { name: "リアクションを付ける" }).click();
+	const addReactionPromise = page.waitForResponse(
+		(response) =>
+			response.url().includes("/reactions") &&
+			response.request().method() === "POST",
+	);
+	await page.getByRole("button", { name: "いいねを付ける" }).click();
+	expect((await addReactionPromise).ok()).toBeTruthy();
+	await expect(
+		card.getByRole("button", { name: "いいねのリアクションを取り消す" }),
+	).toBeVisible();
+	await expect(
+		card.getByRole("button", { name: "いいねのリアクションを取り消す" }),
+	).toContainText("1");
+
+	await page.keyboard.press("Escape");
+
+	const listUsersPromise = page.waitForResponse(
+		(response) =>
+			response.url().includes("/reactions") &&
+			response.request().method() === "GET",
+	);
+	await card.getByRole("button", { name: "リアクションしたユーザー" }).click();
+	expect((await listUsersPromise).ok()).toBeTruthy();
+	await expect(page.getByText("👍 管理者")).toBeVisible();
+
+	await page.keyboard.press("Escape");
+
+	const removeReactionPromise = page.waitForResponse(
+		(response) =>
+			response.url().includes("/reactions") &&
+			response.request().method() === "DELETE",
+	);
+	await card.getByRole("button", { name: "いいねのリアクションを取り消す" }).click();
+	expect((await removeReactionPromise).ok()).toBeTruthy();
+	await expect(
+		card.getByRole("button", { name: "いいねのリアクションを取り消す" }),
+	).toHaveCount(0);
 });
 
 test("自分の学習記録を削除できる", async ({ page }) => {

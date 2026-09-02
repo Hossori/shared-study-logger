@@ -2,17 +2,25 @@
  * D1(`DB`バインディング)へのクエリヘルパー。
  * ユーザー/グループ取得、管理者向けユーザー・グループ・所属の作成、
  * 記録一覧のカーソルページネーション、記録の作成/更新/削除、
- * push_subscriptions / app_notifications CRUDをまとめる。
+ * 記録リアクション、push_subscriptions / app_notifications CRUDをまとめる。
  */
 import type {
   AvatarKey,
   Group,
   InAppNotification,
   PublicUser,
+  ReactionStamp,
+  ReactionSummary,
+  RecordReactionEntry,
   StudyRecord,
   User,
 } from "../../../shared/schemas";
-import { AvatarKeySchema, parseUserRole } from "../../../shared/schemas";
+import {
+  AvatarKeySchema,
+  parseUserRole,
+  REACTION_STAMPS,
+  ReactionStampSchema,
+} from "../../../shared/schemas";
 
 export interface UserRow {
   id: string;
@@ -416,7 +424,10 @@ export function parseStudyRecordsCursor(
   return decodeCursor(cursor);
 }
 
-function toStudyRecord(row: StudyRecordRow): StudyRecord {
+function toStudyRecord(
+  row: StudyRecordRow,
+  reactions: ReactionSummary[] = [],
+): StudyRecord {
   return {
     id: row.id,
     groupId: row.group_id,
@@ -428,13 +439,80 @@ function toStudyRecord(row: StudyRecordRow): StudyRecord {
     memo: row.memo,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    reactions,
   };
+}
+
+const STAMP_ORDER = new Map(
+  REACTION_STAMPS.map((stamp, index) => [stamp, index]),
+);
+
+function sortReactionSummaries(
+  summaries: ReactionSummary[],
+): ReactionSummary[] {
+  return [...summaries].sort(
+    (a, b) =>
+      (STAMP_ORDER.get(a.stamp) ?? 99) - (STAMP_ORDER.get(b.stamp) ?? 99),
+  );
+}
+
+interface ReactionAggregateRow {
+  record_id: string;
+  stamp: string;
+  count: number;
+  reacted_by_me: number;
+}
+
+/** ページ内の記録IDを IN してスタンプ集計する（N+1禁止）。 */
+async function listReactionSummariesByRecordIds(
+  db: D1Database,
+  recordIds: string[],
+  currentUserId: string,
+): Promise<Map<string, ReactionSummary[]>> {
+  const byRecord = new Map<string, ReactionSummary[]>();
+  for (const id of recordIds) {
+    byRecord.set(id, []);
+  }
+  if (recordIds.length === 0) {
+    return byRecord;
+  }
+
+  const placeholders = recordIds.map(() => "?").join(", ");
+  const { results } = await db
+    .prepare(
+      `SELECT record_id, stamp,
+              COUNT(*) AS count,
+              SUM(user_id = ?) AS reacted_by_me
+       FROM record_reactions
+       WHERE record_id IN (${placeholders})
+       GROUP BY record_id, stamp`,
+    )
+    .bind(currentUserId, ...recordIds)
+    .all<ReactionAggregateRow>();
+
+  for (const row of results ?? []) {
+    const stampParsed = ReactionStampSchema.safeParse(row.stamp);
+    if (!stampParsed.success) continue;
+    const list = byRecord.get(row.record_id);
+    if (!list) continue;
+    list.push({
+      stamp: stampParsed.data,
+      count: Number(row.count),
+      reactedByMe: Number(row.reacted_by_me) > 0,
+    });
+  }
+
+  for (const [id, list] of byRecord) {
+    byRecord.set(id, sortReactionSummaries(list));
+  }
+  return byRecord;
 }
 
 /** グループ内の学習記録を新しい順にカーソルページネーションで取得する。 */
 export async function listStudyRecords(
   db: D1Database,
   groupId: string,
+  currentUserId: string,
   options: { cursor?: string; limit: number },
 ): Promise<CursorPage<StudyRecord>> {
   const { limit } = options;
@@ -494,8 +572,16 @@ export async function listStudyRecords(
       ? encodeCursor(lastRow.study_datetime, lastRow.updated_at, lastRow.id)
       : null;
 
+  const reactionsByRecord = await listReactionSummariesByRecordIds(
+    db,
+    pageRows.map((row) => row.id),
+    currentUserId,
+  );
+
   return {
-    items: pageRows.map(toStudyRecord),
+    items: pageRows.map((row) =>
+      toStudyRecord(row, reactionsByRecord.get(row.id) ?? []),
+    ),
     nextCursor,
   };
 }
@@ -545,6 +631,7 @@ export async function createStudyRecord(
     memo: input.memo ?? null,
     createdAt: now,
     updatedAt: now,
+    reactions: [],
   };
 }
 
@@ -553,6 +640,7 @@ export async function getStudyRecord(
   db: D1Database,
   groupId: string,
   recordId: string,
+  currentUserId: string,
 ): Promise<StudyRecord | null> {
   const row = await db
     .prepare(
@@ -566,7 +654,13 @@ export async function getStudyRecord(
     )
     .bind(groupId, recordId)
     .first<StudyRecordRow>();
-  return row ? toStudyRecord(row) : null;
+  if (!row) return null;
+  const reactionsByRecord = await listReactionSummariesByRecordIds(
+    db,
+    [row.id],
+    currentUserId,
+  );
+  return toStudyRecord(row, reactionsByRecord.get(row.id) ?? []);
 }
 
 export interface UpdateStudyRecordInput {
@@ -580,9 +674,10 @@ export async function updateStudyRecord(
   db: D1Database,
   groupId: string,
   recordId: string,
+  currentUserId: string,
   input: UpdateStudyRecordInput,
 ): Promise<StudyRecord | null> {
-  const existing = await getStudyRecord(db, groupId, recordId);
+  const existing = await getStudyRecord(db, groupId, recordId, currentUserId);
   if (!existing) return null;
 
   const now = new Date().toISOString();
@@ -625,6 +720,91 @@ export async function deleteStudyRecord(
     .bind(groupId, recordId)
     .run();
   return (result.meta.changes ?? 0) > 0;
+}
+
+export interface AddRecordReactionInput {
+  id: string;
+  recordId: string;
+  userId: string;
+  stamp: ReactionStamp;
+}
+
+/** 記録にスタンプを付ける。同一ユーザー×同一スタンプが既にあれば null。 */
+export async function addRecordReaction(
+  db: D1Database,
+  input: AddRecordReactionInput,
+): Promise<RecordReactionEntry | null> {
+  const existing = await db
+    .prepare(
+      `SELECT id FROM record_reactions
+       WHERE record_id = ? AND user_id = ? AND stamp = ?`,
+    )
+    .bind(input.recordId, input.userId, input.stamp)
+    .first<{ id: string }>();
+  if (existing) return null;
+
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO record_reactions (id, record_id, user_id, stamp, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .bind(input.id, input.recordId, input.userId, input.stamp, now)
+    .run();
+
+  const user = await getUserById(db, input.userId);
+  return {
+    stamp: input.stamp,
+    userId: input.userId,
+    displayName: user?.display_name ?? "",
+  };
+}
+
+/** 自分のスタンプ行だけ削除する。削除できたら true。 */
+export async function deleteRecordReaction(
+  db: D1Database,
+  recordId: string,
+  userId: string,
+  stamp: ReactionStamp,
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `DELETE FROM record_reactions
+       WHERE record_id = ? AND user_id = ? AND stamp = ?`,
+    )
+    .bind(recordId, userId, stamp)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+/** 記録のリアクション一覧（created_at, id 昇順）。 */
+export async function listRecordReactions(
+  db: D1Database,
+  recordId: string,
+): Promise<RecordReactionEntry[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT rr.stamp AS stamp, rr.user_id AS user_id,
+              u.display_name AS display_name
+       FROM record_reactions rr
+       INNER JOIN users u ON u.id = rr.user_id
+       WHERE rr.record_id = ?
+       ORDER BY rr.created_at ASC, rr.id ASC`,
+    )
+    .bind(recordId)
+    .all<{ stamp: string; user_id: string; display_name: string }>();
+
+  const entries: RecordReactionEntry[] = [];
+  for (const row of results ?? []) {
+    const stampParsed = ReactionStampSchema.safeParse(row.stamp);
+    if (!stampParsed.success) continue;
+    entries.push({
+      stamp: stampParsed.data,
+      userId: row.user_id,
+      displayName: row.display_name,
+    });
+  }
+  return entries;
 }
 
 // ---- push_subscriptions -----------------------------------------------

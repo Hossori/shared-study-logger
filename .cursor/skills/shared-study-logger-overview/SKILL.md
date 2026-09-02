@@ -19,7 +19,7 @@ description: >-
 ```
 ブラウザ(React SPA + Service Worker)
   ├─→ Static Assets (dist/client、SPAフォールバック)
-  └─→ Hono API ──→ D1 (users/groups/group_members/study_records/push_subscriptions/app_notifications)
+  └─→ Hono API ──→ D1 (users/groups/group_members/study_records/record_reactions/push_subscriptions/app_notifications)
                 ├─→ KV (SESSIONS)
                 └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
@@ -45,7 +45,7 @@ wrangler.jsonc / vite.config.ts
 | --- | ---------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
 | 1   | 認証・セッション | Cookie(`session`)。マイページでプロフィール/パスワード変更・Push 設定 | [reference/auth.md](reference/auth.md)                         |
 | 2   | グループ         | 所属グループの記録のみ閲覧。作成・所属は管理者画面で操作 | [reference/groups.md](reference/groups.md)                     |
-| 3   | 学習記録         | 投稿・編集・削除、カーソルページネーション                 | [reference/records.md](reference/records.md)                   |
+| 3   | 学習記録         | 投稿・編集・削除、カーソルページネーション、リアクションスタンプ | [reference/records.md](reference/records.md)                   |
 | 4   | Push通知         | 投稿時に他メンバーへ Web Push（VAPID）                     | [reference/push.md](reference/push.md)                         |
 | 5   | PWA              | ホーム画面追加、SW、Push 受信                              | [reference/pwa.md](reference/pwa.md)                           |
 | 6   | 状態管理         | Zustand（クライアント）+ TanStack Query（サーバー）        | [reference/state-management.md](reference/state-management.md) |
@@ -53,7 +53,7 @@ wrangler.jsonc / vite.config.ts
 
 ## データモデル（D1 / SQLite）
 
-テーブルは `users` / `groups` / `group_members` / `study_records` / `push_subscriptions` / `app_notifications` の6つ。
+テーブルは `users` / `groups` / `group_members` / `study_records` / `record_reactions` / `push_subscriptions` / `app_notifications` の7つ。
 `users.role` は `ADMIN` または `USER`（既存行・未指定は `USER`）。セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
 詳細は [docs/data-model.md](/docs/data-model.md)。
 
