@@ -179,7 +179,7 @@ export function useAddRecordReactionMutation(groupId: string | null) {
     },
     onMutate: async ({ recordId, stamp }) => {
       const listKey = recordsQueryKeys.list(groupId);
-      await queryClient.cancelQueries({ queryKey: listKey });
+      await queryClient.cancelQueries({ queryKey: listKey, exact: true });
       const previous = queryClient.getQueryData<RecordsInfiniteData>(listKey);
       patchRecordReactions(queryClient, groupId, recordId, (reactions) =>
         applyAddReaction(reactions, stamp),
@@ -197,6 +197,7 @@ export function useAddRecordReactionMutation(groupId: string | null) {
     onSettled: async (_data, _error, variables) => {
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.list(groupId),
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.reactions(groupId, variables.recordId),
@@ -222,7 +223,7 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
     },
     onMutate: async ({ recordId, stamp }) => {
       const listKey = recordsQueryKeys.list(groupId);
-      await queryClient.cancelQueries({ queryKey: listKey });
+      await queryClient.cancelQueries({ queryKey: listKey, exact: true });
       const previous = queryClient.getQueryData<RecordsInfiniteData>(listKey);
       patchRecordReactions(queryClient, groupId, recordId, (reactions) =>
         applyRemoveReaction(reactions, stamp),
@@ -240,6 +241,7 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
     onSettled: async (_data, _error, variables) => {
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.list(groupId),
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.reactions(groupId, variables.recordId),
