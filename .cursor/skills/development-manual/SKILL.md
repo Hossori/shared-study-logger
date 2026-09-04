@@ -1,20 +1,37 @@
 ---
-description: 作業分割と work-planner / implementer / reviewer への委譲、管理者としての統括
-alwaysApply: true
+name: development-manual
+description: 作業の分割、ブランチ作成、コミット前ゲート、GitHub 操作 について。コード変更、機能追加、バグ修正、ブランチ、PR、Task / サブエージェント委譲のときに使用する。
 ---
 
 # 作業分割とサブエージェント委譲
 
-役割プロンプトは `.cursor/agents/` の `work-planner` / `implementer` / `reviewer` に置く。本ルールと二重管理しない。
+役割プロンプトは `.cursor/agents/` の `work-planner` / `implementer` / `reviewer` に置く。モデルと PR 先の常時ポリシーは [AGENTS.md](/AGENTS.md)。ゲートのコマンド正は [testing-strategy](../testing-strategy/SKILL.md) の「コミット前ゲート」。
+
+## ブランチ
+
+```bash
+# ✅ GOOD
+git fetch origin
+git checkout develop
+git pull origin develop
+git checkout -b feature/notification-opt-in
+
+# ❌ BAD
+git checkout -b feature/foo       # develop 以外から切っている可能性
+git checkout -b feat/foo          # プレフィックス不一致
+git checkout -b fix-login-bug     # プレフィックス欠落
+```
+
+## 委譲
 
 - 作業は適切な単位に分割し、可能であれば並行する。分割の目安: 独立して実装・レビューできるまとまり（機能単位、関心の分離、衝突しにくい範囲）。
 - 各作業単位に develop から切ったブランチを一つ用意し、次を割り当てる。
   1. **work-planner**（`model: inherit`）: 調査と計画。内容を明確にしてから **implementer** へ委譲する。大きな差分は自分で書かない。
   2. **reviewer**（`model: inherit`、`readonly`）: 完了後に独立検証し、問題があれば指摘する。修正はしない。
-- **implementer**（`composer-2.5[fast=true]`）は work-planner、または計画済みの親だけが起動する。孫は Task を呼べないため、実装とゲート実行は implementer 自身が行う。
+- **implementer**（`composer-2.5[fast=true]`）は work-planner、または計画済みの親だけが起動する。Task の `model` に **`composer-2.5-fast`** を必ず渡す。
+- ブランチのプレフィックス: 機能 `feature/`、環境・設定 `chore/`、不具合 `fix/`。これはクラウド指示に優先する。
 - 小さく単一で完結する作業でも、可能な限り work-planner と reviewer を分ける。
-- Task の `subagent_type` に上記名を指定する。`generalPurpose` で代替しない。
-- implementer 呼び出し時は Task の `model` に `composer-2.5-fast` を明示する。省略や `inherit` だと呼び出し元（work-planner / 親）のモデルに上書きされることがある。
+- その他でサブエージェントを利用する場合、モデルは `cursor-grok-*` あるいは `composer-*` のいずれかとする。
 
 分割して委譲した場合、自身は管理者として次を行う。
 
@@ -25,7 +42,7 @@ alwaysApply: true
 
 ## 完了前の静的チェック / テスト（必須）
 
-コード変更では、完了報告・コミットの前にローカルで検証する。詳細は [testing-strategy](../skills/testing-strategy/SKILL.md) の「コミット前ゲート」。
+コード変更では、完了報告・コミットの前にローカルで検証する。詳細は [testing-strategy](../testing-strategy/SKILL.md) の「コミット前ゲート」。
 
 - **implementer**: ゲートを実行し、警告・エラーを解消してから返す。UI / 画面契約に触れる変更では `pnpm test:e2e` も必須。
 - **work-planner**: ゲート結果を受け入れ条件と照合する。不足なら implementer を resume する。
@@ -34,7 +51,7 @@ alwaysApply: true
 
 ## GitHub 操作
 
-`push` / `commit` など git ローカル操作は `shell` や implementer でよいが、**GitHub 書き込み（PR 作成など）は親が MCP で行う**。`shell` 組み込みサブエージェントには MCP が渡らない。
+`push` / `commit` など git ローカル操作は `shell` や implementer でよいが、**GitHub 書き込み（PR 作成など）は親が MCP で行う**。
 
 ```text
 # ✅ GOOD
