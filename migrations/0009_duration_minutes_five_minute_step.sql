@@ -1,6 +1,7 @@
--- Migration number: 0008 	 2026-08-30T00:00:00.000Z
+-- Migration number: 0009 	 2026-08-30T00:00:00.000Z
 -- duration_minutes の CHECK を 5 分刻み（5〜720）に更新する。
 -- SQLite は CHECK 制約を直接変更できないため study_records を再作成する。
+-- 先行する 0007 の record_reactions は、FK を OFF にしてから DROP するため行は残る。
 
 PRAGMA foreign_keys=OFF;
 

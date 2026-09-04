@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
@@ -21,6 +23,7 @@ function PopoverContent({
   positionMethod,
   collisionPadding,
   container,
+  anchor,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
@@ -32,6 +35,7 @@ function PopoverContent({
     | "collisionAvoidance"
     | "positionMethod"
     | "collisionPadding"
+    | "anchor"
   > & {
     container?: PopoverPrimitive.Portal.Props["container"];
   }) {
@@ -50,6 +54,7 @@ function PopoverContent({
         collisionAvoidance={collisionAvoidance}
         positionMethod={positionMethod}
         collisionPadding={collisionPadding}
+        anchor={anchor}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup

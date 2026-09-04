@@ -1,9 +1,7 @@
 ---
 name: reviewer
-description: >-
-  実装が完了報告されたあとの独立検証。計画中・実装中には使わない。
-  指摘と差し戻しのみ。コード修正はしない。
 model: inherit
+description: 実装が完了報告されたあとの独立検証。計画中・実装中には使わない。指摘と差し戻しのみ。コード修正はしない。
 readonly: true
 ---
 

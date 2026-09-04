@@ -1,15 +1,20 @@
 import { Hono } from "hono";
 import {
+  AddRecordReactionRequestSchema,
   CreateStudyRecordRequestSchema,
   ListStudyRecordsQuerySchema,
+  ReactionStampSchema,
   UpdateStudyRecordRequestSchema,
 } from "../../../shared/schemas";
 import {
+  addRecordReaction,
   createStudyRecord,
+  deleteRecordReaction,
   deleteStudyRecord,
   getOtherGroupMemberUserIds,
   getStudyRecord,
   isUserInGroup,
+  listRecordReactions,
   listStudyRecords,
   parseStudyRecordsCursor,
   updateStudyRecord,
@@ -21,6 +26,9 @@ import type { AuthVariables } from "../middleware/requireAuth";
  * 学習記録API
  * - GET    /:groupId/records            記録一覧（カーソルページネーション、新しい順）
  * - POST   /:groupId/records            記録投稿（成功時にPush用QueueへEnqueue）
+ * - POST   /:groupId/records/:recordId/reactions  スタンプ付与
+ * - DELETE /:groupId/records/:recordId/reactions/:stamp  自分のスタンプ取消
+ * - GET    /:groupId/records/:recordId/reactions  スタンプごとのユーザー一覧
  * - PATCH  /:groupId/records/:recordId  自分の記録の編集
  * - DELETE /:groupId/records/:recordId  自分の記録の削除
  * requireAuthはindex.tsでマウント時に適用される。
@@ -57,7 +65,12 @@ recordsRoutes.get("/:groupId/records", async (c) => {
     return c.json({ error: "invalid_request", message: "Invalid cursor" }, 400);
   }
 
-  const page = await listStudyRecords(c.env.DB, groupId, parsedQuery.data);
+  const page = await listStudyRecords(
+    c.env.DB,
+    groupId,
+    user.id,
+    parsedQuery.data,
+  );
   return c.json({ records: page.items, nextCursor: page.nextCursor });
 });
 
@@ -115,6 +128,99 @@ recordsRoutes.post("/:groupId/records", async (c) => {
   return c.json({ record }, 201);
 });
 
+recordsRoutes.post("/:groupId/records/:recordId/reactions", async (c) => {
+  const user = c.get("user");
+  const groupId = c.req.param("groupId");
+  const recordId = c.req.param("recordId");
+
+  const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
+  if (!isMember) {
+    return c.json({ error: "forbidden" }, 403);
+  }
+
+  const existing = await getStudyRecord(c.env.DB, groupId, recordId, user.id);
+  if (!existing) {
+    return c.json({ error: "not_found" }, 404);
+  }
+
+  const json = await c.req.json().catch(() => null);
+  const parsed = AddRecordReactionRequestSchema.safeParse(json);
+  if (!parsed.success) {
+    return c.json(
+      { error: "invalid_request", issues: parsed.error.issues },
+      400,
+    );
+  }
+
+  const reaction = await addRecordReaction(c.env.DB, {
+    id: crypto.randomUUID(),
+    recordId,
+    userId: user.id,
+    stamp: parsed.data.stamp,
+  });
+  if (!reaction) {
+    return c.json({ error: "already_reacted" }, 409);
+  }
+
+  return c.json({ reaction }, 201);
+});
+
+recordsRoutes.delete(
+  "/:groupId/records/:recordId/reactions/:stamp",
+  async (c) => {
+    const user = c.get("user");
+    const groupId = c.req.param("groupId");
+    const recordId = c.req.param("recordId");
+    const stampParam = c.req.param("stamp");
+
+    const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
+    if (!isMember) {
+      return c.json({ error: "forbidden" }, 403);
+    }
+
+    const existing = await getStudyRecord(c.env.DB, groupId, recordId, user.id);
+    if (!existing) {
+      return c.json({ error: "not_found" }, 404);
+    }
+
+    const parsedStamp = ReactionStampSchema.safeParse(stampParam);
+    if (!parsedStamp.success) {
+      return c.json({ error: "invalid_request" }, 400);
+    }
+
+    const deleted = await deleteRecordReaction(
+      c.env.DB,
+      recordId,
+      user.id,
+      parsedStamp.data,
+    );
+    if (!deleted) {
+      return c.json({ error: "not_found" }, 404);
+    }
+
+    return c.json({ ok: true });
+  },
+);
+
+recordsRoutes.get("/:groupId/records/:recordId/reactions", async (c) => {
+  const user = c.get("user");
+  const groupId = c.req.param("groupId");
+  const recordId = c.req.param("recordId");
+
+  const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
+  if (!isMember) {
+    return c.json({ error: "forbidden" }, 403);
+  }
+
+  const existing = await getStudyRecord(c.env.DB, groupId, recordId, user.id);
+  if (!existing) {
+    return c.json({ error: "not_found" }, 404);
+  }
+
+  const reactions = await listRecordReactions(c.env.DB, recordId);
+  return c.json({ reactions });
+});
+
 recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
   const user = c.get("user");
   const groupId = c.req.param("groupId");
@@ -125,7 +231,7 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "forbidden" }, 403);
   }
 
-  const existing = await getStudyRecord(c.env.DB, groupId, recordId);
+  const existing = await getStudyRecord(c.env.DB, groupId, recordId, user.id);
   if (!existing) {
     return c.json({ error: "not_found" }, 404);
   }
@@ -139,12 +245,18 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
   }
 
-  const record = await updateStudyRecord(c.env.DB, groupId, recordId, {
-    studyDatetime: parsed.data.studyDatetime,
-    title: parsed.data.title,
-    durationMinutes: parsed.data.durationMinutes,
-    memo: parsed.data.memo,
-  });
+  const record = await updateStudyRecord(
+    c.env.DB,
+    groupId,
+    recordId,
+    user.id,
+    {
+      studyDatetime: parsed.data.studyDatetime,
+      title: parsed.data.title,
+      durationMinutes: parsed.data.durationMinutes,
+      memo: parsed.data.memo,
+    },
+  );
   if (!record) {
     return c.json({ error: "not_found" }, 404);
   }
@@ -162,7 +274,7 @@ recordsRoutes.delete("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "forbidden" }, 403);
   }
 
-  const existing = await getStudyRecord(c.env.DB, groupId, recordId);
+  const existing = await getStudyRecord(c.env.DB, groupId, recordId, user.id);
   if (!existing) {
     return c.json({ error: "not_found" }, 404);
   }

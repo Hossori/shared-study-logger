@@ -17,6 +17,9 @@
 | POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue。`durationMinutes` は任意） |
 | PATCH | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の編集（`durationMinutes` 省略時は既存値を維持、`null` で未設定に戻す） |
 | DELETE | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の削除 |
+| POST | `/api/groups/:groupId/records/:recordId/reactions` | 必要+所属チェック | スタンプ付与（`{ stamp }`。重複は 409 `already_reacted`） |
+| DELETE | `/api/groups/:groupId/records/:recordId/reactions/:stamp` | 必要+所属チェック | 自分のスタンプ取消（該当行が無ければ 404） |
+| GET | `/api/groups/:groupId/records/:recordId/reactions` | 必要+所属チェック | スタンプごとのユーザー一覧（`created_at, id` 昇順） |
 | GET | `/api/push/vapid-public-key` | 不要 | Push購読用のVAPID公開鍵取得 |
 | POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
