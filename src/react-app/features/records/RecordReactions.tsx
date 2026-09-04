@@ -1,9 +1,10 @@
 /**
  * 学習記録カード下部のリアクション（スタンプ付与・件数・ユーザー一覧）。
- * 件数は楽観更新。同種が1件のときはバッジを出さず、スタンプ同士は詰めて並べる。
+ * 件数は楽観更新。同種が1件のときは件数を出さず、スタンプ同士は詰めて並べる。
+ * 付与済みスタンプの長押しで、リアクションしたユーザー一覧を表示する。
  */
-import { useState } from "react";
-import { List, SmilePlus } from "lucide-react";
+import { useRef, useState } from "react";
+import { SmilePlus } from "lucide-react";
 import {
   REACTION_STAMP_EMOJI,
   REACTION_STAMP_LABEL,
@@ -28,6 +29,8 @@ import {
   useRecordReactionsQuery,
 } from "../../queries/useRecords";
 
+const LONG_PRESS_MS = 500;
+
 interface RecordReactionsProps {
   groupId: string;
   record: StudyRecord;
@@ -37,11 +40,15 @@ function StampChip({
   summary,
   disabled,
   onClick,
+  onLongPress,
 }: {
   summary: ReactionSummary;
   disabled: boolean;
   onClick: (stamp: ReactionStamp) => void;
+  onLongPress: (anchor: HTMLElement) => void;
 }) {
+  const timerRef = useRef<number | null>(null);
+  const suppressClickRef = useRef(false);
   const emoji = REACTION_STAMP_EMOJI[summary.stamp];
   const label = REACTION_STAMP_LABEL[summary.stamp];
   const stampNode = (
@@ -53,13 +60,44 @@ function StampChip({
     </>
   );
 
+  const clearTimer = () => {
+    if (timerRef.current != null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
   return (
     <Button
       variant="ghost"
       className="p-0"
       disabled={disabled}
+      aria-haspopup="dialog"
       aria-label={`${label}のリアクションを${summary.reactedByMe ? "取り消す" : "付ける"}`}
+      title="長押しでリアクションしたユーザーを表示"
+      onPointerDown={(event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        clearTimer();
+        suppressClickRef.current = false;
+        const target = event.currentTarget;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        timerRef.current = window.setTimeout(() => {
+          timerRef.current = null;
+          suppressClickRef.current = true;
+          onLongPress(target);
+        }, LONG_PRESS_MS);
+      }}
+      onPointerUp={clearTimer}
+      onPointerCancel={clearTimer}
+      onLostPointerCapture={clearTimer}
+      onContextMenu={(event) => {
+        event.preventDefault();
+      }}
       onClick={() => {
+        if (suppressClickRef.current) {
+          suppressClickRef.current = false;
+          return;
+        }
         onClick(summary.stamp);
       }}
     >
@@ -82,6 +120,7 @@ export default function RecordReactions({
   record,
 }: RecordReactionsProps) {
   const [listOpen, setListOpen] = useState(false);
+  const [listAnchor, setListAnchor] = useState<Element | null>(null);
   const addMutation = useAddRecordReactionMutation(groupId);
   const deleteMutation = useDeleteRecordReactionMutation(groupId);
   const listQuery = useRecordReactionsQuery(groupId, record.id, listOpen);
@@ -160,25 +199,20 @@ export default function RecordReactions({
               onClick={(stamp) => {
                 void toggleStamp(stamp);
               }}
+              onLongPress={(anchor) => {
+                setListAnchor(anchor);
+                setListOpen(true);
+              }}
             />
           ))}
         </div>
       ) : null}
 
       <Popover open={listOpen} onOpenChange={setListOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="リアクションしたユーザー"
-            />
-          }
-        >
-          <List aria-hidden />
-          <span className="sr-only">リアクションしたユーザー</span>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-auto">
+        <PopoverContent align="start" className="w-auto" anchor={listAnchor}>
+          <PopoverTitle className="sr-only">
+            リアクションしたユーザー
+          </PopoverTitle>
           {listQuery.isPending ? (
             <div className="flex justify-center py-2">
               <Spinner />
