@@ -1,11 +1,7 @@
 /**
  * 学習記録フォームの日時変換・ペイロード組み立て（コンポーネント非依存）。
  */
-import {
-  DURATION_MINUTES_MAX,
-  DURATION_MINUTES_MIN,
-  DURATION_MINUTES_STEP,
-} from "../../../../shared/schemas";
+import { DURATION_MINUTES_MAX } from "../../../../shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {
@@ -59,6 +55,17 @@ export function isRecordDateString(date: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(date);
 }
 
+/** YYYY-MM-DD をローカル日付に変換（UTC ずれを避ける）。 */
+export function recordDateStringToLocalDate(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/** ローカル日付を YYYY-MM-DD に変換。 */
+export function localDateToRecordDateString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function parseRecordDatetime(
   datetimeLocal: string,
 ): RecordDatetimeParts | null {
@@ -97,26 +104,15 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}時間${rest}分`;
 }
 
-export function durationMinuteValues(): number[] {
-  const values: number[] = [];
-  for (
-    let minutes = DURATION_MINUTES_MIN;
-    minutes <= DURATION_MINUTES_MAX;
-    minutes += DURATION_MINUTES_STEP
-  ) {
-    values.push(minutes);
-  }
-  return values;
+/** 学習時間の加減算。未設定は 0 として計算し、0 以下は null、上限は MAX でクランプ。 */
+export function applyDurationMinutesDelta(
+  current: number | null,
+  delta: number,
+): number | null {
+  const base = current ?? 0;
+  const next = Math.min(Math.max(base + delta, 0), DURATION_MINUTES_MAX);
+  return next <= 0 ? null : next;
 }
-
-export const DURATION_DRUM_OPTIONS: { value: number | null; label: string }[] =
-  [
-    { value: null, label: "未設定" },
-    ...durationMinuteValues().map((minutes) => ({
-      value: minutes,
-      label: formatDurationMinutes(minutes),
-    })),
-  ];
 
 /** 未保存ガードが拾えるよう、フォームへ input イベントをバブリングする。 */
 export function notifyFormInput(node: EventTarget | null): void {
@@ -140,6 +136,9 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
     studyDatetime,
     title,
     memo: memo ? memo : undefined,
-    durationMinutes: values.durationMinutes,
+    durationMinutes:
+      values.durationMinutes == null || values.durationMinutes <= 0
+        ? null
+        : values.durationMinutes,
   };
 }

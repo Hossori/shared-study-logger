@@ -9,7 +9,7 @@ import DurationMinutesPicker from "./DurationMinutesPicker";
 import StudyDatetimePicker from "./StudyDatetimePicker";
 import type { RecordFormValues } from "./recordFormUtils";
 
-type OpenPicker = "time" | "duration" | null;
+type OpenPicker = "date" | "time" | "duration" | null;
 
 interface RecordFormFieldsProps {
   idPrefix: string;
@@ -34,8 +34,10 @@ export default function RecordFormFields({
         idPrefix={idPrefix}
         value={values.studyDatetime}
         onChange={(studyDatetime) => onChange({ ...values, studyDatetime })}
-        open={openPicker === "time"}
-        onOpenChange={togglePicker("time")}
+        dateOpen={openPicker === "date"}
+        onDateOpenChange={togglePicker("date")}
+        timeOpen={openPicker === "time"}
+        onTimeOpenChange={togglePicker("time")}
       />
 
       <DurationMinutesPicker

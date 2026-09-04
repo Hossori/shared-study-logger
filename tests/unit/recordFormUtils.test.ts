@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+	applyDurationMinutesDelta,
 	buildRecordRequestPayload,
 	formatDurationMinutes,
 	formatRecordDatetime,
 	isRecordDateString,
+	localDateToRecordDateString,
 	parseDatetimeLocalToIso,
 	parseRecordDatetime,
+	recordDateStringToLocalDate,
 	toDatetimeLocalString,
 } from "../../src/react-app/features/records/recordFormUtils";
 
@@ -32,6 +35,15 @@ describe("recordFormUtils", () => {
 		).toBe("2026-08-01T10:00");
 	});
 
+	it("recordDateStringToLocalDate and localDateToRecordDateString round-trip", () => {
+		const local = recordDateStringToLocalDate("2026-08-10");
+		expect(local.getFullYear()).toBe(2026);
+		expect(local.getMonth()).toBe(7);
+		expect(local.getDate()).toBe(10);
+		expect(localDateToRecordDateString(local)).toBe("2026-08-10");
+		expect(recordDateStringToLocalDate("2026-08-10").getDate()).toBe(10);
+	});
+
 	it("parseRecordDatetime and formatRecordDatetime round-trip", () => {
 		expect(parseRecordDatetime("2026-08-10T09:05")).toEqual({
 			date: "2026-08-10",
@@ -48,9 +60,19 @@ describe("recordFormUtils", () => {
 	});
 
 	it("formatDurationMinutes uses hours and minutes", () => {
+		expect(formatDurationMinutes(5)).toBe("5分");
 		expect(formatDurationMinutes(10)).toBe("10分");
 		expect(formatDurationMinutes(60)).toBe("1時間");
 		expect(formatDurationMinutes(90)).toBe("1時間30分");
+	});
+
+	it("applyDurationMinutesDelta clamps and treats zero as unset", () => {
+		expect(applyDurationMinutesDelta(null, 5)).toBe(5);
+		expect(applyDurationMinutesDelta(5, -5)).toBeNull();
+		expect(applyDurationMinutesDelta(5, -10)).toBeNull();
+		expect(applyDurationMinutesDelta(715, 10)).toBe(720);
+		expect(applyDurationMinutesDelta(720, 5)).toBe(720);
+		expect(applyDurationMinutesDelta(null, -5)).toBeNull();
 	});
 
 	it("buildRecordRequestPayload trims and includes optional duration", () => {
@@ -86,6 +108,14 @@ describe("recordFormUtils", () => {
 				title: "x",
 				memo: "",
 				durationMinutes: null,
+			})?.durationMinutes,
+		).toBeNull();
+		expect(
+			buildRecordRequestPayload({
+				studyDatetime: "2026-08-01T12:00",
+				title: "x",
+				memo: "",
+				durationMinutes: 0,
 			})?.durationMinutes,
 		).toBeNull();
 	});

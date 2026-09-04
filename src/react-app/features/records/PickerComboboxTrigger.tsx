@@ -1,33 +1,47 @@
 /**
- * コンボボックス風の開閉トリガー（時刻・学習時間ピッカー共通）。
+ * コンボボックス風の開閉トリガー（日付・時刻・学習時間ピッカー共通）。
  */
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, type LucideIcon } from "lucide-react";
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface PickerComboboxTriggerProps {
+interface PickerComboboxTriggerProps extends Omit<
+  ComponentPropsWithoutRef<typeof Button>,
+  "children"
+> {
   id: string;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
   children: string;
-  className?: string;
+  icon?: LucideIcon;
   "aria-label": string;
   "aria-controls": string;
   "aria-haspopup"?: "listbox" | "dialog";
 }
 
-export default function PickerComboboxTrigger({
-  id,
-  open,
-  onOpenChange,
-  children,
-  className,
-  "aria-label": ariaLabel,
-  "aria-controls": ariaControls,
-  "aria-haspopup": ariaHasPopup,
-}: PickerComboboxTriggerProps) {
+const PickerComboboxTrigger = forwardRef<
+  HTMLButtonElement,
+  PickerComboboxTriggerProps
+>(function PickerComboboxTrigger(
+  {
+    id,
+    open,
+    onOpenChange,
+    children,
+    icon: Icon = ChevronDownIcon,
+    className,
+    "aria-label": ariaLabel,
+    "aria-controls": ariaControls,
+    "aria-haspopup": ariaHasPopup,
+    onClick,
+    ...rest
+  },
+  ref,
+) {
   return (
     <Button
+      ref={ref}
       type="button"
       id={id}
       variant="outline"
@@ -35,14 +49,22 @@ export default function PickerComboboxTrigger({
       aria-haspopup={ariaHasPopup}
       aria-controls={open ? ariaControls : undefined}
       aria-label={`${ariaLabel} ${children}`}
-      onClick={() => onOpenChange(!open)}
-      className={cn("w-full justify-between font-normal", className)}
+      onClick={(event) => {
+        onClick?.(event);
+        if (onOpenChange) {
+          onOpenChange(!open);
+        }
+      }}
+      className={cn("w-full justify-between py-1 font-normal", className)}
+      {...rest}
     >
       <span className="tabular-nums">{children}</span>
-      <ChevronDownIcon
+      <Icon
         data-icon="inline-end"
-        className={cn(open && "rotate-180")}
+        className={cn(open && Icon === ChevronDownIcon && "rotate-180")}
       />
     </Button>
   );
-}
+});
+
+export default PickerComboboxTrigger;

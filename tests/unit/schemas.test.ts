@@ -83,7 +83,21 @@ describe("CreateStudyRecordRequestSchema", () => {
 		}
 	});
 
-	it("accepts optional durationMinutes in 10-minute steps", () => {
+	it("accepts optional durationMinutes in 5-minute steps", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 5,
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 15,
+			}).success,
+		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
 				studyDatetime: "2026-08-01T12:00:00.000Z",
@@ -100,12 +114,12 @@ describe("CreateStudyRecordRequestSchema", () => {
 		).toBe(true);
 	});
 
-	it("rejects durationMinutes that are not 10-minute steps", () => {
+	it("rejects durationMinutes that are not 5-minute steps", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
 				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
-				durationMinutes: 15,
+				durationMinutes: 7,
 			}).success,
 		).toBe(false);
 		expect(

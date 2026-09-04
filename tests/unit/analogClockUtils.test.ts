@@ -7,6 +7,7 @@ import {
 	hourLabelFromPointer,
 	hourToClockLabel,
 	INNER_HAND_LENGTH,
+	OUTER_CLOCK_HOURS,
 	OUTER_HAND_LENGTH,
 	minuteFromPointer,
 	minuteHandAngleDegrees,
@@ -14,6 +15,11 @@ import {
 } from "../../src/react-app/features/records/analogClockUtils";
 
 describe("analogClockUtils", () => {
+	it("lists outer ring hours as 13-24 without 0", () => {
+		expect(OUTER_CLOCK_HOURS).toContain(24);
+		expect(OUTER_CLOCK_HOURS).not.toContain(0);
+	});
+
 	it("maps 24 to hour 0 and back", () => {
 		expect(clockLabelToHour(24)).toBe(0);
 		expect(hourToClockLabel(0)).toBe(24);

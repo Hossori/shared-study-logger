@@ -1,12 +1,21 @@
 /**
- * 任意の学習時間（分）。ラベルとコンボボックスを1行に並べ、タップでドラムロールを開く。
+ * 任意の学習時間（分）。トリガーをクリックすると加減算モーダルで 5 分刻みに調整する。
  */
 import { useRef } from "react";
-import { Field, FieldDescription, FieldTitle } from "@/components/ui/field";
-import { DrumRollPicker } from "@/components/ui/drum-roll-picker";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogButtonArea,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { DURATION_MINUTES_MAX } from "../../../../shared/schemas";
 import PickerComboboxTrigger from "./PickerComboboxTrigger";
 import {
-  DURATION_DRUM_OPTIONS,
+  applyDurationMinutesDelta,
   formatDurationMinutes,
   notifyFormInput,
 } from "./recordFormUtils";
@@ -19,6 +28,19 @@ interface DurationMinutesPickerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function displayDuration(value: number | null): string {
+  return value == null || value <= 0 ? "未設定" : formatDurationMinutes(value);
+}
+
+const DELTA_BUTTONS: { label: string; delta: number }[] = [
+  { label: "+1時間", delta: 60 },
+  { label: "-1時間", delta: -60 },
+  { label: "+10分", delta: 10 },
+  { label: "-10分", delta: -10 },
+  { label: "+5分", delta: 5 },
+  { label: "-5分", delta: -5 },
+];
+
 export default function DurationMinutesPicker({
   idPrefix,
   value,
@@ -27,45 +49,72 @@ export default function DurationMinutesPicker({
   onOpenChange,
 }: DurationMinutesPickerProps) {
   const fieldRef = useRef<HTMLDivElement>(null);
+  const triggerId = `${idPrefix}-duration`;
+  const dialogId = `${idPrefix}-duration-dialog`;
   const titleId = `${idPrefix}-duration-label`;
-  const listId = `${idPrefix}-duration`;
+
+  const display = displayDuration(value);
+  const atMin = value == null || value <= 0;
+  const atMax = (value ?? 0) >= DURATION_MINUTES_MAX;
+
+  const applyDelta = (delta: number) => {
+    onChange(applyDurationMinutesDelta(value, delta));
+    notifyFormInput(fieldRef.current);
+  };
+
+  const clear = () => {
+    onChange(null);
+    notifyFormInput(fieldRef.current);
+  };
 
   return (
     <Field ref={fieldRef}>
-      <div className="flex items-center gap-2">
-        <FieldTitle id={titleId} className="shrink-0">
-          学習時間（任意）
-        </FieldTitle>
+      <FieldLabel id={titleId} htmlFor={triggerId}>
+        学習時間
+      </FieldLabel>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <PickerComboboxTrigger
-          id={`${idPrefix}-duration-trigger`}
+          id={triggerId}
           open={open}
           onOpenChange={onOpenChange}
           aria-label="学習時間"
-          aria-controls={listId}
-          aria-haspopup="listbox"
-          className="w-auto min-w-0 flex-1"
+          aria-controls={dialogId}
+          aria-haspopup="dialog"
+          className="w-full"
         >
-          {value == null ? "未設定" : formatDurationMinutes(value)}
+          {display}
         </PickerComboboxTrigger>
-      </div>
-      {open ? (
-        <div className="flex flex-col gap-2">
-          <DrumRollPicker
-            id={listId}
-            aria-labelledby={titleId}
-            options={DURATION_DRUM_OPTIONS}
-            value={value}
-            onChange={(next) => {
-              onChange(next);
-              notifyFormInput(fieldRef.current);
-            }}
-            className="mx-auto w-36"
-          />
-          <FieldDescription>
-            単位は分です。10分刻みで選べます。未設定のまま投稿できます。
-          </FieldDescription>
-        </div>
-      ) : null}
+        <DialogContent id={dialogId} aria-labelledby={titleId}>
+          <DialogHeader>
+            <DialogTitle>学習時間</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-center text-2xl font-medium tabular-nums">
+            {display}
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            {DELTA_BUTTONS.map(({ label, delta }) => (
+              <Button
+                key={label}
+                type="button"
+                variant="outline"
+                disabled={delta > 0 ? atMax : atMin}
+                onClick={() => applyDelta(delta)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+
+          <DialogButtonArea>
+            <Button type="button" variant="outline" onClick={clear}>
+              クリア
+            </Button>
+            <DialogClose render={<Button type="button" />}>OK</DialogClose>
+          </DialogButtonArea>
+        </DialogContent>
+      </Dialog>
     </Field>
   );
 }

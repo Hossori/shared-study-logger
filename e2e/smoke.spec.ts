@@ -5,6 +5,7 @@ import {
 	loginAsUser,
 	openPostModal,
 	fillStudyDatetime,
+	setStudyDurationFromModal,
 	SEED_ADMIN,
 } from "./helpers";
 
@@ -87,6 +88,10 @@ test("学習記録を投稿できる", async ({ page }) => {
 	const title = `e2e-record-${Date.now()}`;
 	await openPostModal(page);
 	await fillStudyDatetime(page, "post", "2026-08-10", 12, 0);
+	await setStudyDurationFromModal(page, "post", {
+		buttonName: "+10分",
+		expectedLabel: "10分",
+	});
 	await page.locator("#post-title").fill(title);
 
 	const responsePromise = page.waitForResponse(
@@ -101,6 +106,8 @@ test("学習記録を投稿できる", async ({ page }) => {
 		`POST /records failed: ${response.status()} ${await response.text()}`,
 	).toBeTruthy();
 	await expect(page.getByRole("heading", { name: title })).toBeVisible();
+	const card = page.locator("li").filter({ hasText: title });
+	await expect(card.getByText("10分", { exact: true })).toBeVisible();
 });
 
 test("自分の学習記録を削除できる", async ({ page }) => {

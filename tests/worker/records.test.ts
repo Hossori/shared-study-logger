@@ -138,7 +138,7 @@ describe("records routes", () => {
 		expect(payload.userId).toBe(SEED.testUser.id);
 	});
 
-	it("accepts durationMinutes on create and rejects non-10-minute values", async () => {
+	it("accepts durationMinutes on create and rejects non-5-minute values", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -168,6 +168,25 @@ describe("records routes", () => {
 		};
 		expect(created.record.durationMinutes).toBe(50);
 
+		const valid15Res = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{
+					method: "POST",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						studyDatetime: "2026-08-10T12:00:00.000Z",
+						title: "With 15-minute duration",
+						durationMinutes: 15,
+					}),
+				},
+			),
+		);
+		expect(valid15Res.status).toBe(201);
+
 		const invalidRes = await workerFetch(
 			new Request(
 				`http://example.com/api/groups/${SEED.groupMember}/records`,
@@ -180,7 +199,7 @@ describe("records routes", () => {
 					body: JSON.stringify({
 						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "Invalid duration",
-						durationMinutes: 15,
+						durationMinutes: 7,
 					}),
 				},
 			),

@@ -112,7 +112,7 @@ function RecordCard({
           )}
           <CardDescription className="flex flex-wrap items-center gap-2">
             <span>{formatStudyDatetime(record.studyDatetime)}</span>
-            {record.durationMinutes != null ? (
+            {record.durationMinutes != null && record.durationMinutes > 0 ? (
               <Badge variant="secondary">
                 {formatDurationMinutes(record.durationMinutes)}
               </Badge>

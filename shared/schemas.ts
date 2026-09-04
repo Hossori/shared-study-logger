@@ -131,9 +131,9 @@ export type AdminGroup = z.infer<typeof AdminGroupSchema>;
 
 // ---- 学習記録 ---------------------------------------------------------------
 
-/** 学習時間（分）。任意項目。UI は 10 分刻み。 */
-export const DURATION_MINUTES_STEP = 10;
-export const DURATION_MINUTES_MIN = 10;
+/** 学習時間（分）。任意項目。UI は 5 分刻み。 */
+export const DURATION_MINUTES_STEP = 5;
+export const DURATION_MINUTES_MIN = 5;
 export const DURATION_MINUTES_MAX = 720;
 
 export const DurationMinutesSchema = z

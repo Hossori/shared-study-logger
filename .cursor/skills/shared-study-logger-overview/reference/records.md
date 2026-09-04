@@ -4,9 +4,9 @@
 
 - **概要**: 学習日時・学習時間（任意・分）・タイトル・メモ（任意）を投稿し、グループ内で学習日時の新しい順に
   一覧表示する。一覧はカーソルページネーション。自分の記録は編集・削除可能。
-  学習日時は日付と時刻を1行に並べ、時刻コンボボックスからアナログ時計のモーダルを開く
-  （内側 1〜12 / 外側 13〜24。時を選ぶと 5 分刻みの分面）。学習時間はラベルとコンボボックスを
-  1行に並べ、開くと 10 分刻みのドラムロールになる。
+  学習日時は日付と時刻のコンボを1行に横並びし、日付は日本語カレンダー、時刻はアナログ時計の
+  前面オーバーレイで選ぶ（内側 1〜12 / 外側 13〜24。時を選ぶと 5 分刻みの分面。分を決定すると時計が閉じる）。
+  学習時間はラベルとトリガーを並べ、クリックで開く加減算モーダル（+/-1時間・+/-10分・+/-5分、5 分刻み、未設定可）で選ぶ。
 - **関連ファイル**:
   - Worker: `src/worker/routes/records.ts`（`GET`/`POST /:groupId/records`、
     `PATCH`/`DELETE /:groupId/records/:recordId`）、
@@ -16,7 +16,7 @@
     自分の記録の編集・削除UI）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
-    `src/react-app/features/records/RecordFormFields.tsx`（日時は1行+時計モーダル、学習時間は1行+ドラムロール）、
+    `src/react-app/features/records/RecordFormFields.tsx`（学習日時は日付/時刻コンボ＋各オーバーレイ、学習時間は加減算モーダル（5 分刻み・未設定可））、
     `src/react-app/queries/useRecords.ts`（`useInfiniteQuery`ベースの`useRecordsQuery`、
     `useCreateRecordMutation`/`useUpdateRecordMutation`/`useDeleteRecordMutation`）
   - 共通: `shared/schemas.ts`の`StudyRecordSchema`/`CreateStudyRecordRequestSchema`/

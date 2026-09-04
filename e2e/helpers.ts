@@ -54,16 +54,62 @@ export async function fillStudyDatetime(
 	hour: number,
 	minute: number,
 ): Promise<void> {
-	await page.locator(`#${idPrefix}-studyDate`).fill(date);
+	const dateTrigger = page.locator(`#${idPrefix}-studyDate`);
+	if ((await dateTrigger.getAttribute("aria-expanded")) !== "true") {
+		await dateTrigger.click();
+	}
+	const datePicker = page.locator(`#${idPrefix}-date-picker`);
+	await expect(datePicker).toBeVisible();
+
+	const dateButton = datePicker.locator(`#${idPrefix}-date-${date}`);
+	for (let attempt = 0; attempt < 14 && !(await dateButton.isVisible()); attempt += 1) {
+		const [year, month] = date.split("-").map(Number);
+		const caption = datePicker.locator(".rdp-month_caption");
+		await expect(caption).toBeVisible();
+		const captionText = (await caption.textContent()) ?? "";
+		const currentYear = Number(/\d{4}/.exec(captionText)?.[0]);
+		const currentMonthMatch = /(\d{1,2})月/.exec(captionText);
+		const currentMonth = currentMonthMatch ? Number(currentMonthMatch[1]) : NaN;
+		if (currentYear === year && currentMonth === month) {
+			break;
+		}
+		const goBack =
+			currentYear > year || (currentYear === year && currentMonth > month);
+		const navButton = datePicker.getByRole("button", {
+			name: goBack ? "前の月へ" : "次の月へ",
+		});
+		await navButton.click();
+	}
+	await dateButton.click();
+	await expect(datePicker).toBeHidden();
+
 	const timeTrigger = page.locator(`#${idPrefix}-studyTime`);
 	if ((await timeTrigger.getAttribute("aria-expanded")) !== "true") {
 		await timeTrigger.click();
 	}
-	const clockDialog = page.getByRole("dialog", { name: "時刻" });
-	await expect(clockDialog).toBeVisible();
+	const timePicker = page.locator(`#${idPrefix}-time-picker`);
+	await expect(timePicker).toBeVisible();
 	const hourLabel = hour === 0 ? 24 : hour;
-	await clockDialog.locator(`#${idPrefix}-hour-${hourLabel}`).click();
-	await clockDialog.locator(`#${idPrefix}-minute-${minute}`).click();
-	await clockDialog.getByRole("button", { name: "完了" }).click();
-	await expect(clockDialog).toBeHidden();
+	await timePicker.locator(`#${idPrefix}-hour-${hourLabel}`).click();
+	await timePicker.locator(`#${idPrefix}-minute-${minute}`).click();
+	await expect(timePicker).toBeHidden();
+}
+
+export async function setStudyDurationFromModal(
+	page: Page,
+	idPrefix: string,
+	options: { buttonName: string; expectedLabel: string },
+): Promise<void> {
+	const trigger = page.locator(`#${idPrefix}-duration`);
+	if ((await trigger.getAttribute("aria-expanded")) !== "true") {
+		await trigger.click();
+	}
+	const dialog = page.locator(`#${idPrefix}-duration-dialog`);
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole("button", { name: options.buttonName }).click();
+	await expect(
+		dialog.getByText(options.expectedLabel, { exact: true }),
+	).toBeVisible();
+	await dialog.getByRole("button", { name: "OK" }).click();
+	await expect(dialog).toBeHidden();
 }

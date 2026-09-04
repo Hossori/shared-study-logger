@@ -44,6 +44,7 @@ interface AnalogClockProps {
   minute: number;
   onHourChange: (hour: number) => void;
   onMinuteChange: (minute: number) => void;
+  onMinuteCommit?: () => void;
   className?: string;
 }
 
@@ -103,6 +104,7 @@ export default function AnalogClock({
   minute,
   onHourChange,
   onMinuteChange,
+  onMinuteCommit,
   className,
 }: AnalogClockProps) {
   const labelId = useId();
@@ -183,6 +185,10 @@ export default function AnalogClock({
         modeSwitchTimerRef.current = null;
         setMode("minute");
       }, 0);
+      return;
+    }
+    if (mode === "minute" && selectedDuringGestureRef.current) {
+      onMinuteCommit?.();
     }
   };
 
@@ -356,7 +362,10 @@ export default function AnalogClock({
                 selected={selectedMinute === value}
                 radius={CLOCK_MINUTE_RADIUS}
                 angleDegrees={minuteHandAngleDegrees(value)}
-                onSelect={() => onMinuteChange(value)}
+                onSelect={() => {
+                  onMinuteChange(value);
+                  onMinuteCommit?.();
+                }}
                 className="size-8"
               >
                 {String(value).padStart(2, "0")}
