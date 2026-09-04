@@ -1,5 +1,6 @@
 /**
  * 学習記録カード下部のリアクション（スタンプ付与・件数・ユーザー一覧）。
+ * 件数は楽観更新。同種が1件のときはバッジを出さず、スタンプ同士は詰めて並べる。
  */
 import { useState } from "react";
 import { List, SmilePlus } from "lucide-react";
@@ -8,6 +9,7 @@ import {
   REACTION_STAMP_LABEL,
   REACTION_STAMPS,
   type ReactionStamp,
+  type ReactionSummary,
   type StudyRecord,
 } from "../../../../shared/schemas";
 import { cn } from "@/lib/utils";
@@ -29,6 +31,62 @@ import {
 interface RecordReactionsProps {
   groupId: string;
   record: StudyRecord;
+}
+
+function CountBadge({ count }: { count: number }) {
+  if (count <= 1) return null;
+  return (
+    <Badge variant="secondary" className="h-4 min-w-4 px-1">
+      {count}
+    </Badge>
+  );
+}
+
+function StampChip({
+  summary,
+  disabled,
+  onRemoveOwn,
+}: {
+  summary: ReactionSummary;
+  disabled: boolean;
+  onRemoveOwn: (stamp: ReactionStamp) => void;
+}) {
+  const emoji = REACTION_STAMP_EMOJI[summary.stamp];
+  const label = REACTION_STAMP_LABEL[summary.stamp];
+  const showCount = summary.count > 1;
+  const emojiNode = <span aria-hidden>{emoji}</span>;
+  const countNode = <CountBadge count={summary.count} />;
+
+  if (summary.reactedByMe) {
+    return (
+      <Button
+        variant="ghost"
+        size={showCount ? "sm" : "icon-sm"}
+        disabled={disabled}
+        aria-label={`${label}のリアクションを取り消す`}
+        className={cn(showCount && "h-7 min-w-7 gap-0.5 px-1")}
+        onClick={() => {
+          onRemoveOwn(summary.stamp);
+        }}
+      >
+        {emojiNode}
+        {countNode}
+      </Button>
+    );
+  }
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center",
+        showCount ? "h-7 min-w-7 gap-0.5 px-1" : "size-7",
+      )}
+      aria-label={showCount ? `${label} ${summary.count}件` : `${label} 1件`}
+    >
+      {emojiNode}
+      {countNode}
+    </span>
+  );
 }
 
 export default function RecordReactions({
@@ -56,7 +114,7 @@ export default function RecordReactions({
         await addMutation.mutateAsync({ recordId: record.id, stamp });
       }
     } catch {
-      // invalidate は成功時のみ。失敗時は現状維持。
+      // 失敗時は onError でキャッシュを戻す。
     }
   };
 
@@ -65,20 +123,20 @@ export default function RecordReactions({
     try {
       await deleteMutation.mutateAsync({ recordId: record.id, stamp });
     } catch {
-      // 失敗時は現状維持。
+      // 失敗時は onError でキャッシュを戻す。
     }
   };
 
   const entries = listQuery.data?.reactions ?? [];
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-1">
+    <div className="flex min-w-0 flex-wrap items-center gap-0.5">
       <Popover>
         <PopoverTrigger
           render={
             <Button
               variant="ghost"
-              size="icon"
+              size="icon-sm"
               aria-label="リアクションを付ける"
             />
           }
@@ -113,45 +171,27 @@ export default function RecordReactions({
         </PopoverContent>
       </Popover>
 
-      {record.reactions.map((summary) => {
-        const emoji = REACTION_STAMP_EMOJI[summary.stamp];
-        const label = REACTION_STAMP_LABEL[summary.stamp];
-        if (summary.reactedByMe) {
-          return (
-            <Button
+      {record.reactions.length > 0 ? (
+        <div className="flex min-w-0 flex-wrap items-center">
+          {record.reactions.map((summary) => (
+            <StampChip
               key={summary.stamp}
-              variant="ghost"
-              size="sm"
+              summary={summary}
               disabled={busy}
-              aria-label={`${label}のリアクションを取り消す`}
-              className="gap-1"
-              onClick={() => {
-                void removeOwn(summary.stamp);
+              onRemoveOwn={(stamp) => {
+                void removeOwn(stamp);
               }}
-            >
-              <span aria-hidden>{emoji}</span>
-              <Badge variant="secondary">{summary.count}</Badge>
-            </Button>
-          );
-        }
-        return (
-          <span
-            key={summary.stamp}
-            className="inline-flex h-7 items-center gap-1 px-2"
-            aria-label={`${label} ${summary.count}件`}
-          >
-            <span aria-hidden>{emoji}</span>
-            <Badge variant="secondary">{summary.count}</Badge>
-          </span>
-        );
-      })}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <Popover open={listOpen} onOpenChange={setListOpen}>
         <PopoverTrigger
           render={
             <Button
               variant="ghost"
-              size="icon"
+              size="icon-sm"
               aria-label="リアクションしたユーザー"
             />
           }

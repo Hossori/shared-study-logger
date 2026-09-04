@@ -47,8 +47,10 @@
     `useDeleteRecordMutation`で呼び出し、成功時に一覧をinvalidate。
   - スタンプ付与: `POST /:groupId/records/:recordId/reactions` `{ stamp }` → 所属チェック →
     記録存在確認 → zod検証 → UNIQUE（record_id, user_id, stamp）重複は 409
-    `{ error: "already_reacted" }`。成功時 201。フロントは mutation 成功後に一覧を invalidate
-    （楽観更新なし）。自分の投稿にも付けられる。
+    `{ error: "already_reacted" }`。成功時 201。フロントは mutation の `onMutate` で
+    一覧キャッシュの件数 / `reactedByMe` を楽観更新し、失敗時はスナップショットへ戻す。
+    `onSettled` で一覧とユーザー一覧を invalidate。自分の投稿にも付けられる。
+    同種が1件のときは件数バッジを出さない。
   - スタンプ取消: `DELETE /:groupId/records/:recordId/reactions/:stamp` → 所属チェック →
     自分の行だけ DELETE。無ければ 404。他人のスタンプをクリックしてもフロントは何もしない。
   - ユーザー一覧: `GET /:groupId/records/:recordId/reactions` → `{ stamp, userId, displayName }`
