@@ -33,59 +33,47 @@ interface RecordReactionsProps {
   record: StudyRecord;
 }
 
-function CountBadge({ count }: { count: number }) {
-  if (count <= 1) return null;
-  return (
-    <Badge variant="secondary" className="h-4 min-w-4 px-1">
-      {count}
-    </Badge>
-  );
-}
-
 function StampChip({
   summary,
   disabled,
-  onRemoveOwn,
+  onClick,
 }: {
   summary: ReactionSummary;
   disabled: boolean;
-  onRemoveOwn: (stamp: ReactionStamp) => void;
+  onClick: (stamp: ReactionStamp) => void;
 }) {
   const emoji = REACTION_STAMP_EMOJI[summary.stamp];
   const label = REACTION_STAMP_LABEL[summary.stamp];
-  const showCount = summary.count > 1;
-  const emojiNode = <span aria-hidden>{emoji}</span>;
-  const countNode = <CountBadge count={summary.count} />;
-
-  if (summary.reactedByMe) {
-    return (
-      <Button
-        variant="ghost"
-        size={showCount ? "sm" : "icon-sm"}
-        disabled={disabled}
-        aria-label={`${label}のリアクションを取り消す`}
-        className={cn(showCount && "h-7 min-w-7 gap-0.5 px-1")}
-        onClick={() => {
-          onRemoveOwn(summary.stamp);
-        }}
-      >
-        {emojiNode}
-        {countNode}
-      </Button>
-    );
-  }
+  const stampNode = (
+    <>
+      <span className="text-base">{emoji}</span>
+      <span className="text-sm">
+        {summary.count > 1 ? summary.count : null}
+      </span>
+    </>
+  );
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center justify-center",
-        showCount ? "h-7 min-w-7 gap-0.5 px-1" : "size-7",
-      )}
-      aria-label={showCount ? `${label} ${summary.count}件` : `${label} 1件`}
+    <Button
+      variant="ghost"
+      className="p-0"
+      disabled={disabled}
+      aria-label={`${label}のリアクションを${summary.reactedByMe ? "取り消す" : "付ける"}`}
+      onClick={() => {
+        onClick(summary.stamp);
+      }}
     >
-      {emojiNode}
-      {countNode}
-    </span>
+      {summary.reactedByMe ? (
+        <Badge
+          variant="ghost"
+          className="text-primary border-primary rounded-full px-1 py-2.5"
+        >
+          {stampNode}
+        </Badge>
+      ) : (
+        <span>{stampNode}</span>
+      )}
+    </Button>
   );
 }
 
@@ -113,15 +101,6 @@ export default function RecordReactions({
       } else {
         await addMutation.mutateAsync({ recordId: record.id, stamp });
       }
-    } catch {
-      // 失敗時は onError でキャッシュを戻す。
-    }
-  };
-
-  const removeOwn = async (stamp: ReactionStamp) => {
-    if (busy) return;
-    try {
-      await deleteMutation.mutateAsync({ recordId: record.id, stamp });
     } catch {
       // 失敗時は onError でキャッシュを戻す。
     }
@@ -172,14 +151,14 @@ export default function RecordReactions({
       </Popover>
 
       {record.reactions.length > 0 ? (
-        <div className="flex min-w-0 flex-wrap items-center">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-0.5">
           {record.reactions.map((summary) => (
             <StampChip
               key={summary.stamp}
               summary={summary}
               disabled={busy}
-              onRemoveOwn={(stamp) => {
-                void removeOwn(stamp);
+              onClick={(stamp) => {
+                void toggleStamp(stamp);
               }}
             />
           ))}
@@ -199,8 +178,7 @@ export default function RecordReactions({
           <List aria-hidden />
           <span className="sr-only">リアクションしたユーザー</span>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-56">
-          <PopoverTitle>リアクションしたユーザー</PopoverTitle>
+        <PopoverContent align="end" className="w-auto">
           {listQuery.isPending ? (
             <div className="flex justify-center py-2">
               <Spinner />
@@ -208,12 +186,18 @@ export default function RecordReactions({
           ) : listQuery.isError ? (
             <p className="text-muted-foreground">取得に失敗しました</p>
           ) : entries.length === 0 ? (
-            <p className="text-muted-foreground">まだありません</p>
+            <p className="text-muted-foreground">
+              リアクションはまだありません
+            </p>
           ) : (
             <ul className="flex flex-col gap-1">
               {entries.map((entry) => (
-                <li key={`${entry.userId}-${entry.stamp}`}>
-                  {REACTION_STAMP_EMOJI[entry.stamp]} {entry.displayName}
+                <li
+                  key={`${entry.userId}-${entry.stamp}`}
+                  className="flex justify-between gap-x-4"
+                >
+                  <span>{entry.displayName}</span>
+                  <span>{REACTION_STAMP_EMOJI[entry.stamp]}</span>
                 </li>
               ))}
             </ul>
