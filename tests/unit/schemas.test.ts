@@ -7,6 +7,9 @@ import {
 	CreateInAppNotificationRequestSchema,
 	CreateStudyRecordRequestSchema,
 	LoginRequestSchema,
+	AddRecordReactionRequestSchema,
+	ReactionStampSchema,
+	REACTION_STAMP_LABEL,
 	UpdateInAppNotificationRequestSchema,
 	UpdateProfileRequestSchema,
 	UserRoleSchema,
@@ -257,5 +260,52 @@ describe("AddGroupMemberRequestSchema", () => {
 		expect(AddGroupMemberRequestSchema.safeParse({ userId: "" }).success).toBe(
 			false,
 		);
+	});
+});
+
+describe("ReactionStampSchema", () => {
+	it("accepts the six stamp keys", () => {
+		expect(ReactionStampSchema.safeParse("thumbs_up").success).toBe(true);
+		expect(ReactionStampSchema.safeParse("smile").success).toBe(true);
+		expect(ReactionStampSchema.safeParse("laugh").success).toBe(true);
+		expect(ReactionStampSchema.safeParse("astonished").success).toBe(true);
+		expect(ReactionStampSchema.safeParse("cry").success).toBe(true);
+		expect(ReactionStampSchema.safeParse("muscle").success).toBe(true);
+	});
+
+	it("rejects emoji and unknown keys", () => {
+		expect(ReactionStampSchema.safeParse("👍").success).toBe(false);
+		expect(ReactionStampSchema.safeParse("unknown").success).toBe(false);
+		expect(ReactionStampSchema.safeParse("").success).toBe(false);
+	});
+
+	it("maps stamps to Japanese accessible labels", () => {
+		expect(REACTION_STAMP_LABEL).toEqual({
+			thumbs_up: "いいね",
+			smile: "ニッコリ",
+			laugh: "笑う",
+			astonished: "驚く",
+			cry: "泣く",
+			muscle: "がんばれ",
+		});
+	});
+});
+
+describe("AddRecordReactionRequestSchema", () => {
+	it("accepts a valid stamp", () => {
+		const result = AddRecordReactionRequestSchema.safeParse({
+			stamp: "smile",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects missing stamp", () => {
+		expect(AddRecordReactionRequestSchema.safeParse({}).success).toBe(false);
+	});
+
+	it("rejects invalid stamp", () => {
+		expect(
+			AddRecordReactionRequestSchema.safeParse({ stamp: "heart" }).success,
+		).toBe(false);
 	});
 });

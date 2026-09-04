@@ -129,6 +129,61 @@ export const AdminGroupSchema = GroupSchema.extend({
 });
 export type AdminGroup = z.infer<typeof AdminGroupSchema>;
 
+// ---- リアクションスタンプ -------------------------------------------------
+
+export const REACTION_STAMPS = [
+  "thumbs_up",
+  "smile",
+  "laugh",
+  "astonished",
+  "cry",
+  "muscle",
+] as const;
+
+export const ReactionStampSchema = z.enum(REACTION_STAMPS);
+export type ReactionStamp = z.infer<typeof ReactionStampSchema>;
+
+/** DB の安定キー → 表示用絵文字（定義順: 👍😊🤣😲😭💪） */
+export const REACTION_STAMP_EMOJI: Record<ReactionStamp, string> = {
+  thumbs_up: "👍",
+  smile: "😊",
+  laugh: "🤣",
+  astonished: "😲",
+  cry: "😭",
+  muscle: "💪",
+};
+
+/** アクセシブルネーム用の日本語ラベル */
+export const REACTION_STAMP_LABEL: Record<ReactionStamp, string> = {
+  thumbs_up: "いいね",
+  smile: "ニッコリ",
+  laugh: "笑う",
+  astonished: "驚く",
+  cry: "泣く",
+  muscle: "がんばれ",
+};
+
+export const ReactionSummarySchema = z.object({
+  stamp: ReactionStampSchema,
+  count: z.number().int().min(1),
+  reactedByMe: z.boolean(),
+});
+export type ReactionSummary = z.infer<typeof ReactionSummarySchema>;
+
+export const AddRecordReactionRequestSchema = z.object({
+  stamp: ReactionStampSchema,
+});
+export type AddRecordReactionRequest = z.infer<
+  typeof AddRecordReactionRequestSchema
+>;
+
+export const RecordReactionEntrySchema = z.object({
+  stamp: ReactionStampSchema,
+  userId: z.string(),
+  displayName: z.string(),
+});
+export type RecordReactionEntry = z.infer<typeof RecordReactionEntrySchema>;
+
 // ---- 学習記録 ---------------------------------------------------------------
 
 export const StudyRecordSchema = z.object({
@@ -142,6 +197,7 @@ export const StudyRecordSchema = z.object({
   memo: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  reactions: z.array(ReactionSummarySchema),
 });
 export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 

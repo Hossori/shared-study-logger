@@ -20,6 +20,7 @@ import {
   CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -35,6 +36,7 @@ import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
+import RecordReactions from "./RecordReactions";
 
 function formatStudyDatetime(studyDatetime: string): string {
   const date = new Date(studyDatetime);
@@ -50,6 +52,7 @@ function formatStudyDatetime(studyDatetime: string): string {
 }
 
 interface RecordCardProps {
+  groupId: string;
   record: StudyRecord;
   isOwner: boolean;
   onEdit: (record: StudyRecord) => void;
@@ -58,6 +61,7 @@ interface RecordCardProps {
 }
 
 function RecordCard({
+  groupId,
   record,
   isOwner,
   onEdit,
@@ -122,6 +126,9 @@ function RecordCard({
             </p>
           </CardContent>
         ) : null}
+        <CardFooter className="flex flex-wrap items-center border-t-0 bg-transparent px-2 py-1.5">
+          <RecordReactions groupId={groupId} record={record} />
+        </CardFooter>
       </Card>
     </li>
   );
@@ -262,6 +269,7 @@ export default function RecordsList() {
         {records.map((record) => (
           <RecordCard
             key={record.id}
+            groupId={selectedGroupId}
             record={record}
             isOwner={me?.id === record.userId}
             onEdit={(record) => {
