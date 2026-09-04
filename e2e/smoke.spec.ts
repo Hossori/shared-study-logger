@@ -135,7 +135,8 @@ test("学習記録を投稿できる", async ({ page }) => {
 	await expect(userList.getByText("管理者")).toBeVisible();
 	await expect(userList.getByText("👍")).toBeVisible();
 
-	await page.keyboard.press("Escape");
+	await page.getByRole("heading", { name: title }).click();
+	await expect(userList).toBeHidden();
 
 	const removeReactionPromise = page.waitForResponse(
 		(response) =>
