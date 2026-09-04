@@ -156,11 +156,11 @@ export const REACTION_STAMP_EMOJI: Record<ReactionStamp, string> = {
 /** アクセシブルネーム用の日本語ラベル */
 export const REACTION_STAMP_LABEL: Record<ReactionStamp, string> = {
   thumbs_up: "いいね",
-  smile: "笑顔",
-  laugh: "大笑い",
-  astonished: "驚き",
-  cry: "泣き顔",
-  muscle: "がんばり",
+  smile: "ニッコリ",
+  laugh: "笑う",
+  astonished: "驚く",
+  cry: "泣く",
+  muscle: "がんばれ",
 };
 
 export const ReactionSummarySchema = z.object({

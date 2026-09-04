@@ -52,7 +52,7 @@ export default function GroupSwitcher() {
       {groups.length > 1 && (
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger aria-label="グループ切替">
-            <Badge variant="outline">
+            <Badge variant="outline" className="gap-1">
               <span className="text-muted-foreground">切り替え</span>
               <ChevronsUpDown className="text-muted-foreground" />
             </Badge>

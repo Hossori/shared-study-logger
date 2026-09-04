@@ -126,7 +126,7 @@ function RecordCard({
             </p>
           </CardContent>
         ) : null}
-        <CardFooter className="flex flex-wrap items-center gap-1 border-0 bg-transparent">
+        <CardFooter className="flex flex-wrap items-center border-t-0 bg-transparent px-2 py-1.5">
           <RecordReactions groupId={groupId} record={record} />
         </CardFooter>
       </Card>
