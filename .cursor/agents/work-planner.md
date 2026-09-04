@@ -19,7 +19,7 @@ model: inherit
 
 ## implementer の呼び方
 
-- `subagent_type` は `implementer`。`generalPurpose` も `custom` でも代替しない。
+- `subagent_type` は `implementer`。
 - Task の `model` に `composer-2.5-fast` を必ず渡す。
 - Task ツールが無い（Cloud の入れ子など）ときは自分で実装せず、その旨を親へ返す。
 - 実装・検索・テストは implementer 自身が行う前提で、プロンプトを自己完結させる。
