@@ -57,7 +57,8 @@
     枠付きで区別する。
   - ユーザー一覧: `GET /:groupId/records/:recordId/reactions` → `{ stamp, userId, displayName }`
     を `created_at, id` 昇順。フロントは付与済みスタンプの長押しでポップアップを開き、
-    そのときだけ `useQuery`。各行は表示名と絵文字。リストアイコンは出さない。
+    指を離しても開いたままにする。他箇所クリックまたは Escape で閉じる。
+    開いているあいだだけ `useQuery`。各行は表示名と絵文字。リストアイコンは出さない。
 - **注意点・既知の制約**:
   - 編集・削除は投稿者本人のみ可能（グループ所属だけでは不可）。他人の記録には
     フロントでも操作UIを出さない（`useMeQuery`の`user.id`と`record.userId`を比較）。

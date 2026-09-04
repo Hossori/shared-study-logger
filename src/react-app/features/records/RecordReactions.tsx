@@ -2,6 +2,7 @@
  * 学習記録カード下部のリアクション（スタンプ付与・件数・ユーザー一覧）。
  * 件数は楽観更新。同種が1件のときは件数を出さず、スタンプ同士は詰めて並べる。
  * 付与済みスタンプの長押しで、リアクションしたユーザー一覧を表示する。
+ * 一覧は指を離しても開いたままで、他箇所クリックまたは Escape で閉じる。
  */
 import { useRef, useState } from "react";
 import { SmilePlus } from "lucide-react";
@@ -121,6 +122,8 @@ export default function RecordReactions({
 }: RecordReactionsProps) {
   const [listOpen, setListOpen] = useState(false);
   const [listAnchor, setListAnchor] = useState<Element | null>(null);
+  // 長押しの pointerup が outside-press になるのを、同じジェスチャが終わるまで無視する。
+  const listDismissLockedRef = useRef(false);
   const addMutation = useAddRecordReactionMutation(groupId);
   const deleteMutation = useDeleteRecordReactionMutation(groupId);
   const listQuery = useRecordReactionsQuery(groupId, record.id, listOpen);
@@ -146,6 +149,36 @@ export default function RecordReactions({
   };
 
   const entries = listQuery.data?.reactions ?? [];
+
+  const openReactionUserList = (anchor: HTMLElement) => {
+    listDismissLockedRef.current = true;
+    setListAnchor(anchor);
+    setListOpen(true);
+
+    const unlock = () => {
+      window.removeEventListener("pointerup", unlock);
+      window.removeEventListener("pointercancel", unlock);
+      window.setTimeout(() => {
+        listDismissLockedRef.current = false;
+      }, 0);
+    };
+    window.addEventListener("pointerup", unlock);
+    window.addEventListener("pointercancel", unlock);
+  };
+
+  const handleListOpenChange = (
+    open: boolean,
+    eventDetails: { cancel: () => void },
+  ) => {
+    if (!open && listDismissLockedRef.current) {
+      eventDetails.cancel();
+      return;
+    }
+    setListOpen(open);
+    if (!open) {
+      setListAnchor(null);
+    }
+  };
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-0.5">
@@ -199,16 +232,13 @@ export default function RecordReactions({
               onClick={(stamp) => {
                 void toggleStamp(stamp);
               }}
-              onLongPress={(anchor) => {
-                setListAnchor(anchor);
-                setListOpen(true);
-              }}
+              onLongPress={openReactionUserList}
             />
           ))}
         </div>
       ) : null}
 
-      <Popover open={listOpen} onOpenChange={setListOpen}>
+      <Popover open={listOpen} onOpenChange={handleListOpenChange}>
         <PopoverContent align="start" className="w-auto" anchor={listAnchor}>
           <PopoverTitle className="sr-only">
             リアクションしたユーザー
