@@ -5,7 +5,7 @@ alwaysApply: true
 
 # 作業分割とサブエージェント委譲
 
-役割プロンプトは `.cursor/agents/` の `work-planner` / `implementer` / `reviewer` に置く。本ルールと二重管理しない。
+役割プロンプトは `.cursor/agents/` の `work-planner` / `implementer` / `reviewer` に置く。
 
 - 作業は適切な単位に分割し、可能であれば並行する。分割の目安: 独立して実装・レビューできるまとまり（機能単位、関心の分離、衝突しにくい範囲）。
 - 各作業単位に develop から切ったブランチを一つ用意し、次を割り当てる。
@@ -13,12 +13,9 @@ alwaysApply: true
   2. **reviewer**（`model: inherit`、`readonly`）: 完了後に独立検証し、問題があれば指摘する。修正はしない。
 - **implementer**（`composer-2.5[fast=true]`）は work-planner、または計画済みの親だけが起動する。孫は Task を呼べないため、実装とゲート実行は implementer 自身が行う。
 - 小さく単一で完結する作業でも、可能な限り work-planner と reviewer を分ける。
-- Task の `subagent_type` は `work-planner` / `implementer` / `reviewer`。`generalPurpose` も **`custom` + name** も代替にしない。
-- implementer 起動時は Task の `model` に **`composer-2.5-fast`** を必ず渡す。省略・`inherit`・親モデル直書きは frontmatter の `composer-2.5[fast=true]` を上書きする。
-- スラッグ: YAML frontmatter は `composer-2.5[fast=true]` / `inherit`。Task の `model` 引数は許可リストの kebab（implementer なら `composer-2.5-fast`）。ブラケット付き ID を Task に渡さない。
-- このリポジトリでは implementer の Composer 2.5 Fast は常設指定。Cloud の Task 説明が「ユーザー明示がなければ inherit」でも省略しない。
-- Cloud の入れ子サブエージェントは Task を持たないことがある。その場合 work-planner に実装させず、親が implementer を直接起動する。
-- `explore` / `computerUse` / `videoReview` は組み込みでサーバーがモデルを選ぶ（Sonnet / Gemini になり得る）。`.cursor/agents` では制御できない。親が `claude-*` や `gemini-*` を自ら渡さない。
+- Task の `subagent_type` は `work-planner` / `implementer` / `reviewer`。
+- implementer 起動時は Task の `model` に **`composer-2.5-fast`** を必ず渡す。
+- その他でサブエージェントを利用する場合、モデルは `cursor-grok-*` あるいは `composer-*` のいずれかとする。
 
 分割して委譲した場合、自身は管理者として次を行う。
 
@@ -38,7 +35,7 @@ alwaysApply: true
 
 ## GitHub 操作
 
-`push` / `commit` など git ローカル操作は `shell` や implementer でよいが、**GitHub 書き込み（PR 作成など）は親が MCP で行う**。`shell` 組み込みサブエージェントには MCP が渡らない。
+`push` / `commit` など git ローカル操作は `shell` や implementer でよいが、**GitHub 書き込み（PR 作成など）は親が MCP で行う**。
 
 ```text
 # ✅ GOOD
