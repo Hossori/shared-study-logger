@@ -15,7 +15,7 @@
     `addRecordReaction`/`deleteRecordReaction`/`listRecordReactions`
   - フロント: `src/react-app/features/records/RecordsList.tsx`（一覧表示、「もっと見る」、
     自分の記録の編集・削除UI）、
-    `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・ユーザー一覧）、
+    `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
     `src/react-app/queries/useRecords.ts`（`useInfiniteQuery`ベースの`useRecordsQuery`、
@@ -23,7 +23,7 @@
     `useAddRecordReactionMutation`/`useDeleteRecordReactionMutation`/`useRecordReactionsQuery`）
   - 共通: `shared/schemas.ts`の`StudyRecordSchema`/`CreateStudyRecordRequestSchema`/
     `UpdateStudyRecordRequestSchema`/`ListStudyRecordsQuerySchema`/
-    `ReactionStampSchema`/`REACTION_STAMP_EMOJI`/`ReactionSummarySchema`/
+    `ReactionStampSchema`/`REACTION_STAMP_EMOJI`/`REACTION_STAMP_LABEL`/`ReactionSummarySchema`/
     `AddRecordReactionRequestSchema`/`RecordReactionEntrySchema`
 - **データフロー**:
   - 一覧取得: `GET /:groupId/records?cursor=...&limit=...` → 所属チェック →
@@ -52,9 +52,12 @@
     `onSettled` で一覧とユーザー一覧を invalidate。自分の投稿にも付けられる。
     同種が1件のときは件数バッジを出さない。
   - スタンプ取消: `DELETE /:groupId/records/:recordId/reactions/:stamp` → 所属チェック →
-    自分の行だけ DELETE。無ければ 404。他人のスタンプをクリックしてもフロントは何もしない。
+    自分の行だけ DELETE。無ければ 404。カード上のスタンプはクリックでトグル（未付与なら付与、
+    自分が付けていれば取消）。件数は1件のとき非表示、2件以上は数字。自分が付けたスタンプは
+    枠付きで区別する。
   - ユーザー一覧: `GET /:groupId/records/:recordId/reactions` → `{ stamp, userId, displayName }`
-    を `created_at, id` 昇順。フロントはポップアップ open 時だけ `useQuery`。
+    を `created_at, id` 昇順。フロントは付与済みスタンプの長押しでポップアップを開き、
+    そのときだけ `useQuery`。各行は表示名と絵文字。リストアイコンは出さない。
 - **注意点・既知の制約**:
   - 編集・削除は投稿者本人のみ可能（グループ所属だけでは不可）。他人の記録には
     フロントでも操作UIを出さない（`useMeQuery`の`user.id`と`record.userId`を比較）。

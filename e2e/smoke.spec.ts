@@ -124,9 +124,16 @@ test("学習記録を投稿できる", async ({ page }) => {
 			response.url().includes("/reactions") &&
 			response.request().method() === "GET",
 	);
-	await card.getByRole("button", { name: "リアクションしたユーザー" }).click();
+	const stampChip = card.getByRole("button", {
+		name: "いいねのリアクションを取り消す",
+	});
+	await stampChip.click({ delay: 600 });
 	expect((await listUsersPromise).ok()).toBeTruthy();
-	await expect(page.getByText("👍 管理者")).toBeVisible();
+	const userList = page
+		.locator("[data-slot='popover-content']")
+		.filter({ hasText: "管理者" });
+	await expect(userList.getByText("管理者")).toBeVisible();
+	await expect(userList.getByText("👍")).toBeVisible();
 
 	await page.keyboard.press("Escape");
 
