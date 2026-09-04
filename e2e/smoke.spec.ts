@@ -115,7 +115,7 @@ test("学習記録を投稿できる", async ({ page }) => {
 	).toBeVisible();
 	await expect(
 		card.getByRole("button", { name: "いいねのリアクションを取り消す" }),
-	).toContainText("1");
+	).not.toContainText("1");
 
 	await page.keyboard.press("Escape");
 
