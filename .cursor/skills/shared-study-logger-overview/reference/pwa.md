@@ -29,9 +29,8 @@
   最小受け入れ版を`null`として強制しない。
 - **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
   Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
-  ログイン画面で使い、通常の padding と inset の大きい方を取る。  `sm` 未満の Dialog は visualViewport にドッキングするボトムシートで、キーボード
-  表示中は `--keyboard-inset` により bottom safe-area を相殺する。`sm` 以上は従来どおり
-  中央ダイアログ。
+  ログイン画面で使い、通常の padding と inset の大きい方を取る。`sm` 未満の Dialog は
+  画面下端のボトムシート（ハーフモーダル）で、下端 inset をシート内パディングに含める。
   AlertDialog はビューポート中央のまま。
 - **テーマ**: `html.dark` クラスで切替（`prefers-color-scheme` メディアクエリだけにしない）。
   未保存時は OS 設定に従い、明示選択は `localStorage` の `theme` キー。FOUC 防止のため
