@@ -11,8 +11,6 @@ export interface AppNotificationItem {
   kind: AppNotificationKind;
   title: string;
   body: string;
-  linkUrl?: string | null;
-  linkLabel?: string | null;
   /** true のときヘッダバッジ件数に含める */
   countsTowardBadge: boolean;
 }

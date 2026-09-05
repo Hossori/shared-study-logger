@@ -37,8 +37,6 @@ export function useAppNotifications(): AppNotificationsController {
         kind: "announcement",
         title: notification.title,
         body: notification.body,
-        linkUrl: notification.linkUrl,
-        linkLabel: notification.linkLabel,
         countsTowardBadge: true,
       });
     }

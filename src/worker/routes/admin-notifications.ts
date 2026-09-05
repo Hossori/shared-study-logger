@@ -49,8 +49,6 @@ adminNotificationsRoutes.post("/", async (c) => {
     id: crypto.randomUUID(),
     title: parsed.data.title,
     body: parsed.data.body,
-    linkUrl: parsed.data.linkUrl ?? null,
-    linkLabel: parsed.data.linkLabel ?? null,
     enabled: parsed.data.enabled ?? true,
     createdBy: user.id,
   });

@@ -191,7 +191,7 @@ describe("UserSchema", () => {
 });
 
 describe("CreateInAppNotificationRequestSchema", () => {
-	it("accepts trimmed title and body without link fields", () => {
+	it("accepts trimmed title and body", () => {
 		const result = CreateInAppNotificationRequestSchema.safeParse({
 			title: "  お知らせ  ",
 			body: " 本文 ",
@@ -200,62 +200,7 @@ describe("CreateInAppNotificationRequestSchema", () => {
 		if (result.success) {
 			expect(result.data.title).toBe("お知らせ");
 			expect(result.data.body).toBe("本文");
-			expect(result.data.linkUrl).toBeUndefined();
-			expect(result.data.linkLabel).toBeUndefined();
 		}
-	});
-
-	it("accepts valid https linkUrl with optional linkLabel", () => {
-		const result = CreateInAppNotificationRequestSchema.safeParse({
-			title: "お知らせ",
-			body: "本文",
-			linkUrl: "https://example.com/path",
-			linkLabel: "詳細",
-		});
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.linkUrl).toBe("https://example.com/path");
-			expect(result.data.linkLabel).toBe("詳細");
-		}
-	});
-
-	it("normalizes empty linkUrl to null-equivalent", () => {
-		const result = CreateInAppNotificationRequestSchema.safeParse({
-			title: "お知らせ",
-			body: "本文",
-			linkUrl: "   ",
-		});
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.linkUrl).toBeNull();
-		}
-	});
-
-	it("rejects invalid link protocols and relative paths", () => {
-		for (const linkUrl of [
-			"javascript:alert(1)",
-			"data:text/html,hi",
-			"ftp://example.com",
-			"/relative/path",
-		]) {
-			expect(
-				CreateInAppNotificationRequestSchema.safeParse({
-					title: "お知らせ",
-					body: "本文",
-					linkUrl,
-				}).success,
-			).toBe(false);
-		}
-	});
-
-	it("rejects linkLabel without linkUrl", () => {
-		expect(
-			CreateInAppNotificationRequestSchema.safeParse({
-				title: "お知らせ",
-				body: "本文",
-				linkLabel: "詳細",
-			}).success,
-		).toBe(false);
 	});
 
 	it("rejects empty title or body", () => {
