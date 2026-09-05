@@ -25,6 +25,10 @@ import {
   PWA_INSTALL_NOTIFICATION_ID,
   PUSH_OPT_IN_NOTIFICATION_ID,
 } from "./useAppNotifications";
+import { parseNotificationBody } from "./notificationBodyLinks";
+
+const bodyLinkClassName = "text-primary underline underline-offset-3";
+const extraLinkClassName = `mt-1 inline-block text-xs ${bodyLinkClassName}`;
 
 interface NotificationModalProps {
   open: boolean;
@@ -102,15 +106,13 @@ function NotificationListItem({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{item.title}</p>
-          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-            {item.body}
-          </p>
+          <NotificationBodyText body={item.body} />
           {safeLinkUrl ? (
             <a
               href={safeLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary mt-1 inline-block text-xs underline underline-offset-3"
+              className={extraLinkClassName}
             >
               {linkLabel}
             </a>
@@ -162,5 +164,28 @@ function NotificationListItem({
         </Alert>
       ) : null}
     </div>
+  );
+}
+
+function NotificationBodyText({ body }: { body: string }) {
+  const parts = parseNotificationBody(body);
+  return (
+    <p className="text-muted-foreground mt-1 text-xs leading-relaxed whitespace-pre-wrap">
+      {parts.map((part, index) =>
+        part.type === "link" ? (
+          <a
+            key={index}
+            href={part.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={bodyLinkClassName}
+          >
+            {part.label}
+          </a>
+        ) : (
+          <span key={index}>{part.text}</span>
+        ),
+      )}
+    </p>
   );
 }

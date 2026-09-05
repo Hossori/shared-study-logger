@@ -225,9 +225,7 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
   const linkUrl = "https://example.com/e2e-notice";
   const linkLabel = "e2eリンク";
   await page.locator("#admin-notification-title").fill(title);
-  await page.locator("#admin-notification-body").fill("e2e 本文");
-  await page.locator("#admin-notification-link-url").fill(linkUrl);
-  await page.locator("#admin-notification-link-label").fill(linkLabel);
+  await page.locator("#admin-notification-body").fill(`e2e 本文 [${linkLabel}](${linkUrl})`);
 
   const createPromise = page.waitForResponse(
     (response) =>
