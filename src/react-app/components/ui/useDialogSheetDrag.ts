@@ -131,11 +131,12 @@ export function useDialogSheetDrag({
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!isMobile || gesture === "dismissing") return;
+      clearTransitionTimer();
       event.currentTarget.setPointerCapture(event.pointerId);
       pointerStartYRef.current = event.clientY;
       setGesture("dragging");
     },
-    [gesture, isMobile],
+    [clearTransitionTimer, gesture, isMobile],
   );
 
   const handlePointerMove = useCallback(

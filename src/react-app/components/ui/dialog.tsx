@@ -103,12 +103,12 @@ function DialogContent({
               <div
                 aria-hidden
                 data-slot="dialog-handle"
-                className="bg-popover sticky top-0 z-10 -mx-4 -mt-4 flex h-11 shrink-0 touch-none items-center justify-center pr-12 sm:hidden"
+                className="bg-popover sticky top-0 -mx-4 -mt-4 flex h-11 shrink-0 touch-none items-center justify-center pr-12 sm:hidden"
                 {...handleProps}
               >
                 <div className="bg-muted-foreground/40 h-1 w-10 rounded-full" />
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto max-sm:min-h-0 max-sm:flex-1 max-sm:overflow-y-auto">
+              <div className="contents max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col max-sm:overflow-y-auto">
                 {children}
               </div>
             </>
@@ -128,7 +128,7 @@ function DialogContent({
               render={
                 <Button
                   variant="ghost"
-                  className="absolute top-2 right-2"
+                  className={cn("absolute top-2 right-2", sheetDrag && "z-20")}
                   size="icon-sm"
                 />
               }
