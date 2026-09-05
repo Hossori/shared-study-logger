@@ -255,6 +255,19 @@ export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
 // ---- アプリ内通知 -----------------------------------------------------------
 
+/** 表示用: http/https のみ許可。それ以外は null。 */
+export function toSafeHttpHttpsUrl(value: string): string | null {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export const InAppNotificationSchema = z.object({
   id: z.string(),
   title: z.string(),

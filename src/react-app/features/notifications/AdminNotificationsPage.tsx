@@ -1,9 +1,9 @@
 /**
  * 管理者向けアプリ内通知の作成・有効切替・削除画面。
  */
-import { useState, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useOutletContext } from "react-router";
-import { Bell } from "lucide-react";
+import { Bell, Link2 } from "lucide-react";
 import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import Layout from "../../components/Layout";
 import { Alert, AlertDescription } from "../../components/ui/alert";
@@ -25,6 +25,7 @@ import {
 } from "../../components/ui/empty";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -50,6 +51,7 @@ import {
 } from "../../queries/useNotifications";
 import { ApiError } from "../../lib/api";
 import { CreateInAppNotificationRequestSchema } from "../../../../shared/schemas";
+import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
 
 function mutationErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -58,6 +60,13 @@ function mutationErrorMessage(error: unknown): string {
     if (error.status === 404) return "通知が見つかりません。";
   }
   return "操作に失敗しました。しばらくしてから再度お試しください。";
+}
+
+function createFormErrorMessage(
+  parsed: ReturnType<typeof CreateInAppNotificationRequestSchema.safeParse>,
+): string {
+  if (parsed.success) return "";
+  return "タイトルと本文を入力してください。";
 }
 
 export default function AdminNotificationsPage() {
@@ -71,12 +80,43 @@ export default function AdminNotificationsPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const bodySelectionRef = useRef<{ start: number; end: number } | null>(null);
+  const pendingBodyCursorRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const cursor = pendingBodyCursorRef.current;
+    const el = bodyRef.current;
+    if (cursor == null || !el) return;
+    pendingBodyCursorRef.current = null;
+    el.focus();
+    el.setSelectionRange(cursor, cursor);
+  }, [body]);
 
   const notifications = listQuery.data?.notifications ?? [];
   const pendingId =
     toggleMutation.isPending || deleteMutation.isPending
       ? (toggleMutation.variables?.id ?? deleteMutation.variables)
       : undefined;
+
+  const rememberBodySelection = () => {
+    const el = bodyRef.current;
+    if (!el) return;
+    bodySelectionRef.current = {
+      start: el.selectionStart,
+      end: el.selectionEnd,
+    };
+  };
+
+  const handleInsertLinkSnippet = () => {
+    const selection = bodySelectionRef.current;
+    const start = selection?.start ?? body.length;
+    const end = selection?.end ?? body.length;
+    const next = insertMarkdownLinkSnippet(body, start, end);
+    pendingBodyCursorRef.current = next.cursor;
+    bodySelectionRef.current = { start: next.cursor, end: next.cursor };
+    setBody(next.value);
+  };
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,7 +125,7 @@ export default function AdminNotificationsPage() {
       body,
     });
     if (!parsed.success) {
-      setFormError("タイトルと本文を入力してください。");
+      setFormError(createFormErrorMessage(parsed));
       return;
     }
     setFormError(null);
@@ -93,6 +133,7 @@ export default function AdminNotificationsPage() {
       onSuccess: () => {
         setTitle("");
         setBody("");
+        bodySelectionRef.current = null;
       },
     });
   };
@@ -132,7 +173,8 @@ export default function AdminNotificationsPage() {
           <CardHeader>
             <CardTitle>新しい通知</CardTitle>
             <CardDescription>
-              タイトルと本文を入力して追加します。追加直後は有効です。
+              タイトルと本文を入力して追加します。追加直後は有効です。本文には
+              [表示名](https://example.com) の形式でリンクを埋め込めます。
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -152,18 +194,48 @@ export default function AdminNotificationsPage() {
                   />
                 </Field>
                 <Field data-invalid={formError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-notification-body">
-                    本文
-                  </FieldLabel>
+                  <div className="flex items-center justify-between gap-2">
+                    <FieldLabel htmlFor="admin-notification-body">
+                      本文
+                    </FieldLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="リンク記法を挿入"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        rememberBodySelection();
+                      }}
+                      onClick={handleInsertLinkSnippet}
+                    >
+                      <Link2 aria-hidden />
+                    </Button>
+                  </div>
                   <Textarea
                     id="admin-notification-body"
+                    ref={bodyRef}
                     value={body}
-                    onChange={(event) => setBody(event.target.value)}
+                    onChange={(event) => {
+                      setBody(event.target.value);
+                      bodySelectionRef.current = {
+                        start: event.target.selectionStart,
+                        end: event.target.selectionEnd,
+                      };
+                    }}
+                    onSelect={rememberBodySelection}
+                    onKeyUp={rememberBodySelection}
+                    onClick={rememberBodySelection}
+                    onBlur={rememberBodySelection}
                     maxLength={2000}
                     required
                     rows={4}
                     aria-invalid={formError ? true : undefined}
                   />
+                  <FieldDescription>
+                    リンクアイコンで []() を挿入できます。[] が空なら URL
+                    をそのまま表示します。http(s) のみ有効です。
+                  </FieldDescription>
                   {formError ? <FieldError>{formError}</FieldError> : null}
                 </Field>
                 <Button type="submit" disabled={createMutation.isPending}>
