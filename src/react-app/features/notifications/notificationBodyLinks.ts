@@ -13,7 +13,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/** カーソル位置（または範囲）に `[]()` を挿入し、カーソルは `[]` の中へ。 */
+/**
+ * 選択なし: カーソル位置に `[]()` を挿入し、カーソルは `[]` の中へ。
+ * 選択あり: 選択文字列を `[selected]()` で囲み、カーソルは `()` の内側へ。
+ */
 export function insertMarkdownLinkSnippet(
   value: string,
   start: number,
@@ -21,9 +24,19 @@ export function insertMarkdownLinkSnippet(
 ): { value: string; cursor: number } {
   const from = clamp(start, 0, value.length);
   const to = clamp(Math.max(start, end), from, value.length);
+
+  if (from === to) {
+    return {
+      value: `${value.slice(0, from)}${MARKDOWN_LINK_SNIPPET}${value.slice(to)}`,
+      cursor: from + MARKDOWN_LINK_CURSOR_OFFSET,
+    };
+  }
+
+  const selected = value.slice(from, to);
+  const wrapped = `[${selected}]()`;
   return {
-    value: `${value.slice(0, from)}${MARKDOWN_LINK_SNIPPET}${value.slice(to)}`,
-    cursor: from + MARKDOWN_LINK_CURSOR_OFFSET,
+    value: `${value.slice(0, from)}${wrapped}${value.slice(to)}`,
+    cursor: from + selected.length + 3,
   };
 }
 
