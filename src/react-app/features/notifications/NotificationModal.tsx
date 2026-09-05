@@ -50,7 +50,7 @@ export default function NotificationModal({
         if (!nextOpen) onClose();
       }}
     >
-      <DialogContent>
+      <DialogContent sheetDrag open={open}>
         <DialogHeader>
           <DialogTitle>通知</DialogTitle>
         </DialogHeader>

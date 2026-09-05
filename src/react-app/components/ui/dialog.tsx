@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import { useDialogSheetDrag } from "@/components/ui/useDialogSheetDrag";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -43,14 +44,34 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  sheetDrag = false,
+  open,
   container,
   overlay,
+  style,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
+  sheetDrag?: boolean;
+  open?: boolean;
   container?: DialogPrimitive.Portal.Props["container"];
   overlay?: DialogPrimitive.Backdrop.Props;
 }) {
+  const popupRef = React.useRef<HTMLDivElement>(null);
+  const hiddenCloseRef = React.useRef<HTMLButtonElement>(null);
+  const {
+    gesture,
+    popupStyle,
+    popupClassName,
+    handleProps,
+    handleTransitionEnd,
+  } = useDialogSheetDrag({
+    enabled: sheetDrag,
+    open,
+    popupRef,
+    hiddenCloseRef,
+  });
+
   return (
     <DialogPortal container={container}>
       <DialogOverlay {...overlay} />
@@ -59,28 +80,55 @@ function DialogContent({
         className="pointer-events-none fixed inset-0 z-50"
       >
         <DialogPrimitive.Popup
+          ref={sheetDrag ? popupRef : undefined}
           data-slot="dialog-content"
+          data-sheet-gesture={
+            sheetDrag && gesture !== "idle" ? gesture : undefined
+          }
+          onTransitionEnd={sheetDrag ? handleTransitionEnd : undefined}
+          style={sheetDrag && popupStyle ? { ...style, ...popupStyle } : style}
           className={cn(
             "bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fill-mode-forwards pointer-events-auto grid w-full min-w-0 gap-4 overflow-x-hidden overflow-y-auto p-4 pb-[max(1rem,var(--safe-area-inset-bottom))] text-sm outline-none *:min-w-0",
             "max-sm:data-open:slide-in-from-bottom max-sm:data-closed:slide-out-to-bottom fixed inset-x-0 bottom-0 max-h-[calc(100dvh-1rem-var(--safe-area-inset-top))] rounded-t-2xl rounded-b-none shadow-lg duration-200",
             "sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] sm:max-w-[min(24rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-none sm:ring-1 sm:duration-100",
+            sheetDrag &&
+              "max-sm:flex max-sm:flex-col max-sm:gap-0 max-sm:overflow-hidden",
+            sheetDrag && popupClassName,
             className,
           )}
           {...props}
         >
-          <div
-            aria-hidden
-            data-slot="dialog-handle"
-            className="bg-muted-foreground/40 absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full sm:hidden"
-          />
-          {children}
+          {sheetDrag ? (
+            <>
+              <div
+                aria-hidden
+                data-slot="dialog-handle"
+                className="bg-popover sticky top-0 -mx-4 -mt-4 flex h-11 shrink-0 touch-none items-center justify-center pr-12 sm:hidden"
+                {...handleProps}
+              >
+                <div className="bg-muted-foreground/40 h-1 w-10 rounded-full" />
+              </div>
+              <div className="contents max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col max-sm:overflow-y-auto">
+                {children}
+              </div>
+            </>
+          ) : (
+            <>
+              <div
+                aria-hidden
+                data-slot="dialog-handle"
+                className="bg-muted-foreground/40 absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full sm:hidden"
+              />
+              {children}
+            </>
+          )}
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot="dialog-close"
               render={
                 <Button
                   variant="ghost"
-                  className="absolute top-2 right-2"
+                  className={cn("absolute top-2 right-2", sheetDrag && "z-20")}
                   size="icon-sm"
                 />
               }
@@ -89,6 +137,16 @@ function DialogContent({
               <span className="sr-only">閉じる</span>
             </DialogPrimitive.Close>
           )}
+          {sheetDrag ? (
+            <DialogPrimitive.Close
+              ref={hiddenCloseRef}
+              tabIndex={-1}
+              aria-hidden
+              className="sr-only"
+            >
+              <span className="sr-only">閉じる</span>
+            </DialogPrimitive.Close>
+          ) : null}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Viewport>
     </DialogPortal>
