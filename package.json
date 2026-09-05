@@ -66,6 +66,7 @@
     "check": "tsc && vite build && wrangler deploy --dry-run",
     "check:zod-deprecated": "node scripts/check-zod-deprecated.mjs",
     "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler deploy --env preview",
     "dev": "vite",
     "format": "prettier --write \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",
     "format:check": "prettier --check \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",
