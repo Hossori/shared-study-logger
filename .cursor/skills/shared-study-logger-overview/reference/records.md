@@ -2,8 +2,13 @@
 
 [← SKILL.md](../SKILL.md)
 
-- **概要**: 学習日時・タイトル・メモ（任意）を投稿し、グループ内で学習日時の新しい順に
+- **概要**: 学習日時・学習時間（任意・分）・タイトル・メモ（任意）を投稿し、グループ内で学習日時の新しい順に
   一覧表示する。一覧はカーソルページネーション。自分の記録は編集・削除可能。
+  学習日時は日付と時刻のコンボを1行に横並びし、日付は日本語カレンダー、時刻はアナログ時計の
+  前面オーバーレイで選ぶ（内側 1〜12 / 外側 13〜0。時を選ぶと 5 分刻みの分面。分を決定すると時計が閉じる）。
+  学習時間はラベルとトリガーを並べ、トリガーをクリックで項目直下の加減算ポップアップ（+/-1時間・+/-10分・+/-5分、クリア、5 分刻み、未設定可）を開く。
+  ラベルクリックではコントロールへフォーカスしないが、開いているポップアップ／モーダルは外側クリックとして閉じる。
+  加減算ポップアップは PC・モバイルとも範囲外クリックで閉じる。
   グループメンバーは各記録にスタンプ（👍😊🤣😲😭💪）を付けられる。同一ユーザーが複数種類
   つけられるが、同一スタンプは1回のみ。Pushは出さない。
 - **関連ファイル**:
@@ -18,6 +23,7 @@
     `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
+    `src/react-app/features/records/RecordFormFields.tsx`（学習日時は日付/時刻コンボ＋各オーバーレイ、学習時間は項目直下の加減算ポップアップ（5 分刻み・未設定可））、
     `src/react-app/queries/useRecords.ts`（`useInfiniteQuery`ベースの`useRecordsQuery`、
     `useCreateRecordMutation`/`useUpdateRecordMutation`/`useDeleteRecordMutation`、
     `useAddRecordReactionMutation`/`useDeleteRecordReactionMutation`/`useRecordReactionsQuery`）

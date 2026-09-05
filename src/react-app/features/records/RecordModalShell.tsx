@@ -42,7 +42,7 @@ export default function RecordModalShell({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <form onSubmit={onSubmit} className="contents" {...formGuardProps}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>

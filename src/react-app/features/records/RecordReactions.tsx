@@ -105,7 +105,7 @@ function StampChip({
       {summary.reactedByMe ? (
         <Badge
           variant="ghost"
-          className="text-primary border-primary rounded-full px-1 py-2.5"
+          className="text-primary border-primary rounded-full px-1 py-3"
         >
           {stampNode}
         </Badge>

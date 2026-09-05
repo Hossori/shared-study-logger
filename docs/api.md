@@ -13,9 +13,9 @@
 | POST | `/api/auth/password` | 必要 | パスワード変更（現在のパスワード検証 + PBKDF2再ハッシュ） |
 | GET | `/api/users/:userId` | 必要 | 公開プロフィール取得（`displayName` / `bio` / `avatarKey`。email なし） |
 | GET | `/api/groups` | 必要 | 自分が所属するグループ一覧 |
-| GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順） |
-| POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue） |
-| PATCH | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の編集 |
+| GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順。`durationMinutes` は未設定なら `null`） |
+| POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue。`durationMinutes` は任意） |
+| PATCH | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の編集（`durationMinutes` 省略時は既存値を維持、`null` で未設定に戻す） |
 | DELETE | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の削除 |
 | POST | `/api/groups/:groupId/records/:recordId/reactions` | 必要+所属チェック | スタンプ付与（`{ stamp }`。重複は 409 `already_reacted`） |
 | DELETE | `/api/groups/:groupId/records/:recordId/reactions/:stamp` | 必要+所属チェック | 自分のスタンプ取消（該当行が無ければ 404） |

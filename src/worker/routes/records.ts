@@ -95,6 +95,7 @@ recordsRoutes.post("/:groupId/records", async (c) => {
     userId: user.id,
     studyDatetime: parsed.data.studyDatetime,
     title: parsed.data.title,
+    durationMinutes: parsed.data.durationMinutes,
     memo: parsed.data.memo,
   });
 
@@ -252,6 +253,7 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     {
       studyDatetime: parsed.data.studyDatetime,
       title: parsed.data.title,
+      durationMinutes: parsed.data.durationMinutes,
       memo: parsed.data.memo,
     },
   );
