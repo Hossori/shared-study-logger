@@ -295,6 +295,25 @@ pnpm build && pnpm run deploy
 Cloudflareにアップロードします。デプロイ後は発行されたURLで、ログイン〜記録投稿〜
 Push通知有効化までのE2E動作確認を行うことを推奨します。
 
+### 5. プレビュー環境
+
+本番の D1 / KV / Queue とは別リソースの Worker `shared-study-logger-preview` で確認する。
+`pnpm run deploy`（`wrangler deploy`）は本番に出すので使わない。
+
+```bash
+CLOUDFLARE_ENV=preview pnpm build
+pnpm exec wrangler d1 migrations apply shared-study-logger-db-preview --remote --env preview
+pnpm run deploy:preview
+```
+
+URL は `https://shared-study-logger-preview.<subdomain>.workers.dev`。
+Queue は未接続のため Web Push は送らない。VAPID は
+`pnpm exec wrangler secret put <NAME> --env preview` で preview Worker にだけ入れる。
+
+`node scripts/seed-users.mjs --remote` は本番 D1 向けなので使わない。
+preview D1 へ SQL を流す場合は
+`pnpm exec wrangler d1 execute shared-study-logger-db-preview --remote --env preview`。
+
 ## Cloudflareリソース一覧（本番）
 
 | リソース                   | 名前                     | ID / binding                                                    |
@@ -303,6 +322,16 @@ Push通知有効化までのE2E動作確認を行うことを推奨します。
 | KV                         | `SESSIONS`               | `866cf1c34dda41199499692e4252bb6e`（binding: `SESSIONS`）       |
 | Queue（producer/consumer） | `push-notifications`     | binding: `PUSH_QUEUE`                                           |
 | Queue（Dead Letter Queue） | `push-notifications-dlq` | `push-notifications`コンシューマの`dead_letter_queue`として設定 |
+
+## Cloudflareリソース一覧（preview）
+
+| リソース | 名前 | ID / binding |
+| -------- | ---- | ------------ |
+| Worker   | `shared-study-logger-preview` | `wrangler deploy --env preview` |
+| D1       | `shared-study-logger-db-preview` | `95d74ca6-3d93-4db0-8f6e-c808da94f516`（binding: `DB`） |
+| KV       | `shared-study-logger-preview-SESSIONS` | `d3ec52361c2d4305b82010fad748b50e`（binding: `SESSIONS`） |
+
+preview に Queue は無い。本番の `push-notifications` には接続しない。
 
 ## Push通知・VAPID鍵について
 
