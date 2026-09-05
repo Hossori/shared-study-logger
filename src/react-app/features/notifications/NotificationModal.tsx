@@ -4,6 +4,7 @@
  */
 import { Link } from "react-router";
 import { X } from "lucide-react";
+import { toSafeHttpHttpsUrl } from "../../../../shared/schemas";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,6 +93,10 @@ function NotificationListItem({
   onDismiss,
   onClose,
 }: NotificationListItemProps) {
+  const safeLinkUrl =
+    item.linkUrl != null ? toSafeHttpHttpsUrl(item.linkUrl) : null;
+  const linkLabel = item.linkLabel?.trim() || "詳細を見る";
+
   return (
     <div className="bg-muted/50 rounded-xl px-3 py-3">
       <div className="flex items-start justify-between gap-2">
@@ -100,6 +105,16 @@ function NotificationListItem({
           <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             {item.body}
           </p>
+          {safeLinkUrl ? (
+            <a
+              href={safeLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary mt-1 inline-block text-xs underline underline-offset-3"
+            >
+              {linkLabel}
+            </a>
+          ) : null}
         </div>
         <Button
           type="button"
@@ -112,8 +127,8 @@ function NotificationListItem({
         </Button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {item.id === PWA_INSTALL_NOTIFICATION_ID && pwa.canPromptInstall ? (
+      {item.id === PWA_INSTALL_NOTIFICATION_ID && pwa.canPromptInstall ? (
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button
             size="sm"
             onClick={() => {
@@ -124,9 +139,11 @@ function NotificationListItem({
           >
             ホーム画面に追加
           </Button>
-        ) : null}
+        </div>
+      ) : null}
 
-        {item.id === PUSH_OPT_IN_NOTIFICATION_ID ? (
+      {item.id === PUSH_OPT_IN_NOTIFICATION_ID ? (
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button
             size="sm"
             nativeButton={false}
@@ -134,8 +151,8 @@ function NotificationListItem({
           >
             マイページで設定
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {item.kind === "pwa-install" && pwa.isIosGuide ? (
         <Alert className="mt-2">

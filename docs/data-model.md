@@ -68,6 +68,8 @@ erDiagram
     string id PK
     string title
     string body
+    string link_url "NULL可"
+    string link_label "NULL可"
     int enabled "0 or 1"
     string created_by FK "NULL可"
     string created_at
@@ -90,6 +92,7 @@ erDiagram
   ユーザー削除・グループ削除の API は無い。
 - `app_notifications` は管理者が作成するアプリ内通知。`enabled = 1` のものだけ
   `GET /api/notifications` で全ユーザーに返す。CRUD は ADMIN のみ。
+  任意で `link_url` / `link_label` を付けられる（http/https のみ。ラベル省略時は UI で「詳細を見る」）。
 - セッションは D1 ではなく **Cloudflare Workers KV**（`SESSIONS` バインディング）に保存する（`session:{token}` → `{ userId, expiresAt }`）。
 - インデックス: `group_members(user_id)`、`study_records(group_id, study_datetime DESC, updated_at DESC, id DESC)`（カーソルページネーション用）、`study_records(user_id)`、`record_reactions(record_id)`、`push_subscriptions(user_id)`、`app_notifications(enabled, created_at DESC)`。
 - `record_reactions` は学習記録へのスタンプ。同一ユーザーが同一記録に複数種類つけられる。同一ユーザー×同一スタンプは UNIQUE。記録削除時は CASCADE で消える。安定キーと表示絵文字の対応は `shared/schemas.ts` の `REACTION_STAMP_EMOJI`。
@@ -100,5 +103,6 @@ erDiagram
   - `0007_record_reactions.sql`: `record_reactions`（学習記録のリアクションスタンプ）を追加。
   - `0008_optional_duration_minutes.sql`: `study_records.duration_minutes`（任意の学習時間・分）を再追加。
   - `0009_duration_minutes_five_minute_step.sql`: `duration_minutes` の CHECK を 5 分刻み（5〜720）に更新。
+  - `0010_app_notification_link.sql`: `app_notifications` に `link_url` / `link_label` を追加。
 - 本番 D1 は SemVer タグ（`vX.Y.Z`）push 後の [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) の production release で、Time Travel の migration 前復旧ポイントを記録してから apply する。同じ job が migration 完了後に Worker をデプロイするため、Worker が新スキーマを先行して参照しない。`main` へのマージだけでは本番 D1 は更新されない。
 - rename / drop / NOT NULL 化などの破壊的変更は、旧 Worker と共存できる追加変更（expand）と旧スキーマを削除する変更（contract）を別リリースに分ける。Worker のロールバックでは D1 スキーマは戻らないため、必要時は release summary の Time Travel bookmark を使う。

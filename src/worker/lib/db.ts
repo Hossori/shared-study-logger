@@ -893,6 +893,8 @@ export interface AppNotificationRow {
   id: string;
   title: string;
   body: string;
+  link_url: string | null;
+  link_label: string | null;
   enabled: number;
   created_by: string | null;
   created_at: string;
@@ -904,6 +906,8 @@ function toInAppNotification(row: AppNotificationRow): InAppNotification {
     id: row.id,
     title: row.title,
     body: row.body,
+    linkUrl: row.link_url ?? null,
+    linkLabel: row.link_label ?? null,
     enabled: Number(row.enabled) === 1,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -916,7 +920,7 @@ export async function listAppNotifications(
 ): Promise<InAppNotification[]> {
   const { results } = await db
     .prepare(
-      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+      `SELECT id, title, body, link_url, link_label, enabled, created_by, created_at, updated_at
        FROM app_notifications
        ORDER BY created_at DESC, id DESC`,
     )
@@ -929,7 +933,7 @@ export async function listEnabledAppNotifications(
 ): Promise<InAppNotification[]> {
   const { results } = await db
     .prepare(
-      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+      `SELECT id, title, body, link_url, link_label, enabled, created_by, created_at, updated_at
        FROM app_notifications
        WHERE enabled = 1
        ORDER BY created_at DESC, id DESC`,
@@ -944,7 +948,7 @@ export async function getAppNotification(
 ): Promise<InAppNotification | null> {
   const row = await db
     .prepare(
-      `SELECT id, title, body, enabled, created_by, created_at, updated_at
+      `SELECT id, title, body, link_url, link_label, enabled, created_by, created_at, updated_at
        FROM app_notifications
        WHERE id = ?`,
     )
@@ -957,6 +961,8 @@ export interface CreateAppNotificationInput {
   id: string;
   title: string;
   body: string;
+  linkUrl?: string | null;
+  linkLabel?: string | null;
   enabled: boolean;
   createdBy: string;
 }
@@ -966,16 +972,20 @@ export async function createAppNotification(
   input: CreateAppNotificationInput,
 ): Promise<InAppNotification> {
   const now = new Date().toISOString();
+  const linkUrl = input.linkUrl ?? null;
+  const linkLabel = input.linkLabel ?? null;
   await db
     .prepare(
       `INSERT INTO app_notifications
-        (id, title, body, enabled, created_by, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (id, title, body, link_url, link_label, enabled, created_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       input.id,
       input.title,
       input.body,
+      linkUrl,
+      linkLabel,
       input.enabled ? 1 : 0,
       input.createdBy,
       now,
@@ -987,6 +997,8 @@ export async function createAppNotification(
     id: input.id,
     title: input.title,
     body: input.body,
+    linkUrl,
+    linkLabel,
     enabled: input.enabled,
     createdBy: input.createdBy,
     createdAt: now,

@@ -76,11 +76,15 @@ describe("in-app notification routes", () => {
 				title: string;
 				enabled: boolean;
 				createdBy: string;
+				linkUrl: string | null;
+				linkLabel: string | null;
 			};
 		};
 		expect(created.notification.title).toBe("メンテナンス");
 		expect(created.notification.enabled).toBe(true);
 		expect(created.notification.createdBy).toBe(SEED.admin.id);
+		expect(created.notification.linkUrl).toBeNull();
+		expect(created.notification.linkLabel).toBeNull();
 
 		const adminListRes = await workerFetch(
 			new Request("http://example.com/api/admin/notifications", {
@@ -175,6 +179,81 @@ describe("in-app notification routes", () => {
 				method: "POST",
 				headers: { cookie, "content-type": "application/json" },
 				body: JSON.stringify({ title: "", body: "x" }),
+			}),
+		);
+		expect(res.status).toBe(400);
+	});
+
+	it("creates notification with https link and exposes it to users", async () => {
+		const { cookie: adminCookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const { cookie: userCookie } = await loginAs(
+			workerFetch,
+			SEED.testUser.email,
+			SEED.testUser.password,
+		);
+
+		const createRes = await workerFetch(
+			new Request("http://example.com/api/admin/notifications", {
+				method: "POST",
+				headers: {
+					cookie: adminCookie,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					title: "リンク付き",
+					body: "詳細はこちら",
+					linkUrl: "https://example.com/notice",
+					linkLabel: "詳細を確認",
+				}),
+			}),
+		);
+		expect(createRes.status).toBe(201);
+		const created = (await createRes.json()) as {
+			notification: {
+				linkUrl: string | null;
+				linkLabel: string | null;
+			};
+		};
+		expect(created.notification.linkUrl).toBe("https://example.com/notice");
+		expect(created.notification.linkLabel).toBe("詳細を確認");
+
+		const enabledRes = await workerFetch(
+			new Request("http://example.com/api/notifications", {
+				headers: { cookie: userCookie },
+			}),
+		);
+		expect(enabledRes.status).toBe(200);
+		const enabled = (await enabledRes.json()) as {
+			notifications: Array<{
+				linkUrl: string | null;
+				linkLabel: string | null;
+			}>;
+		};
+		const match = enabled.notifications.find(
+			(n) => n.linkUrl === "https://example.com/notice",
+		);
+		expect(match?.linkLabel).toBe("詳細を確認");
+	});
+
+	it("rejects invalid linkUrl with 400", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const res = await workerFetch(
+			new Request("http://example.com/api/admin/notifications", {
+				method: "POST",
+				headers: { cookie, "content-type": "application/json" },
+				body: JSON.stringify({
+					title: "x",
+					body: "y",
+					linkUrl: "javascript:alert(1)",
+				}),
 			}),
 		);
 		expect(res.status).toBe(400);

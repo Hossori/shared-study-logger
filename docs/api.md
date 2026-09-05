@@ -23,15 +23,15 @@
 | GET | `/api/push/vapid-public-key` | 不要 | Push購読用のVAPID公開鍵取得 |
 | POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
-| GET | `/api/notifications` | 必要 | 有効なアプリ内通知一覧（全ユーザー） |
+| GET | `/api/notifications` | 必要 | 有効なアプリ内通知一覧（全ユーザー。各要素に `linkUrl` / `linkLabel`、無ければ `null`） |
 | GET | `/api/admin/users` | 必要+ADMIN | 全ユーザー一覧（email 含む） |
 | POST | `/api/admin/users` | 必要+ADMIN | ユーザー作成（`{ email, password, displayName }`。role は USER 固定） |
 | GET | `/api/admin/groups` | 必要+ADMIN | 全グループ一覧（所属不問。各グループに `members` を含む） |
 | POST | `/api/admin/groups` | 必要+ADMIN | グループ作成（`{ name }`） |
 | POST | `/api/admin/groups/:groupId/members` | 必要+ADMIN | グループへユーザーを所属追加（`{ userId }`） |
 | DELETE | `/api/admin/groups/:groupId/members/:userId` | 必要+ADMIN | グループからユーザーの所属を削除 |
-| GET | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の全件一覧 |
-| POST | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の作成 |
+| GET | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の全件一覧（各要素に `linkUrl` / `linkLabel`、無ければ `null`） |
+| POST | `/api/admin/notifications` | 必要+ADMIN | アプリ内通知の作成（`{ title, body, enabled?, linkUrl?, linkLabel? }`。`linkUrl` / `linkLabel` は任意。ラベルのみは 400。URL は http/https のみ） |
 | PATCH | `/api/admin/notifications/:id` | 必要+ADMIN | 有効/無効の切替（`{ enabled }`） |
 | DELETE | `/api/admin/notifications/:id` | 必要+ADMIN | アプリ内通知の削除 |
 

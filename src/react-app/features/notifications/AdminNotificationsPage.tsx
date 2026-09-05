@@ -25,6 +25,7 @@ import {
 } from "../../components/ui/empty";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -60,6 +61,20 @@ function mutationErrorMessage(error: unknown): string {
   return "操作に失敗しました。しばらくしてから再度お試しください。";
 }
 
+function createFormErrorMessage(
+  parsed: ReturnType<typeof CreateInAppNotificationRequestSchema.safeParse>,
+): string {
+  if (parsed.success) return "";
+  const paths = parsed.error.issues.map((issue) => issue.path[0]);
+  if (paths.includes("linkUrl")) {
+    return "http(s) の URL を入力してください。";
+  }
+  if (paths.includes("linkLabel")) {
+    return "リンク URL を入力するか、リンクラベルを空にしてください。";
+  }
+  return "タイトルと本文を入力してください。";
+}
+
 export default function AdminNotificationsPage() {
   const { user } = useOutletContext<AuthenticatedOutletContext>();
   const confirm = useConfirm();
@@ -70,6 +85,8 @@ export default function AdminNotificationsPage() {
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkLabel, setLinkLabel] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
   const notifications = listQuery.data?.notifications ?? [];
@@ -83,9 +100,11 @@ export default function AdminNotificationsPage() {
     const parsed = CreateInAppNotificationRequestSchema.safeParse({
       title,
       body,
+      linkUrl: linkUrl || undefined,
+      linkLabel: linkLabel || undefined,
     });
     if (!parsed.success) {
-      setFormError("タイトルと本文を入力してください。");
+      setFormError(createFormErrorMessage(parsed));
       return;
     }
     setFormError(null);
@@ -93,6 +112,8 @@ export default function AdminNotificationsPage() {
       onSuccess: () => {
         setTitle("");
         setBody("");
+        setLinkUrl("");
+        setLinkLabel("");
       },
     });
   };
@@ -166,6 +187,39 @@ export default function AdminNotificationsPage() {
                   />
                   {formError ? <FieldError>{formError}</FieldError> : null}
                 </Field>
+                <Field data-invalid={formError ? true : undefined}>
+                  <FieldLabel htmlFor="admin-notification-link-url">
+                    リンク URL（任意）
+                  </FieldLabel>
+                  <Input
+                    id="admin-notification-link-url"
+                    type="url"
+                    value={linkUrl}
+                    onChange={(event) => setLinkUrl(event.target.value)}
+                    maxLength={2048}
+                    placeholder="https://example.com"
+                    aria-invalid={formError ? true : undefined}
+                  />
+                  <FieldDescription>
+                    http または https の URL のみ指定できます。
+                  </FieldDescription>
+                </Field>
+                <Field data-invalid={formError ? true : undefined}>
+                  <FieldLabel htmlFor="admin-notification-link-label">
+                    リンクラベル（任意）
+                  </FieldLabel>
+                  <Input
+                    id="admin-notification-link-label"
+                    value={linkLabel}
+                    onChange={(event) => setLinkLabel(event.target.value)}
+                    maxLength={100}
+                    placeholder="詳細を見る"
+                    aria-invalid={formError ? true : undefined}
+                  />
+                  <FieldDescription>
+                    未入力の場合、ユーザーには「詳細を見る」と表示されます。
+                  </FieldDescription>
+                </Field>
                 <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending ? (
                     <>
@@ -225,6 +279,7 @@ export default function AdminNotificationsPage() {
                   <TableRow>
                     <TableHead>タイトル</TableHead>
                     <TableHead>本文</TableHead>
+                    <TableHead>リンク</TableHead>
                     <TableHead>状態</TableHead>
                     <TableHead>有効</TableHead>
                     <TableHead className="text-right">操作</TableHead>
@@ -238,6 +293,9 @@ export default function AdminNotificationsPage() {
                       </TableCell>
                       <TableCell className="text-muted-foreground max-w-56 truncate">
                         {item.body}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground max-w-40 truncate">
+                        {item.linkUrl ?? "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant={item.enabled ? "default" : "secondary"}>

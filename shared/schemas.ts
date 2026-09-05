@@ -255,10 +255,54 @@ export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
 // ---- アプリ内通知 -----------------------------------------------------------
 
+/** 表示用: http/https のみ許可。それ以外は null。 */
+export function toSafeHttpHttpsUrl(value: string): string | null {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+const optionalHttpHttpsUrlSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value === undefined || value === null) return null;
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  })
+  .pipe(
+    z.union([
+      z.null(),
+      z
+        .url()
+        .max(2048)
+        .refine(
+          (url) => toSafeHttpHttpsUrl(url) !== null,
+          "URL must use http or https",
+        ),
+    ]),
+  );
+
+const optionalLinkLabelSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value === undefined || value === null) return null;
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  })
+  .pipe(z.union([z.null(), z.string().max(100)]));
+
 export const InAppNotificationSchema = z.object({
   id: z.string(),
   title: z.string(),
   body: z.string(),
+  linkUrl: z.string().nullable(),
+  linkLabel: z.string().nullable(),
   enabled: z.boolean(),
   createdBy: z.string().nullable(),
   createdAt: z.string(),
@@ -266,11 +310,18 @@ export const InAppNotificationSchema = z.object({
 });
 export type InAppNotification = z.infer<typeof InAppNotificationSchema>;
 
-export const CreateInAppNotificationRequestSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  body: z.string().trim().min(1).max(2000),
-  enabled: z.boolean().optional(),
-});
+export const CreateInAppNotificationRequestSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200),
+    body: z.string().trim().min(1).max(2000),
+    enabled: z.boolean().optional(),
+    linkUrl: optionalHttpHttpsUrlSchema.optional(),
+    linkLabel: optionalLinkLabelSchema.optional(),
+  })
+  .refine((data) => !(data.linkLabel && !data.linkUrl), {
+    message: "linkLabel requires linkUrl",
+    path: ["linkLabel"],
+  });
 export type CreateInAppNotificationRequest = z.infer<
   typeof CreateInAppNotificationRequestSchema
 >;
