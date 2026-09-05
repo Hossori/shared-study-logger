@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -18,6 +19,7 @@ import {
 
 const MOBILE_MEDIA_QUERY = "(max-width: 639px)";
 const SHEET_DRAG_TRANSITION_MS = 200;
+const SHEET_DRAG_TRANSITION_FALLBACK_MS = 280;
 
 type SheetGesture = "idle" | "dragging" | "snapping" | "dismissing";
 
@@ -35,7 +37,7 @@ function getMobileViewportSnapshot() {
 
 interface UseDialogSheetDragOptions {
   enabled: boolean;
-  open: boolean;
+  open?: boolean;
   popupRef: RefObject<HTMLDivElement | null>;
   hiddenCloseRef: RefObject<HTMLButtonElement | null>;
 }
@@ -49,6 +51,7 @@ export function useDialogSheetDrag({
   const pointerStartYRef = useRef(0);
   const offsetYRef = useRef(0);
   const resetGestureRef = useRef<() => void>(() => {});
+  const transitionTimerRef = useRef<number | null>(null);
   const [offsetY, setOffsetY] = useState(0);
   const [gesture, setGesture] = useState<SheetGesture>("idle");
   const isMobileViewport = useSyncExternalStore(
@@ -68,12 +71,47 @@ export function useDialogSheetDrag({
     resetGestureRef.current = resetGesture;
   }, [resetGesture]);
 
+  const clearTransitionTimer = useCallback(() => {
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+  }, []);
+
+  const finishSnap = useCallback(() => {
+    clearTransitionTimer();
+    resetGesture();
+  }, [clearTransitionTimer, resetGesture]);
+
+  const finishDismiss = useCallback(() => {
+    clearTransitionTimer();
+    hiddenCloseRef.current?.click();
+  }, [clearTransitionTimer, hiddenCloseRef]);
+
+  const armTransitionFallback = useCallback(
+    (finish: () => void) => {
+      clearTransitionTimer();
+      transitionTimerRef.current = window.setTimeout(
+        finish,
+        SHEET_DRAG_TRANSITION_FALLBACK_MS,
+      );
+    },
+    [clearTransitionTimer],
+  );
+
+  useEffect(() => {
+    return () => {
+      clearTransitionTimer();
+    };
+  }, [clearTransitionTimer]);
+
   useEffect(() => {
     if (!enabled) return;
 
     const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
     const handleViewportChange = () => {
       if (!mediaQuery.matches) {
+        clearTransitionTimer();
         resetGestureRef.current();
       }
     };
@@ -82,12 +120,13 @@ export function useDialogSheetDrag({
     return () => {
       mediaQuery.removeEventListener("change", handleViewportChange);
     };
-  }, [enabled]);
+  }, [clearTransitionTimer, enabled]);
 
-  useEffect(() => {
-    if (!enabled || open) return;
+  useLayoutEffect(() => {
+    if (!enabled || open !== true) return;
+    clearTransitionTimer();
     resetGestureRef.current();
-  }, [enabled, open]);
+  }, [clearTransitionTimer, enabled, open]);
 
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -113,22 +152,38 @@ export function useDialogSheetDrag({
   );
 
   const startSnapBack = useCallback(() => {
+    if (offsetYRef.current === 0) {
+      finishSnap();
+      return;
+    }
+
     setGesture("snapping");
     requestAnimationFrame(() => {
       offsetYRef.current = 0;
       setOffsetY(0);
     });
-  }, []);
+    armTransitionFallback(finishSnap);
+  }, [armTransitionFallback, finishSnap]);
 
   const startDismiss = useCallback(() => {
     const sheetHeight = popupRef.current?.offsetHeight ?? 0;
     const dismissY = sheetDismissTranslateY(sheetHeight);
+
     setGesture("dismissing");
+
+    if (offsetYRef.current === dismissY) {
+      offsetYRef.current = dismissY;
+      setOffsetY(dismissY);
+      finishDismiss();
+      return;
+    }
+
     requestAnimationFrame(() => {
       offsetYRef.current = dismissY;
       setOffsetY(dismissY);
     });
-  }, [popupRef]);
+    armTransitionFallback(finishDismiss);
+  }, [armTransitionFallback, finishDismiss, popupRef]);
 
   const handlePointerUp = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -161,19 +216,20 @@ export function useDialogSheetDrag({
 
   const handleTransitionEnd = useCallback(
     (event: React.TransitionEvent<HTMLDivElement>) => {
-      if (!enabled || event.propertyName !== "transform") return;
+      if (!enabled) return;
+      if (event.target !== event.currentTarget) return;
+      if (event.propertyName !== "transform") return;
 
       if (gesture === "snapping") {
-        resetGesture();
+        finishSnap();
         return;
       }
 
       if (gesture === "dismissing") {
-        hiddenCloseRef.current?.click();
-        resetGesture();
+        finishDismiss();
       }
     },
-    [enabled, gesture, hiddenCloseRef, resetGesture],
+    [enabled, finishDismiss, finishSnap, gesture],
   );
 
   const isGesturing = gesture !== "idle" || offsetY !== 0;
