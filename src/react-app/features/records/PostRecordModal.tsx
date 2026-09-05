@@ -1,5 +1,5 @@
 /**
- * 学習記録の投稿モーダル（学習日時・タイトル・メモ(任意)）。
+ * 学習記録の投稿モーダル（学習日時・学習時間(任意)・タイトル・メモ(任意)）。
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useEffect, useState, type FormEvent } from "react";
@@ -23,6 +23,7 @@ export default function PostRecordModal() {
     studyDatetime: nowDatetimeLocalString(),
     title: "",
     memo: "",
+    durationMinutes: null,
   });
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function PostRecordModal() {
         studyDatetime: nowDatetimeLocalString(),
         title: "",
         memo: "",
+        durationMinutes: null,
       });
       createRecordMutation.reset();
     }
