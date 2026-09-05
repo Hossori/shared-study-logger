@@ -179,4 +179,51 @@ describe("in-app notification routes", () => {
 		);
 		expect(res.status).toBe(400);
 	});
+
+	it("stores markdown link syntax in the body as-is", async () => {
+		const { cookie: adminCookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const { cookie: userCookie } = await loginAs(
+			workerFetch,
+			SEED.testUser.email,
+			SEED.testUser.password,
+		);
+
+		const body = "詳細は[こちら](https://example.com/notice)";
+		const createRes = await workerFetch(
+			new Request("http://example.com/api/admin/notifications", {
+				method: "POST",
+				headers: {
+					cookie: adminCookie,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					title: "リンク付き",
+					body,
+				}),
+			}),
+		);
+		expect(createRes.status).toBe(201);
+		const created = (await createRes.json()) as {
+			notification: { id: string; body: string };
+		};
+		expect(created.notification.body).toBe(body);
+
+		const enabledRes = await workerFetch(
+			new Request("http://example.com/api/notifications", {
+				headers: { cookie: userCookie },
+			}),
+		);
+		expect(enabledRes.status).toBe(200);
+		const enabled = (await enabledRes.json()) as {
+			notifications: Array<{ id: string; body: string }>;
+		};
+		const match = enabled.notifications.find(
+			(n) => n.id === created.notification.id,
+		);
+		expect(match?.body).toBe(body);
+	});
 });

@@ -24,6 +24,9 @@ import {
   PWA_INSTALL_NOTIFICATION_ID,
   PUSH_OPT_IN_NOTIFICATION_ID,
 } from "./useAppNotifications";
+import { parseNotificationBody } from "./notificationBodyLinks";
+
+const bodyLinkClassName = "text-primary underline underline-offset-3";
 
 interface NotificationModalProps {
   open: boolean;
@@ -97,9 +100,7 @@ function NotificationListItem({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{item.title}</p>
-          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-            {item.body}
-          </p>
+          <NotificationBodyText body={item.body} />
         </div>
         <Button
           type="button"
@@ -112,8 +113,8 @@ function NotificationListItem({
         </Button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {item.id === PWA_INSTALL_NOTIFICATION_ID && pwa.canPromptInstall ? (
+      {item.id === PWA_INSTALL_NOTIFICATION_ID && pwa.canPromptInstall ? (
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button
             size="sm"
             onClick={() => {
@@ -124,9 +125,11 @@ function NotificationListItem({
           >
             ホーム画面に追加
           </Button>
-        ) : null}
+        </div>
+      ) : null}
 
-        {item.id === PUSH_OPT_IN_NOTIFICATION_ID ? (
+      {item.id === PUSH_OPT_IN_NOTIFICATION_ID ? (
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button
             size="sm"
             nativeButton={false}
@@ -134,8 +137,8 @@ function NotificationListItem({
           >
             マイページで設定
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {item.kind === "pwa-install" && pwa.isIosGuide ? (
         <Alert className="mt-2">
@@ -145,5 +148,28 @@ function NotificationListItem({
         </Alert>
       ) : null}
     </div>
+  );
+}
+
+function NotificationBodyText({ body }: { body: string }) {
+  const parts = parseNotificationBody(body);
+  return (
+    <p className="text-muted-foreground mt-1 text-xs leading-relaxed whitespace-pre-wrap">
+      {parts.map((part, index) =>
+        part.type === "link" ? (
+          <a
+            key={index}
+            href={part.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={bodyLinkClassName}
+          >
+            {part.label}
+          </a>
+        ) : (
+          <span key={index}>{part.text}</span>
+        ),
+      )}
+    </p>
   );
 }

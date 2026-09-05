@@ -222,8 +222,10 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "通知管理" })).toBeVisible();
 
   const title = `e2e-notice-${Date.now()}`;
+  const linkUrl = "https://example.com/e2e-notice";
+  const linkLabel = "e2eリンク";
   await page.locator("#admin-notification-title").fill(title);
-  await page.locator("#admin-notification-body").fill("e2e 本文");
+  await page.locator("#admin-notification-body").fill(`e2e 本文 [${linkLabel}](${linkUrl})`);
 
   const createPromise = page.waitForResponse(
     (response) =>
@@ -246,6 +248,15 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
   await expect(page).toHaveURL(/\/login/);
 
   await loginAsUser(page);
+  await page.getByRole("button", { name: /通知/ }).click();
+  const notice = page.locator("li").filter({ hasText: title });
+  const noticeLink = notice.getByRole("link", { name: linkLabel });
+  await expect(noticeLink).toBeVisible();
+  await expect(noticeLink).toHaveAttribute("href", linkUrl);
+  await expect(noticeLink).toHaveAttribute("target", "_blank");
+  await expect(noticeLink).toHaveAttribute("rel", "noopener noreferrer");
+  await page.keyboard.press("Escape");
+
   await page.getByLabel("プロフィールメニュー").click();
   await expect(
     page.getByRole("menuitem", { name: "マイページ" }),

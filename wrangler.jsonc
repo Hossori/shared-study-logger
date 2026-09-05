@@ -58,4 +58,31 @@
    * シークレット（wrangler secret put で設定。ローカルは .dev.vars を利用）
    * - VAPID_PRIVATE_KEY: Web Push署名用の秘密鍵（@pushforge/builderで使用）
    */
+  // 本番 D1/KV/Queue とは別リソース。`wrangler deploy --env preview` のみ使うこと。
+  // バインディングは環境間で継承されないため、preview 用をすべて明示する。
+  // Queue は未設定（本番 push-notifications へ enqueue しない）。
+  "env": {
+    "preview": {
+      "workers_dev": true,
+      "preview_urls": true,
+      "assets": {
+        "directory": "./dist/client",
+        "not_found_handling": "single-page-application",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "shared-study-logger-db-preview",
+          "database_id": "95d74ca6-3d93-4db0-8f6e-c808da94f516",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "SESSIONS",
+          "id": "d3ec52361c2d4305b82010fad748b50e",
+        },
+      ],
+    },
+  },
 }

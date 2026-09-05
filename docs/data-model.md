@@ -90,6 +90,7 @@ erDiagram
   ユーザー削除・グループ削除の API は無い。
 - `app_notifications` は管理者が作成するアプリ内通知。`enabled = 1` のものだけ
   `GET /api/notifications` で全ユーザーに返す。CRUD は ADMIN のみ。
+  本文に `[表示名](https://example.com)` を埋め込むとユーザー画面でリンクになる（`[]` が空なら URL をそのまま表示。http/https のみ）。
 - セッションは D1 ではなく **Cloudflare Workers KV**（`SESSIONS` バインディング）に保存する（`session:{token}` → `{ userId, expiresAt }`）。
 - インデックス: `group_members(user_id)`、`study_records(group_id, study_datetime DESC, updated_at DESC, id DESC)`（カーソルページネーション用）、`study_records(user_id)`、`record_reactions(record_id)`、`push_subscriptions(user_id)`、`app_notifications(enabled, created_at DESC)`。
 - `record_reactions` は学習記録へのスタンプ。同一ユーザーが同一記録に複数種類つけられる。同一ユーザー×同一スタンプは UNIQUE。記録削除時は CASCADE で消える。安定キーと表示絵文字の対応は `shared/schemas.ts` の `REACTION_STAMP_EMOJI`。
