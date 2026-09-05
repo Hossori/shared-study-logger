@@ -1,5 +1,5 @@
 /**
- * アナログ時計。時面は内側 1〜12・外側 13〜24。
+ * アナログ時計。時面は内側 1〜12・外側 13〜0。
  * 時を選ぶと 5 分刻みの分面に切り替わる。
  */
 import {
@@ -25,11 +25,9 @@ import {
   OUTER_CLOCK_HOURS,
   OUTER_NUMBER_RADIUS,
   clockLabelToAngleDegrees,
-  clockLabelToHour,
   hourHandAngleDegrees,
   hourHandLength,
   hourLabelFromPointer,
-  hourToClockLabel,
   minuteFromPointer,
   minuteHandAngleDegrees,
   polarToCartesian,
@@ -114,11 +112,10 @@ export default function AnalogClock({
   const skipInitialFocusRef = useRef(true);
   const [mode, setMode] = useState<AnalogClockMode>("hour");
   const [capturing, setCapturing] = useState(false);
-  const selectedHourLabel = hourToClockLabel(hour);
   const selectedMinute = snapToClockMinute(minute);
-  const hourAngle = hourHandAngleDegrees(hour, selectedMinute);
+  const hourAngle = hourHandAngleDegrees(hour);
   const minuteAngle = minuteHandAngleDegrees(selectedMinute);
-  const hourLength = hourHandLength(selectedHourLabel);
+  const hourLength = hourHandLength(hour);
 
   useEffect(() => {
     return () => {
@@ -151,7 +148,7 @@ export default function AnalogClock({
         const label = hourLabelFromPointer(x, y);
         if (label == null) return;
         selectedDuringGestureRef.current = true;
-        onHourChange(clockLabelToHour(label));
+        onHourChange(label);
         return;
       }
       const nextMinute = minuteFromPointer(x, y);
@@ -199,14 +196,11 @@ export default function AnalogClock({
 
   return (
     <div
-      className={cn(
-        "mx-auto flex w-full max-w-[17.5rem] flex-col gap-3",
-        className,
-      )}
+      className={cn("mx-auto flex w-full max-w-70 flex-col gap-3", className)}
     >
       <p id={labelId} className="sr-only" aria-live="polite">
         {mode === "hour"
-          ? "時。内側が1から12時、外側が13から24時です。時を選ぶと分の選択に切り替わります。"
+          ? "時。内側が1から12時、外側が13から0時です。時を選ぶと分の選択に切り替わります。"
           : "分。5分刻みです。"}
       </p>
       <div className="flex items-center justify-center gap-0.5 text-2xl font-medium tabular-nums">
@@ -274,7 +268,8 @@ export default function AnalogClock({
               strokeWidth={1}
             />
           ) : null}
-          {Array.from({ length: 60 }, (_, index) => {
+          {/* 秒メモリ */}
+          {/* {Array.from({ length: 60 }, (_, index) => {
             const angle = index * 6;
             const outer = polarToCartesian(
               ANALOG_CLOCK_CENTER,
@@ -299,7 +294,7 @@ export default function AnalogClock({
                 strokeWidth={index % 5 === 0 ? 2 : 1}
               />
             );
-          })}
+          })} */}
           {mode === "minute" ? (
             <ClockHand
               angle={minuteAngle}
@@ -329,10 +324,10 @@ export default function AnalogClock({
                 key={label}
                 id={`${idPrefix}-hour-${label}`}
                 ariaLabel={`${label}時`}
-                selected={selectedHourLabel === label}
+                selected={hour === label}
                 radius={INNER_NUMBER_RADIUS}
                 angleDegrees={clockLabelToAngleDegrees(label)}
-                onSelect={() => selectHour(clockLabelToHour(label))}
+                onSelect={() => selectHour(label)}
               >
                 {label}
               </ClockNumberButton>
@@ -344,10 +339,10 @@ export default function AnalogClock({
                 key={label}
                 id={`${idPrefix}-hour-${label}`}
                 ariaLabel={`${label}時`}
-                selected={selectedHourLabel === label}
+                selected={hour === label}
                 radius={OUTER_NUMBER_RADIUS}
                 angleDegrees={clockLabelToAngleDegrees(label)}
-                onSelect={() => selectHour(clockLabelToHour(label))}
+                onSelect={() => selectHour(label)}
               >
                 {label}
               </ClockNumberButton>

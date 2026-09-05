@@ -1,6 +1,5 @@
 /**
- * 24時間アナログ時計（内側 1〜12、外側 13〜24）の幾何計算。
- * 24 は 0 時（真夜中）として扱う。分は 5 分刻み。
+ * 24時間アナログ時計（内側 1〜12、外側 13〜0）の幾何計算。分は 5 分刻み。
  */
 
 export const INNER_CLOCK_HOURS = [
@@ -8,7 +7,7 @@ export const INNER_CLOCK_HOURS = [
 ] as const;
 
 export const OUTER_CLOCK_HOURS = [
-  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0,
 ] as const;
 
 export const ANALOG_CLOCK_SIZE = 280;
@@ -25,23 +24,13 @@ export const CLOCK_MINUTES = [
 ] as const;
 export const CLOCK_MINUTE_RADIUS = 110;
 
-/** 時計盤ラベル 24 を 0〜23 時へ。 */
-export function clockLabelToHour(label: number): number {
-  return label === 24 ? 0 : label;
-}
-
-/** 0〜23 時を時計盤ラベル（0 時は 24）へ。 */
-export function hourToClockLabel(hour: number): number {
-  return hour === 0 ? 24 : hour;
-}
-
 export function isOuterClockLabel(label: number): boolean {
-  return label >= 13;
+  return label === 0 || label >= 13;
 }
 
 /** 12 時位置を 0° とした時計回りの角度。 */
 export function clockLabelToAngleDegrees(label: number): number {
-  const hour = clockLabelToHour(label);
+  const hour = label;
   return (hour % 12) * 30;
 }
 
@@ -66,9 +55,8 @@ export function hourHandLength(
   return isOuterClockLabel(label) ? outerLength : innerLength;
 }
 
-export function hourHandAngleDegrees(hour: number, minute: number): number {
-  const label = hourToClockLabel(hour);
-  return clockLabelToAngleDegrees(label) + snapToClockMinute(minute) * 0.5;
+export function hourHandAngleDegrees(hour: number): number {
+  return clockLabelToAngleDegrees(hour);
 }
 
 /** 0〜59 分を 5 分刻みに丸める。58〜59 分は 0（時の繰り上げは applyClockMinuteSnap）。 */
@@ -119,7 +107,7 @@ export function hourLabelFromPointer(
   const midpoint = (innerRadius + outerRadius) / 2;
   const isOuter = dist >= midpoint;
   if (isOuter) {
-    return index === 0 ? 24 : index + 12;
+    return index === 0 ? 0 : index + 12;
   }
   return index === 0 ? 12 : index;
 }

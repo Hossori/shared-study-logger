@@ -2,7 +2,13 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Label({ className, ...props }: React.ComponentProps<"label">) {
+function Label({
+  className,
+  onPointerDown,
+  onMouseDown,
+  onClick,
+  ...props
+}: React.ComponentProps<"label">) {
   return (
     <label
       data-slot="label"
@@ -11,6 +17,18 @@ function Label({ className, ...props }: React.ComponentProps<"label">) {
         className,
       )}
       {...props}
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        if (!event.defaultPrevented) event.preventDefault();
+      }}
+      onMouseDown={(event) => {
+        onMouseDown?.(event);
+        if (!event.defaultPrevented) event.preventDefault();
+      }}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) event.preventDefault();
+      }}
     />
   );
 }

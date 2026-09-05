@@ -72,7 +72,20 @@ export default function DurationMinutesPicker({
       <FieldLabel id={titleId} htmlFor={triggerId}>
         学習時間
       </FieldLabel>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen, eventDetails) => {
+          if (
+            !nextOpen &&
+            eventDetails.reason === "outside-press" &&
+            window.matchMedia("(min-width: 40rem)").matches
+          ) {
+            eventDetails.cancel();
+            return;
+          }
+          onOpenChange(nextOpen);
+        }}
+      >
         <PickerComboboxTrigger
           id={triggerId}
           open={open}
