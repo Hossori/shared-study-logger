@@ -19,10 +19,31 @@ describe("insertMarkdownLinkSnippet", () => {
 		});
 	});
 
-	it("replaces a selection with the snippet", () => {
+	it("wraps a selection as the link label and places caret inside ()", () => {
 		expect(insertMarkdownLinkSnippet("hello", 1, 4)).toEqual({
-			value: "h[]()o",
-			cursor: 2,
+			value: "h[ell]()o",
+			cursor: 7,
+		});
+	});
+
+	it("wraps a full selection", () => {
+		expect(insertMarkdownLinkSnippet("ab", 0, 2)).toEqual({
+			value: "[ab]()",
+			cursor: 5,
+		});
+	});
+
+	it("does not escape special characters in the selection", () => {
+		expect(insertMarkdownLinkSnippet("a]b\nc", 1, 4)).toEqual({
+			value: "a[]b\n]()c",
+			cursor: 7,
+		});
+	});
+
+	it("inserts an empty snippet when start and end are reversed", () => {
+		expect(insertMarkdownLinkSnippet("hello", 4, 1)).toEqual({
+			value: "hell[]()o",
+			cursor: 5,
 		});
 	});
 });
