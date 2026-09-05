@@ -268,33 +268,6 @@ export default function AnalogClock({
               strokeWidth={1}
             />
           ) : null}
-          {/* 秒メモリ */}
-          {/* {Array.from({ length: 60 }, (_, index) => {
-            const angle = index * 6;
-            const outer = polarToCartesian(
-              ANALOG_CLOCK_CENTER,
-              ANALOG_CLOCK_CENTER,
-              132,
-              angle,
-            );
-            const inner = polarToCartesian(
-              ANALOG_CLOCK_CENTER,
-              ANALOG_CLOCK_CENTER,
-              index % 5 === 0 ? 124 : 128,
-              angle,
-            );
-            return (
-              <line
-                key={index}
-                x1={inner.x}
-                y1={inner.y}
-                x2={outer.x}
-                y2={outer.y}
-                className="stroke-muted-foreground/70"
-                strokeWidth={index % 5 === 0 ? 2 : 1}
-              />
-            );
-          })} */}
           {mode === "minute" ? (
             <ClockHand
               angle={minuteAngle}
