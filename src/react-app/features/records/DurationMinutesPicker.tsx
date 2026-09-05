@@ -1,17 +1,15 @@
 /**
- * 任意の学習時間（分）。トリガーをクリックすると加減算モーダルで 5 分刻みに調整する。
+ * 任意の学習時間（分）。トリガー直下のポップアップで 5 分刻みに加減算する。
  */
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogButtonArea,
-  DialogClose,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { DURATION_MINUTES_MAX } from "../../../../shared/schemas";
 import PickerComboboxTrigger from "./PickerComboboxTrigger";
 import {
@@ -41,6 +39,13 @@ const DELTA_BUTTONS: { label: string; delta: number }[] = [
   { label: "-5分", delta: -5 },
 ];
 
+const overlayPosition = {
+  align: "start" as const,
+  side: "bottom" as const,
+  positionMethod: "fixed" as const,
+  collisionAvoidance: { side: "shift" as const, align: "shift" as const },
+};
+
 export default function DurationMinutesPicker({
   idPrefix,
   value,
@@ -50,7 +55,7 @@ export default function DurationMinutesPicker({
 }: DurationMinutesPickerProps) {
   const fieldRef = useRef<HTMLDivElement>(null);
   const triggerId = `${idPrefix}-duration`;
-  const dialogId = `${idPrefix}-duration-dialog`;
+  const pickerId = `${idPrefix}-duration-picker`;
   const titleId = `${idPrefix}-duration-label`;
 
   const display = displayDuration(value);
@@ -62,50 +67,33 @@ export default function DurationMinutesPicker({
     notifyFormInput(fieldRef.current);
   };
 
-  const clear = () => {
-    onChange(null);
-    notifyFormInput(fieldRef.current);
-  };
-
   return (
     <Field ref={fieldRef}>
       <FieldLabel id={titleId} htmlFor={triggerId}>
         学習時間
       </FieldLabel>
-      <Dialog
-        open={open}
-        onOpenChange={(nextOpen, eventDetails) => {
-          if (
-            !nextOpen &&
-            eventDetails.reason === "outside-press" &&
-            window.matchMedia("(min-width: 40rem)").matches
-          ) {
-            eventDetails.cancel();
-            return;
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverTrigger
+          render={
+            <PickerComboboxTrigger
+              id={triggerId}
+              open={open}
+              aria-label="学習時間"
+              aria-controls={pickerId}
+              aria-haspopup="dialog"
+              className="w-full"
+            >
+              {display}
+            </PickerComboboxTrigger>
           }
-          onOpenChange(nextOpen);
-        }}
-      >
-        <PickerComboboxTrigger
-          id={triggerId}
-          open={open}
-          onOpenChange={onOpenChange}
-          aria-label="学習時間"
-          aria-controls={dialogId}
-          aria-haspopup="dialog"
-          className="w-full"
+        />
+        <PopoverContent
+          id={pickerId}
+          aria-labelledby={titleId}
+          className="w-(--anchor-width)"
+          {...overlayPosition}
         >
-          {display}
-        </PickerComboboxTrigger>
-        <DialogContent id={dialogId} aria-labelledby={titleId}>
-          <DialogHeader>
-            <DialogTitle>学習時間</DialogTitle>
-          </DialogHeader>
-
-          <p className="text-center text-2xl font-medium tabular-nums">
-            {display}
-          </p>
-
+          <PopoverTitle className="sr-only">学習時間</PopoverTitle>
           <div className="grid grid-cols-2 gap-2">
             {DELTA_BUTTONS.map(({ label, delta }) => (
               <Button
@@ -118,16 +106,17 @@ export default function DurationMinutesPicker({
                 {label}
               </Button>
             ))}
-          </div>
-
-          <DialogButtonArea>
-            <Button type="button" variant="outline" onClick={clear}>
+            <Button
+              className="col-start-2"
+              type="button"
+              disabled={atMin}
+              onClick={() => onChange(null)}
+            >
               クリア
             </Button>
-            <DialogClose render={<Button type="button" />}>OK</DialogClose>
-          </DialogButtonArea>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </PopoverContent>
+      </Popover>
     </Field>
   );
 }

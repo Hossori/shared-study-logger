@@ -102,7 +102,7 @@ export async function fillStudyDatetime(
   await expect(timePicker).toBeHidden();
 }
 
-export async function setStudyDurationFromModal(
+export async function setStudyDurationFromPicker(
   page: Page,
   idPrefix: string,
   options: { buttonName: string; expectedLabel: string },
@@ -111,12 +111,12 @@ export async function setStudyDurationFromModal(
   if ((await trigger.getAttribute("aria-expanded")) !== "true") {
     await trigger.click();
   }
-  const dialog = page.locator(`#${idPrefix}-duration-dialog`);
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: options.buttonName }).click();
-  await expect(
-    dialog.getByText(options.expectedLabel, { exact: true }),
-  ).toBeVisible();
-  await dialog.getByRole("button", { name: "OK" }).click();
-  await expect(dialog).toBeHidden();
+  const picker = page.locator(`#${idPrefix}-duration-picker`);
+  await expect(picker).toBeVisible();
+  await picker.getByRole("button", { name: options.buttonName }).click();
+  await expect(trigger).toContainText(options.expectedLabel);
+  if ((await trigger.getAttribute("aria-expanded")) === "true") {
+    await trigger.click();
+  }
+  await expect(picker).toBeHidden();
 }

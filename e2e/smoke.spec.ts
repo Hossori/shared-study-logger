@@ -5,7 +5,7 @@ import {
 	loginAsUser,
 	openPostModal,
 	fillStudyDatetime,
-	setStudyDurationFromModal,
+	setStudyDurationFromPicker,
 	SEED_ADMIN,
 } from "./helpers";
 
@@ -89,12 +89,11 @@ test("学習記録を投稿できる", async ({ page }) => {
 	await openPostModal(page);
 	await fillStudyDatetime(page, "post", "2026-08-10", 12, 0);
 	await page.locator("#post-duration").click();
-	const durationDialog = page.locator("#post-duration-dialog");
-	await expect(durationDialog).toBeVisible();
-	const overlays = page.locator('[data-slot="dialog-overlay"]');
-	await overlays.last().click({ position: { x: 5, y: 5 } });
-	await expect(durationDialog).toBeVisible();
-	await setStudyDurationFromModal(page, "post", {
+	const durationPicker = page.locator("#post-duration-picker");
+	await expect(durationPicker).toBeVisible();
+	await page.locator("#post-title").click();
+	await expect(durationPicker).toBeHidden();
+	await setStudyDurationFromPicker(page, "post", {
 		buttonName: "+10分",
 		expectedLabel: "10分",
 	});
