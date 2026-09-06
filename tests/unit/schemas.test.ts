@@ -12,6 +12,7 @@ import {
 	REACTION_STAMP_LABEL,
 	UpdateInAppNotificationRequestSchema,
 	UpdateProfileRequestSchema,
+	UpdateStudyRecordRequestSchema,
 	UserRoleSchema,
 	UserSchema,
 } from "../../shared/schemas";
@@ -112,6 +113,20 @@ describe("CreateStudyRecordRequestSchema", () => {
 			CreateStudyRecordRequestSchema.safeParse({
 				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
+				durationMinutes: 720,
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 1435,
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
 				durationMinutes: null,
 			}).success,
 		).toBe(true);
@@ -132,6 +147,13 @@ describe("CreateStudyRecordRequestSchema", () => {
 				durationMinutes: 0,
 			}).success,
 		).toBe(false);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 1440,
+			}).success,
+		).toBe(false);
 	});
 
 	it("rejects empty title", () => {
@@ -140,6 +162,87 @@ describe("CreateStudyRecordRequestSchema", () => {
 			title: "",
 		});
 		expect(result.success).toBe(false);
+	});
+
+	it("accepts both studyDatetime and durationMinutes null", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: null,
+				title: "数学",
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: null,
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts studyDatetime set with durationMinutes null or omitted", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts both studyDatetime and durationMinutes set", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 30,
+			}).success,
+		).toBe(true);
+	});
+
+	it("rejects durationMinutes without studyDatetime", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: null,
+				title: "数学",
+				durationMinutes: 30,
+			}).success,
+		).toBe(false);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				studyDatetime: null,
+				title: "数学",
+				durationMinutes: 5,
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("UpdateStudyRecordRequestSchema", () => {
+	it("rejects durationMinutes without studyDatetime", () => {
+		expect(
+			UpdateStudyRecordRequestSchema.safeParse({
+				studyDatetime: null,
+				title: "数学",
+				durationMinutes: 30,
+			}).success,
+		).toBe(false);
+	});
+
+	it("accepts both null", () => {
+		expect(
+			UpdateStudyRecordRequestSchema.safeParse({
+				studyDatetime: null,
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(true);
 	});
 });
 

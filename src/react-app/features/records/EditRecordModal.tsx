@@ -31,7 +31,9 @@ export default function EditRecordModal({
   const [values, setValues] = useState<RecordFormValues>(() =>
     record
       ? {
-          studyDatetime: toDatetimeLocalString(record.studyDatetime),
+          studyDatetime: record.studyDatetime
+            ? toDatetimeLocalString(record.studyDatetime)
+            : "",
           title: record.title,
           memo: record.memo ?? "",
           durationMinutes: record.durationMinutes ?? null,

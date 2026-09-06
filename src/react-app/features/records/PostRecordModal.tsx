@@ -9,7 +9,6 @@ import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
   buildRecordRequestPayload,
-  nowDatetimeLocalString,
   type RecordFormValues,
 } from "./recordFormUtils";
 
@@ -20,7 +19,7 @@ export default function PostRecordModal() {
   const createRecordMutation = useCreateRecordMutation(selectedGroupId);
 
   const [values, setValues] = useState<RecordFormValues>({
-    studyDatetime: nowDatetimeLocalString(),
+    studyDatetime: "",
     title: "",
     memo: "",
     durationMinutes: null,
@@ -29,7 +28,7 @@ export default function PostRecordModal() {
   useEffect(() => {
     if (isOpen) {
       setValues({
-        studyDatetime: nowDatetimeLocalString(),
+        studyDatetime: "",
         title: "",
         memo: "",
         durationMinutes: null,

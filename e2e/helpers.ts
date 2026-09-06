@@ -51,6 +51,10 @@ export async function openPostModal(page: Page): Promise<void> {
   ).toBeVisible();
 }
 
+function studyDatetimeDialog(page: Page) {
+  return page.getByRole("dialog", { name: "学習日時を設定" });
+}
+
 export async function fillStudyDatetime(
   page: Page,
   idPrefix: string,
@@ -58,7 +62,13 @@ export async function fillStudyDatetime(
   hour: number,
   minute: number,
 ): Promise<void> {
-  const dateTrigger = page.locator(`#${idPrefix}-studyDate`);
+  const dialog = studyDatetimeDialog(page);
+  if (!(await dialog.isVisible())) {
+    await page.getByRole("button", { name: "学習日時を設定" }).click();
+    await expect(dialog).toBeVisible();
+  }
+
+  const dateTrigger = dialog.locator(`#${idPrefix}-studyDate`);
   if ((await dateTrigger.getAttribute("aria-expanded")) !== "true") {
     await dateTrigger.click();
   }
@@ -91,15 +101,15 @@ export async function fillStudyDatetime(
   await dateButton.click();
   await expect(datePicker).toBeHidden();
 
-  const timeTrigger = page.locator(`#${idPrefix}-studyTime`);
-  if ((await timeTrigger.getAttribute("aria-expanded")) !== "true") {
-    await timeTrigger.click();
+  const startTrigger = dialog.locator(`#${idPrefix}-startTime`);
+  if ((await startTrigger.getAttribute("aria-expanded")) !== "true") {
+    await startTrigger.click();
   }
-  const timePicker = page.locator(`#${idPrefix}-time-picker`);
-  await expect(timePicker).toBeVisible();
-  await timePicker.locator(`#${idPrefix}-hour-${hour}`).click();
-  await timePicker.locator(`#${idPrefix}-minute-${minute}`).click();
-  await expect(timePicker).toBeHidden();
+  const startPicker = page.locator(`#${idPrefix}-start-time-picker`);
+  await expect(startPicker).toBeVisible();
+  await startPicker.locator(`#${idPrefix}-start-hour-${hour}`).click();
+  await startPicker.locator(`#${idPrefix}-start-minute-${minute}`).click();
+  await expect(startPicker).toBeHidden();
 }
 
 export async function setStudyDurationFromPicker(
@@ -107,16 +117,10 @@ export async function setStudyDurationFromPicker(
   idPrefix: string,
   options: { buttonName: string; expectedLabel: string },
 ): Promise<void> {
-  const trigger = page.locator(`#${idPrefix}-duration`);
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
-  }
-  const picker = page.locator(`#${idPrefix}-duration-picker`);
-  await expect(picker).toBeVisible();
-  await picker.getByRole("button", { name: options.buttonName }).click();
-  await expect(trigger).toContainText(options.expectedLabel);
-  if ((await trigger.getAttribute("aria-expanded")) === "true") {
-    await trigger.click();
-  }
-  await expect(picker).toBeHidden();
+  const dialog = studyDatetimeDialog(page);
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: options.buttonName }).click();
+  await expect(dialog.getByText(options.expectedLabel, { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(dialog).toBeHidden();
 }

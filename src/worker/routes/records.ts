@@ -245,6 +245,20 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
   }
 
+  const effectiveDuration =
+    parsed.data.durationMinutes === undefined
+      ? existing.durationMinutes
+      : parsed.data.durationMinutes;
+  if (parsed.data.studyDatetime == null && effectiveDuration != null) {
+    return c.json(
+      {
+        error: "invalid_request",
+        message: "duration_requires_study_datetime",
+      },
+      400,
+    );
+  }
+
   const record = await updateStudyRecord(
     c.env.DB,
     groupId,

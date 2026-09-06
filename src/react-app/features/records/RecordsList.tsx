@@ -18,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -37,21 +36,12 @@ import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
-import { formatDurationMinutes } from "./recordFormUtils";
+import {
+  formatDurationMinutes,
+  formatRecordCardDatetime,
+  shouldShowDurationBadge,
+} from "./recordFormUtils";
 import RecordReactions from "./RecordReactions";
-
-function formatStudyDatetime(studyDatetime: string): string {
-  const date = new Date(studyDatetime);
-  if (Number.isNaN(date.getTime())) return studyDatetime;
-  return date.toLocaleString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 interface RecordCardProps {
   groupId: string;
@@ -75,50 +65,54 @@ function RecordCard({
   return (
     <li>
       <Card size="sm">
-        <CardHeader>
-          <CardDescription>
-            <Link
-              to={`/users/${record.userId}`}
-              className="focus-visible:ring-ring inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
-              aria-label={`${authorName}のユーザーページ`}
-            >
-              <UserAvatar
-                avatarKey={record.authorAvatarKey ?? null}
-                className="size-6"
-              />
-              <span className="truncate">{authorName}</span>
-            </Link>
-          </CardDescription>
-          {isOwner && (
-            <CardAction className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(record)}
-                aria-label="編集"
-                title="編集"
+        <CardHeader className="flex flex-col">
+          <div className="flex w-full min-w-0 items-center justify-between gap-1">
+            <CardDescription className="min-w-0 flex-1">
+              <Link
+                to={`/users/${record.userId}`}
+                className="focus-visible:ring-ring inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
+                aria-label={`${authorName}のユーザーページ`}
               >
-                <Pencil aria-hidden />
-                <span className="sr-only">編集</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(record)}
-                disabled={isDeleting}
-                aria-label="削除"
-                title="削除"
-              >
-                <Trash2 aria-hidden />
-                <span className="sr-only">削除</span>
-              </Button>
-            </CardAction>
-          )}
+                <UserAvatar
+                  avatarKey={record.authorAvatarKey ?? null}
+                  className="size-6 shrink-0"
+                />
+                <span className="truncate">{authorName}</span>
+              </Link>
+            </CardDescription>
+            {isOwner ? (
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(record)}
+                  aria-label="編集"
+                  title="編集"
+                >
+                  <Pencil aria-hidden />
+                  <span className="sr-only">編集</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(record)}
+                  disabled={isDeleting}
+                  aria-label="削除"
+                  title="削除"
+                >
+                  <Trash2 aria-hidden />
+                  <span className="sr-only">削除</span>
+                </Button>
+              </div>
+            ) : null}
+          </div>
           <CardDescription className="flex flex-wrap items-center gap-2">
-            <span>{formatStudyDatetime(record.studyDatetime)}</span>
-            {record.durationMinutes != null && record.durationMinutes > 0 ? (
+            <span className="tabular-nums">
+              {formatRecordCardDatetime(record)}
+            </span>
+            {shouldShowDurationBadge(record) ? (
               <Badge variant="secondary">
-                {formatDurationMinutes(record.durationMinutes)}
+                {formatDurationMinutes(record.durationMinutes!)}
               </Badge>
             ) : null}
           </CardDescription>
