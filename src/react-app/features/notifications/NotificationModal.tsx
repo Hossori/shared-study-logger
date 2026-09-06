@@ -93,7 +93,9 @@ export default function NotificationModal({
           <DrawerHeader>
             <DrawerTitle>通知</DrawerTitle>
           </DrawerHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{list}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1rem,var(--safe-area-inset-bottom))]">
+            {list}
+          </div>
         </DrawerContent>
       </Drawer>
     );
