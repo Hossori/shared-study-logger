@@ -28,10 +28,11 @@
   UIが新APIで副作用を起こさない。強制版では両者を同じ現行版に設定する。ブリッジリリースだけは
   最小受け入れ版を`null`として強制しない。
 - **セーフエリア**: `index.html` の viewport は `viewport-fit=cover`。iPhone の角丸・
-  Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / AlertDialog /
-  ログイン画面で使い、通常の padding と inset の大きい方を取る。`sm` 未満の Dialog は
-  画面下端のボトムシート（ハーフモーダル）で、下端 inset をシート内パディングに含める。
-  AlertDialog はビューポート中央のまま。
+  Dynamic Island・横画面では `env(safe-area-inset-*)` を Layout / Dialog / Drawer /
+  AlertDialog / ログイン画面で使い、通常の padding と inset の大きい方を取る。`sm` 未満の
+  Dialog（記録・プロフィール等）は飾りハンドルなしの下端ボトムシートで、下端 inset を
+  シート内パディングに含める。アプリ内通知だけは `sm` 未満で Drawer（スナップ 0.5 / 1、
+  スワイプハンドル）を使う。AlertDialog はビューポート中央のまま。
 - **テーマ**: `html.dark` クラスで切替（`prefers-color-scheme` メディアクエリだけにしない）。
   未保存時は OS 設定に従い、明示選択は `localStorage` の `theme` キー。FOUC 防止のため
   `index.html` 先頭のインラインスクリプトが React 起動前にクラスと `theme-color` を合わせる。

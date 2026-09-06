@@ -68,11 +68,6 @@ function DialogContent({
           )}
           {...props}
         >
-          <div
-            aria-hidden
-            data-slot="dialog-handle"
-            className="bg-muted-foreground/40 absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full sm:hidden"
-          />
           {children}
           {showCloseButton && (
             <DialogPrimitive.Close
