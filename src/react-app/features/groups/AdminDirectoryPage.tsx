@@ -205,7 +205,9 @@ export default function AdminDirectoryPage() {
             <form onSubmit={handleCreateGroup}>
               <FieldGroup>
                 <Field data-invalid={groupFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-group-name">グループ名</FieldLabel>
+                  <FieldLabel htmlFor="admin-group-name" required>
+                    グループ名
+                  </FieldLabel>
                   <Input
                     id="admin-group-name"
                     value={groupName}
@@ -244,7 +246,7 @@ export default function AdminDirectoryPage() {
             <form onSubmit={handleCreateUser}>
               <FieldGroup>
                 <Field data-invalid={userFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-user-email">
+                  <FieldLabel htmlFor="admin-user-email" required>
                     メールアドレス
                   </FieldLabel>
                   <Input
@@ -258,7 +260,7 @@ export default function AdminDirectoryPage() {
                   />
                 </Field>
                 <Field data-invalid={userFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-user-display-name">
+                  <FieldLabel htmlFor="admin-user-display-name" required>
                     表示名
                   </FieldLabel>
                   <Input
@@ -271,7 +273,7 @@ export default function AdminDirectoryPage() {
                   />
                 </Field>
                 <Field data-invalid={userFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-user-password">
+                  <FieldLabel htmlFor="admin-user-password" required>
                     パスワード
                   </FieldLabel>
                   <Input
@@ -426,7 +428,7 @@ export default function AdminDirectoryPage() {
                   <form onSubmit={handleAddMember}>
                     <FieldGroup>
                       <Field>
-                        <FieldLabel htmlFor="admin-member-user">
+                        <FieldLabel htmlFor="admin-member-user" required>
                           未所属のユーザー
                         </FieldLabel>
                         <NativeSelect
