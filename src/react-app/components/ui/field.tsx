@@ -114,8 +114,8 @@ function FieldLabel({
       {...props}
     >
       {required ? (
-        <span>
-          {children}
+        <span className="inline-flex items-baseline">
+          {typeof children === "string" ? children.trim() : children}
           <span className="text-destructive" aria-hidden="true">
             *
           </span>
