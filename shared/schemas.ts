@@ -186,10 +186,10 @@ export type RecordReactionEntry = z.infer<typeof RecordReactionEntrySchema>;
 
 // ---- 学習記録 ---------------------------------------------------------------
 
-/** 学習時間（分）。任意項目。UI は 5 分刻み。 */
+/** 学習時間（分）。任意項目。UI は 5 分刻み。上限は 23 時間 55 分。 */
 export const DURATION_MINUTES_STEP = 5;
 export const DURATION_MINUTES_MIN = 5;
-export const DURATION_MINUTES_MAX = 720;
+export const DURATION_MINUTES_MAX = 1435;
 
 export const DurationMinutesSchema = z
   .number()
@@ -198,13 +198,27 @@ export const DurationMinutesSchema = z
   .max(DURATION_MINUTES_MAX)
   .multipleOf(DURATION_MINUTES_STEP);
 
+/** durationMinutes が非 null のとき studyDatetime も必須。 */
+function refineStudyDatetimeDurationPair(
+  data: { studyDatetime: string | null; durationMinutes?: number | null },
+  ctx: z.RefinementCtx,
+): void {
+  if (data.durationMinutes != null && data.studyDatetime == null) {
+    ctx.addIssue({
+      code: "custom",
+      message: "duration_requires_study_datetime",
+      path: ["durationMinutes"],
+    });
+  }
+}
+
 export const StudyRecordSchema = z.object({
   id: z.string(),
   groupId: z.string(),
   userId: z.string(),
   authorDisplayName: z.string().optional(),
   authorAvatarKey: AvatarKeySchema.nullable().optional(),
-  studyDatetime: z.string(),
+  studyDatetime: z.iso.datetime().nullable(),
   title: z.string().min(1),
   durationMinutes: z.number().int().nullable(),
   memo: z.string().optional().nullable(),
@@ -214,22 +228,26 @@ export const StudyRecordSchema = z.object({
 });
 export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 
-export const CreateStudyRecordRequestSchema = z.object({
-  studyDatetime: z.iso.datetime(),
-  title: z.string().min(1).max(200),
-  durationMinutes: DurationMinutesSchema.nullable().optional(),
-  memo: z.string().max(2000).optional(),
-});
+export const CreateStudyRecordRequestSchema = z
+  .object({
+    studyDatetime: z.iso.datetime().nullable(),
+    title: z.string().min(1).max(200),
+    durationMinutes: DurationMinutesSchema.nullable().optional(),
+    memo: z.string().max(2000).optional(),
+  })
+  .superRefine(refineStudyDatetimeDurationPair);
 export type CreateStudyRecordRequest = z.infer<
   typeof CreateStudyRecordRequestSchema
 >;
 
-export const UpdateStudyRecordRequestSchema = z.object({
-  studyDatetime: z.iso.datetime(),
-  title: z.string().min(1).max(200),
-  durationMinutes: DurationMinutesSchema.nullable().optional(),
-  memo: z.string().max(2000).optional(),
-});
+export const UpdateStudyRecordRequestSchema = z
+  .object({
+    studyDatetime: z.iso.datetime().nullable(),
+    title: z.string().min(1).max(200),
+    durationMinutes: DurationMinutesSchema.nullable().optional(),
+    memo: z.string().max(2000).optional(),
+  })
+  .superRefine(refineStudyDatetimeDurationPair);
 export type UpdateStudyRecordRequest = z.infer<
   typeof UpdateStudyRecordRequestSchema
 >;

@@ -2,13 +2,21 @@
 
 [← SKILL.md](../SKILL.md)
 
-- **概要**: 学習日時・学習時間（任意・分）・タイトル・メモ（任意）を投稿し、グループ内で学習日時の新しい順に
-  一覧表示する。一覧はカーソルページネーション。自分の記録は編集・削除可能。
-  学習日時は日付と時刻のコンボを1行に横並びし、日付は日本語カレンダー、時刻はアナログ時計の
-  前面オーバーレイで選ぶ（内側 1〜12 / 外側 13〜0。時を選ぶと 5 分刻みの分面。分を決定すると時計が閉じる）。
-  学習時間はラベルとトリガーを並べ、トリガーをクリックで項目直下の加減算ポップアップ（+/-1時間・+/-10分・+/-5分、クリア、5 分刻み、未設定可）を開く。
-  ラベルクリックではコントロールへフォーカスしないが、開いているポップアップ／モーダルは外側クリックとして閉じる。
-  加減算ポップアップは PC・モバイルとも範囲外クリックで閉じる。
+- **概要**: 学習日時（任意）・学習時間（任意・分）・タイトル・メモ（任意）を投稿し、グループ内で
+  `COALESCE(study_datetime, created_at)` の新しい順に一覧表示する。一覧はカーソルページネーション。
+  自分の記録は編集・削除可能。
+  学習日時は投稿/編集フォームの 1 ボタン（ClockPlus + ラベル）。未設定時のラベルは
+  「学習日時を設定」、設定済みは `2026年12月28日(月) 23:30-25:00`。押下でネスト Dialog を開く。
+  Dialog は学習日（カレンダー）・開始/終了時刻（アナログ時計 0–23、間に「～」、
+  終了トリガーは 24h オーバーフロー表示）・学習時間（+/- ボタン、5 分刻み、最大 23 時間 55 分）。
+  学習時間ラベルと分表示の間にヘルプ（クリックで直下ポップアップ
+  「学習日時の終了時刻と連動します」）。
+  OK は duration ≥ 5 のときのみ。クリアは日時・時間を未設定にして閉じる。
+  範囲外クリック / Escape はドラフトを破棄して閉じる（未保存確認は出さない。親の投稿ダイアログは開いたまま）。
+  確定は OK / クリアのみ。親フォームへは確定まで反映しない。
+  一覧カードは 3 行: 投稿者名と編集/削除（同一行）、日時 + 学習時間バッジ（両方セット時のみ）、タイトル。
+  学習日時未設定の記録は `createdAt` を `2026年12月28日(月) 15:51` 形式で表示（範囲・バッジなし）。
+  日跨ぎ終了は `25:00` など 24h オーバーフロー表示（`0:xx` / `1:xx` にはしない）。
   グループメンバーは各記録にスタンプ（👍😊🤣😲😭💪）を付けられる。同一ユーザーが複数種類
   つけられるが、同一スタンプは1回のみ。Pushは出さない。
 - **関連ファイル**:
@@ -18,12 +26,14 @@
     `src/worker/lib/db.ts`の`listStudyRecords`/`createStudyRecord`/
     `getStudyRecord`/`updateStudyRecord`/`deleteStudyRecord`/
     `addRecordReaction`/`deleteRecordReaction`/`listRecordReactions`
-  - フロント: `src/react-app/features/records/RecordsList.tsx`（一覧表示、「もっと見る」、
+  - フロント: `src/react-app/features/records/RecordsList.tsx`（3 行カード、一覧表示、「もっと見る」、
     自分の記録の編集・削除UI）、
     `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
-    `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム）、
+    `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム、学習日時は未設定で開始）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
-    `src/react-app/features/records/RecordFormFields.tsx`（学習日時は日付/時刻コンボ＋各オーバーレイ、学習時間は項目直下の加減算ポップアップ（5 分刻み・未設定可））、
+    `src/react-app/features/records/RecordFormFields.tsx`（タイトル・メモ + `StudyDatetimeField`）、
+    `src/react-app/features/records/StudyDatetimeField.tsx`（学習日時ネスト Dialog。範囲外クリックで破棄、学習時間ヘルプ）、
+    `src/react-app/features/records/recordFormUtils.ts`（24h オーバーフロー表示・ペイロード組み立て）、
     `src/react-app/queries/useRecords.ts`（`useInfiniteQuery`ベースの`useRecordsQuery`、
     `useCreateRecordMutation`/`useUpdateRecordMutation`/`useDeleteRecordMutation`、
     `useAddRecordReactionMutation`/`useDeleteRecordReactionMutation`/`useRecordReactionsQuery`）
@@ -33,8 +43,8 @@
     `AddRecordReactionRequestSchema`/`RecordReactionEntrySchema`
 - **データフロー**:
   - 一覧取得: `GET /:groupId/records?cursor=...&limit=...` → 所属チェック →
-    zodでクエリ検証 → `listStudyRecords`が`study_datetime`+`updated_at`+`id`を複合キーとした
-    base64エンコードカーソル（`(study_datetime, updated_at, id)`の辞書順比較）で
+    zodでクエリ検証 → `listStudyRecords`が`COALESCE(study_datetime, created_at)`+`id`を複合キーとした
+    base64エンコードカーソル（`sortKey|id` の 2 要素、`sortKey` は ISO 文字列）で
     `limit+1`件取得し、`limit`件を超えていれば`nextCursor`を返す。同じページの record id を
     `IN`して`record_reactions`を`GROUP BY record_id, stamp`で1回集計し、各記録の
     `reactions`（`count` / `reactedByMe`、スタンプ定義順）を付ける。フロントは

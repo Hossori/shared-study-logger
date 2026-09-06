@@ -46,7 +46,7 @@ export interface StudyRecordRow {
   user_id: string;
   author_display_name: string;
   author_avatar_key: string | null;
-  study_datetime: string;
+  study_datetime: string | null;
   title: string;
   duration_minutes: number | null;
   memo: string | null;
@@ -386,14 +386,8 @@ export interface CursorPage<T> {
   nextCursor: string | null;
 }
 
-function encodeCursor(
-  studyDatetime: string,
-  updatedAt: string,
-  id: string,
-): string {
-  const bytes = new TextEncoder().encode(
-    `${studyDatetime}|${updatedAt}|${id}`,
-  );
+function encodeCursor(sortKey: string, id: string): string {
+  const bytes = new TextEncoder().encode(`${sortKey}|${id}`);
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
@@ -403,16 +397,16 @@ function encodeCursor(
 
 function decodeCursor(
   cursor: string,
-): { studyDatetime: string; updatedAt: string; id: string } | null {
+): { sortKey: string; id: string } | null {
   try {
     const binary = atob(cursor);
     const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
     const decoded = new TextDecoder().decode(bytes);
     const parts = decoded.split("|");
-    if (parts.length !== 3) return null;
-    const [studyDatetime, updatedAt, id] = parts;
-    if (!studyDatetime || !updatedAt || !id) return null;
-    return { studyDatetime, updatedAt, id };
+    if (parts.length !== 2) return null;
+    const [sortKey, id] = parts;
+    if (!sortKey || !id) return null;
+    return { sortKey, id };
   } catch {
     return null;
   }
@@ -421,8 +415,12 @@ function decodeCursor(
 /** カーソル文字列をパースする。不正な場合は null を返す。 */
 export function parseStudyRecordsCursor(
   cursor: string,
-): { studyDatetime: string; updatedAt: string; id: string } | null {
+): { sortKey: string; id: string } | null {
   return decodeCursor(cursor);
+}
+
+function studyRecordSortKey(row: StudyRecordRow): string {
+  return row.study_datetime ?? row.created_at;
 }
 
 function toStudyRecord(
@@ -538,27 +536,26 @@ export async function listStudyRecords(
         .prepare(
           `${baseQuery}
            AND (
-             sr.study_datetime < ?
-             OR (sr.study_datetime = ? AND sr.updated_at < ?)
-             OR (sr.study_datetime = ? AND sr.updated_at = ? AND sr.id < ?)
+             COALESCE(sr.study_datetime, sr.created_at) < ?
+             OR (
+               COALESCE(sr.study_datetime, sr.created_at) = ?
+               AND sr.id < ?
+             )
            )
-           ORDER BY sr.study_datetime DESC, sr.updated_at DESC, sr.id DESC
+           ORDER BY COALESCE(sr.study_datetime, sr.created_at) DESC, sr.id DESC
            LIMIT ?`,
         )
         .bind(
           groupId,
-          cursorParts.studyDatetime,
-          cursorParts.studyDatetime,
-          cursorParts.updatedAt,
-          cursorParts.studyDatetime,
-          cursorParts.updatedAt,
+          cursorParts.sortKey,
+          cursorParts.sortKey,
           cursorParts.id,
           limit + 1,
         )
     : db
         .prepare(
           `${baseQuery}
-           ORDER BY sr.study_datetime DESC, sr.updated_at DESC, sr.id DESC
+           ORDER BY COALESCE(sr.study_datetime, sr.created_at) DESC, sr.id DESC
            LIMIT ?`,
         )
         .bind(groupId, limit + 1);
@@ -571,7 +568,7 @@ export async function listStudyRecords(
   const lastRow = pageRows[pageRows.length - 1];
   const nextCursor =
     hasMore && lastRow
-      ? encodeCursor(lastRow.study_datetime, lastRow.updated_at, lastRow.id)
+      ? encodeCursor(studyRecordSortKey(lastRow), lastRow.id)
       : null;
 
   const reactionsByRecord = await listReactionSummariesByRecordIds(
@@ -592,7 +589,7 @@ export interface CreateStudyRecordInput {
   id: string;
   groupId: string;
   userId: string;
-  studyDatetime: string;
+  studyDatetime: string | null;
   title: string;
   durationMinutes?: number | null;
   memo?: string | null;
@@ -669,7 +666,7 @@ export async function getStudyRecord(
 }
 
 export interface UpdateStudyRecordInput {
-  studyDatetime: string;
+  studyDatetime: string | null;
   title: string;
   durationMinutes?: number | null;
   memo?: string | null;
