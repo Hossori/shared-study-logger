@@ -13,6 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -25,6 +31,7 @@ import {
   PUSH_OPT_IN_NOTIFICATION_ID,
 } from "./useAppNotifications";
 import { parseNotificationBody } from "./notificationBodyLinks";
+import { useIsMaxSm } from "./useIsMaxSm";
 
 const bodyLinkClassName = "text-primary underline underline-offset-3";
 
@@ -43,40 +50,62 @@ export default function NotificationModal({
   pwa,
   dismiss,
 }: NotificationModalProps) {
+  const isMaxSm = useIsMaxSm();
+
+  const list =
+    items.length === 0 ? (
+      <Empty className="py-8">
+        <EmptyHeader>
+          <EmptyTitle>新しい通知はありません</EmptyTitle>
+          <EmptyDescription>
+            お知らせがあればここに表示されます。
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    ) : (
+      <ul className="flex flex-col gap-2">
+        {items.map((item) => (
+          <li key={item.id}>
+            <NotificationListItem
+              item={item}
+              pwa={pwa}
+              onDismiss={() => dismiss(item.id)}
+              onClose={onClose}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) onClose();
+  };
+
+  if (isMaxSm) {
+    return (
+      <Drawer
+        open={open}
+        onOpenChange={handleOpenChange}
+        showSwipeHandle
+        snapPoints={[0.5, 1]}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>通知</DrawerTitle>
+          </DrawerHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{list}</div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) onClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>通知</DialogTitle>
         </DialogHeader>
-        {items.length === 0 ? (
-          <Empty className="py-8">
-            <EmptyHeader>
-              <EmptyTitle>新しい通知はありません</EmptyTitle>
-              <EmptyDescription>
-                お知らせがあればここに表示されます。
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {items.map((item) => (
-              <li key={item.id}>
-                <NotificationListItem
-                  item={item}
-                  pwa={pwa}
-                  onDismiss={() => dismiss(item.id)}
-                  onClose={onClose}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+        {list}
       </DialogContent>
     </Dialog>
   );

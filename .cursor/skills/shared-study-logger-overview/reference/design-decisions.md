@@ -46,6 +46,11 @@ Zustandだけではサーバー状態キャッシュが無いため意図的に�
 例: 確認ダイアログの見た目（`ConfirmDialog`）は`ui/`、Context / Promise 解決を持つ`ConfirmProvider`と`useConfirm`は`components/`直下。
 **しないこと**: atoms/molecules等の階層を導入する。データ取得・Zustand・副作用を持つコンポーネントを`components/ui/`に置く。新しいフォーム部品が必要ならまず既存`ui/`を再利用する。
 
+### オーバーレイ: Dialog / Drawer / AlertDialog
+
+記録・プロフィール・パスワード・ConfirmDialog などは `Dialog` の CSS 下端ボトムシート（`sm` 未満）を維持する。アプリ内通知だけモバイルで Base UI `Drawer`（スナップ 0.5 / 1）に分岐し、高さ変更をスワイプで行う。`AlertDialog` は常にビューポート中央。
+**しないこと**: 記録等を Drawer 化する、通知以外に Drawer を広げる、Dialog に飾りハンドルを戻す。
+
 ### テーマは `html.dark` + localStorage
 
 shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に合わせ、クラス戦略で切替える。未保存時だけ `prefers-color-scheme` に追従し、トグル後は `localStorage` の明示値を優先する。FOUC 防止の初期化は `index.html` のインラインスクリプトと `src/react-app/lib/theme.ts` でキーを揃える。
