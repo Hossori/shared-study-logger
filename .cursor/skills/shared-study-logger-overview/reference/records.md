@@ -28,7 +28,7 @@
     `addRecordReaction`/`deleteRecordReaction`/`listRecordReactions`
   - フロント: `src/react-app/features/records/RecordsList.tsx`（3 行カード、一覧表示、「もっと見る」、
     自分の記録の編集・削除UI）、
-    `src/react-app/features/records/RecordsFilter.tsx`（ユーザーフィルタ: 全員 / 自分のみ / 指定する）、
+    `src/react-app/features/records/RecordsFilter.tsx`（「表示フィルター」開示。投稿者はラジオ: 全員 / 自分のみ / 指定する。指定するはポップアップ複数選択、閉じたら適用）、
     `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム、学習日時は未設定で開始）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
@@ -53,8 +53,10 @@
     `IN`して`record_reactions`を`GROUP BY record_id, stamp`で1回集計し、各記録の
     `reactions`（`count` / `reactedByMe`、スタンプ定義順）を付ける。フロントは
     `useInfiniteQuery`の`getNextPageParam`で`nextCursor`をそのままページパラメータに使う。
-    フィルタ UI（`RecordsFilter`）はコンポーネント state のみ（Zustand 禁止）。「自分のみ」は
-    クライアントが `userIds=<me.id>` を付ける。未投稿の空は「まだ学習記録がありません」、
+    フィルタ UI（`RecordsFilter`）はコンポーネント state のみ（Zustand 禁止）。
+    開示トリガーはアイコン＋「表示フィルター」。配下にインデントした「投稿者」ラジオ。
+    「自分のみ」はクライアントが `userIds=<me.id>` を付ける。「指定する」はポップアップで
+    複数選択し、閉じたときに適用（選択中の名前は画面に出さない）。未投稿の空は「まだ学習記録がありません」、
     フィルタ適用中の空は「条件に合う学習記録がありません」。`selectedGroupId` 変更でフィルタリセット。
   - 投稿: `POST /:groupId/records` → 所属チェック → zod検証 → `createStudyRecord`でD1へINSERT
     → 投稿者以外の全メンバーIDを`getOtherGroupMemberUserIds`で取得し、1人1メッセージを

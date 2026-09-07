@@ -1,22 +1,23 @@
 /**
  * 学習記録一覧のユーザーフィルタ（全員 / 自分のみ / 指定する）。
- * 適用ボタンなし・即適用。state は親（GroupRecordsContent）が保持する controlled コンポーネント。
+ * 「指定する」はポップアップで複数選択し、閉じたときに適用する。
+ * state は親（GroupRecordsContent）が保持する controlled コンポーネント。
  * 親は `key={groupId}` でマウントし直すとリセットされる。
  */
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ListFilter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Field, FieldDescription, FieldTitle } from "@/components/ui/field";
-import { Separator } from "@/components/ui/separator";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+  Field,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Popover, PopoverContent, PopoverTitle } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Spinner } from "@/components/ui/spinner";
 import UserAvatar from "../../components/UserAvatar";
 import { useGroupMembersQuery } from "../../queries/useGroups";
 import type { GroupMember } from "../../../../shared/schemas";
@@ -32,67 +33,51 @@ interface RecordsFilterProps {
   onPanelOpenChange: (open: boolean) => void;
 }
 
-function MemberSelectDropdown({
+function MemberMultiSelectList({
   members,
-  specifiedUserIds,
-  onSpecifiedUserIdsChange,
+  draftUserIds,
+  onDraftUserIdsChange,
 }: {
   members: GroupMember[];
-  specifiedUserIds: string[];
-  onSpecifiedUserIdsChange: (ids: string[]) => void;
+  draftUserIds: string[];
+  onDraftUserIdsChange: Dispatch<SetStateAction<string[]>>;
 }) {
-  const selectedMembers = members.filter((m) =>
-    specifiedUserIds.includes(m.id),
-  );
-  const triggerLabel =
-    selectedMembers.length === 0
-      ? "メンバーを選択"
-      : selectedMembers.length === 1
-        ? selectedMembers[0]!.displayName
-        : `${selectedMembers.length}人`;
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="outline" className="max-w-full justify-start" />
-        }
-      >
-        {selectedMembers.length === 1 ? (
-          <UserAvatar
-            avatarKey={selectedMembers[0]!.avatarKey}
-            className="size-5 shrink-0"
-          />
-        ) : null}
-        <span className="truncate">{triggerLabel}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>メンバー</DropdownMenuLabel>
-          {members.map((member) => (
-            <DropdownMenuCheckboxItem
-              key={member.id}
-              checked={specifiedUserIds.includes(member.id)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  onSpecifiedUserIdsChange([...specifiedUserIds, member.id]);
-                } else {
-                  onSpecifiedUserIdsChange(
-                    specifiedUserIds.filter((id) => id !== member.id),
-                  );
-                }
-              }}
-            >
-              <UserAvatar
-                avatarKey={member.avatarKey}
-                className="size-5 shrink-0"
+    <FieldSet>
+      <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+        {members.map((member) => {
+          const checkboxId = `records-filter-member-${member.id}`;
+          const checked = draftUserIds.includes(member.id);
+          return (
+            <Field key={member.id} orientation="horizontal">
+              <Checkbox
+                id={checkboxId}
+                checked={checked}
+                onCheckedChange={(nextChecked) => {
+                  onDraftUserIdsChange((current) => {
+                    if (nextChecked === true) {
+                      return current.includes(member.id)
+                        ? current
+                        : [...current, member.id];
+                    }
+                    return current.filter((id) => id !== member.id);
+                  });
+                }}
               />
-              <span className="truncate">{member.displayName}</span>
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+              <FieldLabel htmlFor={checkboxId}>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <UserAvatar
+                    avatarKey={member.avatarKey}
+                    className="size-5 shrink-0"
+                  />
+                  <span className="truncate">{member.displayName}</span>
+                </span>
+              </FieldLabel>
+            </Field>
+          );
+        })}
+      </div>
+    </FieldSet>
   );
 }
 
@@ -102,9 +87,7 @@ function activeFilterBadgeLabel(
 ): string | null {
   if (mode === "mine") return "自分のみ";
   if (mode === "specify" && specifiedUserIds.length >= 1) {
-    return specifiedUserIds.length === 1
-      ? "指定する"
-      : `${specifiedUserIds.length}人`;
+    return "指定する";
   }
   return null;
 }
@@ -119,23 +102,86 @@ export default function RecordsFilter({
   onPanelOpenChange,
 }: RecordsFilterProps) {
   const panelId = "records-filter-panel";
-  const { data: members } = useGroupMembersQuery(groupId, {
-    enabled: mode === "specify" || panelOpen,
-  });
+  const specifyAnchorRef = useRef<HTMLDivElement>(null);
+  const skipApplyOnCloseRef = useRef(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [draftUserIds, setDraftUserIds] = useState<string[]>([]);
+
+  const { data: members, isPending: membersPending } = useGroupMembersQuery(
+    groupId,
+    {
+      enabled: panelOpen || mode === "specify" || pickerOpen,
+    },
+  );
   const showSpecifyOption = (members?.length ?? 0) > 1;
   const badgeLabel = activeFilterBadgeLabel(mode, specifiedUserIds);
+
+  const applyDraftAndClose = () => {
+    onSpecifiedUserIdsChange(draftUserIds);
+    if (draftUserIds.length === 0 && mode === "specify") {
+      onModeChange("all");
+    }
+    setPickerOpen(false);
+  };
+
+  const openSpecifyPicker = () => {
+    skipApplyOnCloseRef.current = false;
+    setDraftUserIds(specifiedUserIds);
+    setPickerOpen(true);
+  };
+
+  const handleModeChange = (value: unknown) => {
+    if (typeof value !== "string" || value.length === 0) return;
+    const next = value as RecordsFilterMode;
+    if (next === "specify") {
+      onModeChange(next);
+      openSpecifyPicker();
+      return;
+    }
+    skipApplyOnCloseRef.current = true;
+    setPickerOpen(false);
+    onModeChange(next);
+  };
+
+  const handlePickerOpenChange = (open: boolean) => {
+    if (open) {
+      openSpecifyPicker();
+      return;
+    }
+    if (skipApplyOnCloseRef.current) {
+      skipApplyOnCloseRef.current = false;
+      setPickerOpen(false);
+      return;
+    }
+    applyDraftAndClose();
+  };
+
+  const handlePanelToggle = () => {
+    if (panelOpen) {
+      if (pickerOpen && !skipApplyOnCloseRef.current) {
+        applyDraftAndClose();
+      } else {
+        skipApplyOnCloseRef.current = true;
+        setPickerOpen(false);
+      }
+      onPanelOpenChange(false);
+      return;
+    }
+    onPanelOpenChange(true);
+  };
 
   return (
     <div className="mb-4 flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Button
-          variant="outline"
+          variant="ghost"
+          size="sm"
           aria-expanded={panelOpen}
           aria-controls={panelId}
-          onClick={() => onPanelOpenChange(!panelOpen)}
+          onClick={handlePanelToggle}
         >
           <ListFilter data-icon="inline-start" aria-hidden />
-          絞り込み
+          表示フィルター
         </Button>
         {!panelOpen && badgeLabel ? (
           <Badge variant="secondary">{badgeLabel}</Badge>
@@ -143,39 +189,63 @@ export default function RecordsFilter({
       </div>
 
       {panelOpen ? (
-        <div id={panelId} className="flex flex-col gap-3">
-          <Separator />
-          <Field>
-            <FieldTitle>表示する投稿者</FieldTitle>
-            <ToggleGroup
-              value={[mode]}
-              onValueChange={(values) => {
-                if (values.length === 0) return;
-                onModeChange(values[0] as RecordsFilterMode);
-              }}
-            >
-              <ToggleGroupItem value="all">全員</ToggleGroupItem>
-              <ToggleGroupItem value="mine">自分のみ</ToggleGroupItem>
+        <div id={panelId} className="border-border ml-2 border-l pl-3">
+          <FieldSet>
+            <FieldLegend variant="label">投稿者</FieldLegend>
+            <RadioGroup value={mode} onValueChange={handleModeChange}>
+              <Field orientation="horizontal">
+                <RadioGroupItem value="all" id="records-filter-all" />
+                <FieldLabel htmlFor="records-filter-all">全員</FieldLabel>
+              </Field>
+              <Field orientation="horizontal">
+                <RadioGroupItem value="mine" id="records-filter-mine" />
+                <FieldLabel htmlFor="records-filter-mine">自分のみ</FieldLabel>
+              </Field>
               {showSpecifyOption ? (
-                <ToggleGroupItem value="specify">指定する</ToggleGroupItem>
+                <div ref={specifyAnchorRef}>
+                  <Field
+                    orientation="horizontal"
+                    onClick={() => {
+                      if (mode === "specify" && !pickerOpen) {
+                        openSpecifyPicker();
+                      }
+                    }}
+                  >
+                    <RadioGroupItem
+                      value="specify"
+                      id="records-filter-specify"
+                    />
+                    <FieldLabel htmlFor="records-filter-specify">
+                      指定する
+                    </FieldLabel>
+                  </Field>
+                </div>
               ) : null}
-            </ToggleGroup>
-          </Field>
-
-          {mode === "specify" && showSpecifyOption && members ? (
-            <Field>
-              <MemberSelectDropdown
-                members={members}
-                specifiedUserIds={specifiedUserIds}
-                onSpecifiedUserIdsChange={onSpecifiedUserIdsChange}
-              />
-              <FieldDescription>
-                1人以上選ぶと絞り込みます。未選択のときは全員分を表示します。
-              </FieldDescription>
-            </Field>
-          ) : null}
+            </RadioGroup>
+          </FieldSet>
         </div>
       ) : null}
+
+      <Popover open={pickerOpen} onOpenChange={handlePickerOpenChange}>
+        <PopoverContent
+          align="start"
+          className="w-64"
+          anchor={specifyAnchorRef}
+        >
+          <PopoverTitle>メンバーを選択</PopoverTitle>
+          {membersPending || !members ? (
+            <div className="flex justify-center py-2">
+              <Spinner />
+            </div>
+          ) : (
+            <MemberMultiSelectList
+              members={members}
+              draftUserIds={draftUserIds}
+              onDraftUserIdsChange={setDraftUserIds}
+            />
+          )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
