@@ -56,6 +56,11 @@ export default function PullToRefresh({
     y: number;
     pointerId: number;
   } | null>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    identifier: number;
+  } | null>(null);
   const pullConfirmedRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
@@ -76,6 +81,7 @@ export default function PullToRefresh({
     setIsPulling(false);
     pullConfirmedRef.current = false;
     pointerStartRef.current = null;
+    touchStartRef.current = null;
   }, [updatePullDistance]);
 
   const runRefresh = useCallback(async () => {
@@ -92,15 +98,108 @@ export default function PullToRefresh({
     }
   }, [resetPull, updatePullDistance]);
 
+  const finishPull = useCallback(() => {
+    if (pullConfirmedRef.current) {
+      if (
+        shouldTriggerRefresh(pullDistanceRef.current) &&
+        !isRefreshingRef.current
+      ) {
+        void runRefresh();
+      } else if (!isRefreshingRef.current) {
+        resetPull();
+      }
+    }
+
+    pointerStartRef.current = null;
+    touchStartRef.current = null;
+    if (!isRefreshingRef.current) {
+      pullConfirmedRef.current = false;
+      setIsPulling(false);
+    }
+  }, [resetPull, runRefresh]);
+
   useEffect(() => {
-    if (!ptrEnabled) return;
+    if (!ptrEnabled) {
+      resetPull();
+      return;
+    }
     const el = containerRef.current;
     if (!el) return;
 
     const scrollParent = findScrollParent(el);
     if (!scrollParent) return;
 
+    const onTouchStart = (event: TouchEvent) => {
+      if (isRefreshingRef.current) return;
+      if (scrollParent.scrollTop > 0) return;
+      if (event.touches.length !== 1) return;
+
+      const touch = event.touches[0];
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        identifier: touch.identifier,
+      };
+      pullConfirmedRef.current = false;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (isRefreshingRef.current || !touchStartRef.current) return;
+      if (event.touches.length !== 1) return;
+
+      const touch = event.touches[0];
+      if (touch.identifier !== touchStartRef.current.identifier) return;
+
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = touch.clientY - touchStartRef.current.y;
+
+      if (deltaY < 0) {
+        touchStartRef.current = null;
+        if (!isRefreshingRef.current) {
+          resetPull();
+        }
+        return;
+      }
+
+      if (!isPullGesture(deltaX, deltaY)) return;
+
+      event.preventDefault();
+
+      if (!pullConfirmedRef.current) {
+        if (deltaY < PULL_ACTIVATION_PX) {
+          updatePullDistance(applyPullResistance(deltaY));
+          return;
+        }
+        pullConfirmedRef.current = true;
+        setIsPulling(true);
+      }
+
+      updatePullDistance(applyPullResistance(deltaY));
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const ended = Array.from(event.changedTouches).some(
+        (t) => t.identifier === touchStartRef.current!.identifier,
+      );
+      if (!ended) return;
+      finishPull();
+    };
+
+    const onTouchCancel = (event: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const cancelled = Array.from(event.changedTouches).some(
+        (t) => t.identifier === touchStartRef.current!.identifier,
+      );
+      if (!cancelled) return;
+      if (!isRefreshingRef.current) {
+        resetPull();
+      }
+      touchStartRef.current = null;
+    };
+
     const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
       if (isRefreshingRef.current) return;
       if (scrollParent.scrollTop > 0) return;
       if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -114,6 +213,7 @@ export default function PullToRefresh({
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
       if (isRefreshingRef.current || !pointerStartRef.current) return;
       if (event.pointerId !== pointerStartRef.current.pointerId) return;
 
@@ -130,7 +230,6 @@ export default function PullToRefresh({
 
         pullConfirmedRef.current = true;
         setIsPulling(true);
-        scrollParent.setPointerCapture(event.pointerId);
       }
 
       if (pullConfirmedRef.current) {
@@ -139,34 +238,15 @@ export default function PullToRefresh({
       }
     };
 
-    const finishPointer = (event: PointerEvent) => {
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
       if (!pointerStartRef.current) return;
       if (event.pointerId !== pointerStartRef.current.pointerId) return;
-
-      if (pullConfirmedRef.current) {
-        try {
-          scrollParent.releasePointerCapture(event.pointerId);
-        } catch {
-          // capture されていない場合は無視
-        }
-        if (
-          shouldTriggerRefresh(pullDistanceRef.current) &&
-          !isRefreshingRef.current
-        ) {
-          void runRefresh();
-        } else if (!isRefreshingRef.current) {
-          resetPull();
-        }
-      }
-
-      pointerStartRef.current = null;
-      if (!isRefreshingRef.current) {
-        pullConfirmedRef.current = false;
-        setIsPulling(false);
-      }
+      finishPull();
     };
 
     const onPointerCancel = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
       if (pointerStartRef.current?.pointerId !== event.pointerId) return;
       if (!isRefreshingRef.current) {
         resetPull();
@@ -174,20 +254,30 @@ export default function PullToRefresh({
       pointerStartRef.current = null;
     };
 
-    scrollParent.addEventListener("pointerdown", onPointerDown);
-    scrollParent.addEventListener("pointermove", onPointerMove, {
-      passive: false,
+    scrollParent.addEventListener("touchstart", onTouchStart, {
+      passive: true,
     });
-    scrollParent.addEventListener("pointerup", finishPointer);
-    scrollParent.addEventListener("pointercancel", onPointerCancel);
+    scrollParent.addEventListener("touchmove", onTouchMove, { passive: false });
+    scrollParent.addEventListener("touchend", onTouchEnd);
+    scrollParent.addEventListener("touchcancel", onTouchCancel);
+
+    scrollParent.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove, { passive: false });
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerCancel);
 
     return () => {
+      scrollParent.removeEventListener("touchstart", onTouchStart);
+      scrollParent.removeEventListener("touchmove", onTouchMove);
+      scrollParent.removeEventListener("touchend", onTouchEnd);
+      scrollParent.removeEventListener("touchcancel", onTouchCancel);
+
       scrollParent.removeEventListener("pointerdown", onPointerDown);
-      scrollParent.removeEventListener("pointermove", onPointerMove);
-      scrollParent.removeEventListener("pointerup", finishPointer);
-      scrollParent.removeEventListener("pointercancel", onPointerCancel);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
     };
-  }, [ptrEnabled, resetPull, runRefresh, updatePullDistance]);
+  }, [ptrEnabled, finishPull, resetPull, updatePullDistance]);
 
   const indicatorHeight = isRefreshing ? REFRESH_HOLD_PX : pullDistance;
 
