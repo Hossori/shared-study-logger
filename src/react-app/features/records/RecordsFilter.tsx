@@ -6,7 +6,6 @@
  */
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ListFilter } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -81,17 +80,6 @@ function MemberMultiSelectList({
   );
 }
 
-function activeFilterBadgeLabel(
-  mode: RecordsFilterMode,
-  specifiedUserIds: string[],
-): string | null {
-  if (mode === "mine") return "自分のみ";
-  if (mode === "specify" && specifiedUserIds.length >= 1) {
-    return "指定する";
-  }
-  return null;
-}
-
 export default function RecordsFilter({
   groupId,
   mode,
@@ -114,7 +102,6 @@ export default function RecordsFilter({
     },
   );
   const showSpecifyOption = (members?.length ?? 0) > 1;
-  const badgeLabel = activeFilterBadgeLabel(mode, specifiedUserIds);
 
   const applyDraftAndClose = () => {
     onSpecifiedUserIdsChange(draftUserIds);
@@ -172,39 +159,40 @@ export default function RecordsFilter({
 
   return (
     <div className="mb-4 flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-expanded={panelOpen}
-          aria-controls={panelId}
-          onClick={handlePanelToggle}
-        >
-          <ListFilter data-icon="inline-start" aria-hidden />
-          表示フィルター
-        </Button>
-        {!panelOpen && badgeLabel ? (
-          <Badge variant="secondary">{badgeLabel}</Badge>
-        ) : null}
-      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-1.5 w-fit"
+        aria-expanded={panelOpen}
+        aria-controls={panelId}
+        onClick={handlePanelToggle}
+      >
+        <ListFilter data-icon="inline-start" aria-hidden />
+        表示フィルター
+      </Button>
 
       {panelOpen ? (
         <div id={panelId} className="border-border ml-2 border-l pl-3">
           <FieldSet>
             <FieldLegend variant="label">投稿者</FieldLegend>
-            <RadioGroup value={mode} onValueChange={handleModeChange}>
-              <Field orientation="horizontal">
+            <RadioGroup
+              className="flex w-auto flex-row flex-wrap items-center gap-x-4 gap-y-2"
+              value={mode}
+              onValueChange={handleModeChange}
+            >
+              <Field orientation="horizontal" className="w-fit">
                 <RadioGroupItem value="all" id="records-filter-all" />
                 <FieldLabel htmlFor="records-filter-all">全員</FieldLabel>
               </Field>
-              <Field orientation="horizontal">
+              <Field orientation="horizontal" className="w-fit">
                 <RadioGroupItem value="mine" id="records-filter-mine" />
                 <FieldLabel htmlFor="records-filter-mine">自分のみ</FieldLabel>
               </Field>
               {showSpecifyOption ? (
-                <div ref={specifyAnchorRef}>
+                <div ref={specifyAnchorRef} className="w-fit">
                   <Field
                     orientation="horizontal"
+                    className="w-fit"
                     onClick={() => {
                       if (mode === "specify" && !pickerOpen) {
                         openSpecifyPicker();
