@@ -10,6 +10,7 @@ import {
   formatRecordCardDatetime,
   formatRecordDatetime,
   formatStudyDatetimeLabel,
+  getDurationBadgeTier,
   isRecordDateString,
   localDateToRecordDateString,
   parseDatetimeLocalToIso,
@@ -77,6 +78,19 @@ describe("recordFormUtils", () => {
     expect(formatDurationMinutes(60)).toBe("1時間");
     expect(formatDurationMinutes(90)).toBe("1時間30分");
     expect(formatDurationMinutes(1435)).toBe("23時間55分");
+  });
+
+  it("getDurationBadgeTier maps minutes to tier boundaries", () => {
+    expect(getDurationBadgeTier(5)).toBe("under1h");
+    expect(getDurationBadgeTier(59)).toBe("under1h");
+    expect(getDurationBadgeTier(60)).toBe("h1to3");
+    expect(getDurationBadgeTier(179)).toBe("h1to3");
+    expect(getDurationBadgeTier(180)).toBe("h3to5");
+    expect(getDurationBadgeTier(299)).toBe("h3to5");
+    expect(getDurationBadgeTier(300)).toBe("h5to10");
+    expect(getDurationBadgeTier(599)).toBe("h5to10");
+    expect(getDurationBadgeTier(600)).toBe("h10plus");
+    expect(getDurationBadgeTier(1435)).toBe("h10plus");
   });
 
   it("formatClockTime uses unpadded hours and 2-digit minutes", () => {
