@@ -5,10 +5,10 @@
  * 自分の記録には編集・削除操作を表示する。
  */
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useOutletContext } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
-import { useMeQuery } from "../../queries/useAuth";
+import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import {
   useDeleteRecordMutation,
   useRecordsQuery,
@@ -44,6 +44,12 @@ import {
   shouldShowDurationBadge,
 } from "./recordFormUtils";
 import RecordReactions from "./RecordReactions";
+import RecordsFilter from "./RecordsFilter";
+import {
+  computeEffectiveUserIds,
+  isFilterApplied,
+  type RecordsFilterMode,
+} from "./recordsFilterUtils";
 
 interface RecordCardProps {
   groupId: string;
@@ -160,6 +166,16 @@ function EmptyRecordsMessage() {
   );
 }
 
+function FilteredEmptyRecordsMessage() {
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyTitle>条件に合う学習記録がありません</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
 function RecordsToolbar() {
   const openPostModal = useUiStore((state) => state.openPostModal);
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
@@ -182,18 +198,36 @@ function RecordsToolbar() {
   );
 }
 
-function RecordsListFrame({ children }: { children: ReactNode }) {
+function RecordsListFrame({
+  filter,
+  children,
+}: {
+  filter?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div>
       <RecordsToolbar />
+      {filter}
       {children}
     </div>
   );
 }
 
-export default function RecordsList() {
-  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
-  const { data: me } = useMeQuery();
+function GroupRecordsContent({ groupId }: { groupId: string }) {
+  const { user } = useOutletContext<AuthenticatedOutletContext>();
+  const meId = user.id;
+
+  const [mode, setMode] = useState<RecordsFilterMode>("all");
+  const [specifiedUserIds, setSpecifiedUserIds] = useState<string[]>([]);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const effectiveUserIds = computeEffectiveUserIds(
+    mode,
+    specifiedUserIds,
+    meId,
+  );
+
   const {
     data,
     isPending,
@@ -202,14 +236,24 @@ export default function RecordsList() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useRecordsQuery(selectedGroupId);
-  const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
+  } = useRecordsQuery(groupId, effectiveUserIds);
+  const deleteRecordMutation = useDeleteRecordMutation(groupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
   const [editSession, setEditSession] = useState(0);
 
-  // isLoading(= isPending && isFetching) だけだと fetch 開始前や retry 待ちで
-  // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
+  const filterSlot = (
+    <RecordsFilter
+      groupId={groupId}
+      mode={mode}
+      onModeChange={setMode}
+      specifiedUserIds={specifiedUserIds}
+      onSpecifiedUserIdsChange={setSpecifiedUserIds}
+      panelOpen={panelOpen}
+      onPanelOpenChange={setPanelOpen}
+    />
+  );
+
   const isInitialLoading = isPending || (isFetching && !data);
 
   const handleDelete = async (record: StudyRecord) => {
@@ -227,21 +271,9 @@ export default function RecordsList() {
     }
   };
 
-  if (!selectedGroupId) {
-    return (
-      <RecordsListFrame>
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>グループを選択してください。</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </RecordsListFrame>
-    );
-  }
-
   if (isInitialLoading) {
     return (
-      <RecordsListFrame>
+      <RecordsListFrame filter={filterSlot}>
         <div className="flex flex-col gap-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -253,7 +285,7 @@ export default function RecordsList() {
 
   if (isError) {
     return (
-      <RecordsListFrame>
+      <RecordsListFrame filter={filterSlot}>
         <Empty>
           <EmptyHeader>
             <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
@@ -267,21 +299,25 @@ export default function RecordsList() {
 
   if (records.length === 0) {
     return (
-      <RecordsListFrame>
-        <EmptyRecordsMessage />
+      <RecordsListFrame filter={filterSlot}>
+        {isFilterApplied(effectiveUserIds) ? (
+          <FilteredEmptyRecordsMessage />
+        ) : (
+          <EmptyRecordsMessage />
+        )}
       </RecordsListFrame>
     );
   }
 
   return (
-    <RecordsListFrame>
+    <RecordsListFrame filter={filterSlot}>
       <ul className="flex flex-col gap-3">
         {records.map((record) => (
           <RecordCard
             key={record.id}
-            groupId={selectedGroupId}
+            groupId={groupId}
             record={record}
-            isOwner={me?.id === record.userId}
+            isOwner={meId === record.userId}
             onEdit={(record) => {
               setEditSession((session) => session + 1);
               setEditingRecord(record);
@@ -321,5 +357,25 @@ export default function RecordsList() {
         onClose={() => setEditingRecord(null)}
       />
     </RecordsListFrame>
+  );
+}
+
+export default function RecordsList() {
+  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+
+  if (!selectedGroupId) {
+    return (
+      <RecordsListFrame>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>グループを選択してください。</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
+      </RecordsListFrame>
+    );
+  }
+
+  return (
+    <GroupRecordsContent key={selectedGroupId} groupId={selectedGroupId} />
   );
 }

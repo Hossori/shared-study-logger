@@ -7,6 +7,7 @@
 import type {
   AvatarKey,
   Group,
+  GroupMember,
   InAppNotification,
   PublicUser,
   ReactionStamp,
@@ -248,6 +249,29 @@ export async function isUserInGroup(
     .bind(groupId, userId)
     .first();
   return row !== null;
+}
+
+/** グループ所属メンバーの公開情報を返す（email / bio は含めない）。 */
+export async function listGroupMembers(
+  db: D1Database,
+  groupId: string,
+): Promise<GroupMember[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT u.id, u.display_name, u.avatar_key
+       FROM group_members gm
+       INNER JOIN users u ON u.id = gm.user_id
+       WHERE gm.group_id = ?
+       ORDER BY gm.joined_at ASC, u.id ASC`,
+    )
+    .bind(groupId)
+    .all<{ id: string; display_name: string; avatar_key: string | null }>();
+
+  return (results ?? []).map((row) => ({
+    id: row.id,
+    displayName: row.display_name,
+    avatarKey: parseAvatarKey(row.avatar_key),
+  }));
 }
 
 /** 指定グループに所属する他メンバーのuserIdを返す(Push通知の送信対象)。 */
@@ -513,7 +537,7 @@ export async function listStudyRecords(
   db: D1Database,
   groupId: string,
   currentUserId: string,
-  options: { cursor?: string; limit: number },
+  options: { cursor?: string; limit: number; userIds?: string[] },
 ): Promise<CursorPage<StudyRecord>> {
   const { limit } = options;
   const cursorParts = options.cursor ? decodeCursor(options.cursor) : null;
@@ -521,46 +545,44 @@ export async function listStudyRecords(
     throw new Error("invalid_cursor");
   }
 
-  const baseQuery = `
+  const userIds = options.userIds?.length ? options.userIds : undefined;
+
+  const where = ["sr.group_id = ?"];
+  const binds: unknown[] = [groupId];
+
+  if (userIds) {
+    where.push(`sr.user_id IN (${userIds.map(() => "?").join(", ")})`);
+    binds.push(...userIds);
+  }
+
+  if (cursorParts) {
+    where.push(`(
+      COALESCE(sr.started_at, sr.created_at) < ?
+      OR (
+        COALESCE(sr.started_at, sr.created_at) = ?
+        AND sr.id < ?
+      )
+    )`);
+    binds.push(cursorParts.sortKey, cursorParts.sortKey, cursorParts.id);
+  }
+
+  const sql = `
     SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
            u.avatar_key AS author_avatar_key,
            sr.started_at, sr.title, sr.duration_minutes, sr.memo,
            sr.created_at, sr.updated_at
     FROM study_records sr
     INNER JOIN users u ON u.id = sr.user_id
-    WHERE sr.group_id = ?
+    WHERE ${where.join(" AND ")}
+    ORDER BY COALESCE(sr.started_at, sr.created_at) DESC, sr.id DESC
+    LIMIT ?
   `;
+  binds.push(limit + 1);
 
-  const statement = cursorParts
-    ? db
-        .prepare(
-          `${baseQuery}
-           AND (
-             COALESCE(sr.started_at, sr.created_at) < ?
-             OR (
-               COALESCE(sr.started_at, sr.created_at) = ?
-               AND sr.id < ?
-             )
-           )
-           ORDER BY COALESCE(sr.started_at, sr.created_at) DESC, sr.id DESC
-           LIMIT ?`,
-        )
-        .bind(
-          groupId,
-          cursorParts.sortKey,
-          cursorParts.sortKey,
-          cursorParts.id,
-          limit + 1,
-        )
-    : db
-        .prepare(
-          `${baseQuery}
-           ORDER BY COALESCE(sr.started_at, sr.created_at) DESC, sr.id DESC
-           LIMIT ?`,
-        )
-        .bind(groupId, limit + 1);
-
-  const { results } = await statement.all<StudyRecordRow>();
+  const { results } = await db
+    .prepare(sql)
+    .bind(...binds)
+    .all<StudyRecordRow>();
   const rows = results ?? [];
 
   const hasMore = rows.length > limit;
