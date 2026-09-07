@@ -50,7 +50,9 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+                <FieldLabel htmlFor="email" required>
+                  メールアドレス
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -63,7 +65,9 @@ export default function LoginPage() {
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="password">パスワード</FieldLabel>
+                <FieldLabel htmlFor="password" required>
+                  パスワード
+                </FieldLabel>
                 <Input
                   id="password"
                   type="password"

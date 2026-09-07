@@ -181,7 +181,7 @@ export default function AdminNotificationsPage() {
             <form onSubmit={handleCreate}>
               <FieldGroup>
                 <Field data-invalid={formError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-notification-title">
+                  <FieldLabel htmlFor="admin-notification-title" required>
                     タイトル
                   </FieldLabel>
                   <Input
@@ -195,7 +195,7 @@ export default function AdminNotificationsPage() {
                 </Field>
                 <Field data-invalid={formError ? true : undefined}>
                   <div className="flex items-center justify-between gap-2">
-                    <FieldLabel htmlFor="admin-notification-body">
+                    <FieldLabel htmlFor="admin-notification-body" required>
                       本文
                     </FieldLabel>
                     <Button

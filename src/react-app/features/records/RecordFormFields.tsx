@@ -21,7 +21,7 @@ export default function RecordFormFields({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor={`${idPrefix}-title`}>
+        <FieldLabel htmlFor={`${idPrefix}-title`} required>
           タイトル・学習内容
         </FieldLabel>
         <Input
