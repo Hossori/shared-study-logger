@@ -1,9 +1,8 @@
 /**
  * 学習記録一覧のユーザーフィルタ（全員 / 自分のみ / 指定する）。
- * 適用ボタンなし・即適用。state はコンポーネント内（Zustand 禁止）。
+ * 適用ボタンなし・即適用。state は親（GroupRecordsContent）が保持する controlled コンポーネント。
  * 親は `key={groupId}` でマウントし直すとリセットされる。
  */
-import { useEffect, useState } from "react";
 import { ListFilter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,33 +14,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldDescription } from "@/components/ui/field";
+import { Field, FieldDescription, FieldTitle } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import UserAvatar from "../../components/UserAvatar";
 import { useGroupMembersQuery } from "../../queries/useGroups";
 import type { GroupMember } from "../../../../shared/schemas";
-
-export type RecordsFilterMode = "all" | "mine" | "specify";
-
-function computeEffectiveUserIds(
-  mode: RecordsFilterMode,
-  specifiedUserIds: string[],
-  meId: string | undefined,
-): string[] | undefined {
-  if (mode === "all") return undefined;
-  if (mode === "mine") return meId ? [meId] : undefined;
-  if (mode === "specify" && specifiedUserIds.length >= 1) {
-    return specifiedUserIds;
-  }
-  return undefined;
-}
+import type { RecordsFilterMode } from "./recordsFilterUtils";
 
 interface RecordsFilterProps {
   groupId: string;
-  meId: string | undefined;
-  onEffectiveUserIdsChange: (userIds: string[] | undefined) => void;
-  onQueryEnabledChange: (enabled: boolean) => void;
+  mode: RecordsFilterMode;
+  onModeChange: (mode: RecordsFilterMode) => void;
+  specifiedUserIds: string[];
+  onSpecifiedUserIdsChange: (ids: string[]) => void;
+  panelOpen: boolean;
+  onPanelOpenChange: (open: boolean) => void;
 }
 
 function MemberSelectDropdown({
@@ -123,35 +111,19 @@ function activeFilterBadgeLabel(
 
 export default function RecordsFilter({
   groupId,
-  meId,
-  onEffectiveUserIdsChange,
-  onQueryEnabledChange,
+  mode,
+  onModeChange,
+  specifiedUserIds,
+  onSpecifiedUserIdsChange,
+  panelOpen,
+  onPanelOpenChange,
 }: RecordsFilterProps) {
-  const [mode, setMode] = useState<RecordsFilterMode>("all");
-  const [specifiedUserIds, setSpecifiedUserIds] = useState<string[]>([]);
-  const [panelOpen, setPanelOpen] = useState(false);
-
   const panelId = "records-filter-panel";
   const { data: members } = useGroupMembersQuery(groupId, {
     enabled: mode === "specify" || panelOpen,
   });
   const showSpecifyOption = (members?.length ?? 0) > 1;
   const badgeLabel = activeFilterBadgeLabel(mode, specifiedUserIds);
-
-  const effectiveUserIds = computeEffectiveUserIds(
-    mode,
-    specifiedUserIds,
-    meId,
-  );
-  const queryEnabled = mode !== "mine" || meId !== undefined;
-
-  useEffect(() => {
-    onEffectiveUserIdsChange(effectiveUserIds);
-  }, [effectiveUserIds, onEffectiveUserIdsChange]);
-
-  useEffect(() => {
-    onQueryEnabledChange(queryEnabled);
-  }, [queryEnabled, onQueryEnabledChange]);
 
   return (
     <div className="mb-4 flex flex-col gap-2">
@@ -160,7 +132,7 @@ export default function RecordsFilter({
           variant="outline"
           aria-expanded={panelOpen}
           aria-controls={panelId}
-          onClick={() => setPanelOpen(!panelOpen)}
+          onClick={() => onPanelOpenChange(!panelOpen)}
         >
           <ListFilter data-icon="inline-start" aria-hidden />
           絞り込み
@@ -174,11 +146,12 @@ export default function RecordsFilter({
         <div id={panelId} className="flex flex-col gap-3">
           <Separator />
           <Field>
+            <FieldTitle>表示する投稿者</FieldTitle>
             <ToggleGroup
               value={[mode]}
               onValueChange={(values) => {
                 if (values.length === 0) return;
-                setMode(values[0] as RecordsFilterMode);
+                onModeChange(values[0] as RecordsFilterMode);
               }}
             >
               <ToggleGroupItem value="all">全員</ToggleGroupItem>
@@ -194,7 +167,7 @@ export default function RecordsFilter({
               <MemberSelectDropdown
                 members={members}
                 specifiedUserIds={specifiedUserIds}
-                onSpecifiedUserIdsChange={setSpecifiedUserIds}
+                onSpecifiedUserIdsChange={onSpecifiedUserIdsChange}
               />
               <FieldDescription>
                 1人以上選ぶと絞り込みます。未選択のときは全員分を表示します。

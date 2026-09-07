@@ -4,11 +4,11 @@
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
  */
-import { useCallback, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { useState, type ReactNode } from "react";
+import { Link, useOutletContext } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
-import { useMeQuery } from "../../queries/useAuth";
+import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import {
   useDeleteRecordMutation,
   useRecordsQuery,
@@ -43,7 +43,11 @@ import {
 } from "./recordFormUtils";
 import RecordReactions from "./RecordReactions";
 import RecordsFilter from "./RecordsFilter";
-import { isFilterApplied } from "./recordsFilterUtils";
+import {
+  computeEffectiveUserIds,
+  isFilterApplied,
+  type RecordsFilterMode,
+} from "./recordsFilterUtils";
 
 interface RecordCardProps {
   groupId: string;
@@ -202,21 +206,18 @@ function RecordsListFrame({
 }
 
 function GroupRecordsContent({ groupId }: { groupId: string }) {
-  const { data: me } = useMeQuery();
-  const [effectiveUserIds, setEffectiveUserIds] = useState<
-    string[] | undefined
-  >(undefined);
-  const [recordsQueryEnabled, setRecordsQueryEnabled] = useState(true);
+  const { user } = useOutletContext<AuthenticatedOutletContext>();
+  const meId = user.id;
 
-  const handleEffectiveUserIdsChange = useCallback(
-    (userIds: string[] | undefined) => {
-      setEffectiveUserIds(userIds);
-    },
-    [],
+  const [mode, setMode] = useState<RecordsFilterMode>("all");
+  const [specifiedUserIds, setSpecifiedUserIds] = useState<string[]>([]);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const effectiveUserIds = computeEffectiveUserIds(
+    mode,
+    specifiedUserIds,
+    meId,
   );
-  const handleQueryEnabledChange = useCallback((enabled: boolean) => {
-    setRecordsQueryEnabled(enabled);
-  }, []);
 
   const {
     data,
@@ -226,9 +227,7 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useRecordsQuery(groupId, effectiveUserIds, {
-    enabled: recordsQueryEnabled,
-  });
+  } = useRecordsQuery(groupId, effectiveUserIds);
   const deleteRecordMutation = useDeleteRecordMutation(groupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
@@ -237,9 +236,12 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
   const filterSlot = (
     <RecordsFilter
       groupId={groupId}
-      meId={me?.id}
-      onEffectiveUserIdsChange={handleEffectiveUserIdsChange}
-      onQueryEnabledChange={handleQueryEnabledChange}
+      mode={mode}
+      onModeChange={setMode}
+      specifiedUserIds={specifiedUserIds}
+      onSpecifiedUserIdsChange={setSpecifiedUserIds}
+      panelOpen={panelOpen}
+      onPanelOpenChange={setPanelOpen}
     />
   );
 
@@ -306,7 +308,7 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
             key={record.id}
             groupId={groupId}
             record={record}
-            isOwner={me?.id === record.userId}
+            isOwner={meId === record.userId}
             onEdit={(record) => {
               setEditSession((session) => session + 1);
               setEditingRecord(record);
