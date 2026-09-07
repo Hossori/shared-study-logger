@@ -51,7 +51,7 @@ export async function openPostModal(page: Page): Promise<void> {
   ).toBeVisible();
 }
 
-function studyDatetimeDialog(page: Page) {
+function studyTimeDialog(page: Page) {
   return page.getByRole("dialog", { name: "学習日時を設定" });
 }
 
@@ -62,7 +62,7 @@ export async function fillStudyDatetime(
   hour: number,
   minute: number,
 ): Promise<void> {
-  const dialog = studyDatetimeDialog(page);
+  const dialog = studyTimeDialog(page);
   if (!(await dialog.isVisible())) {
     await page.getByRole("button", { name: "学習日時を設定" }).click();
     await expect(dialog).toBeVisible();
@@ -117,7 +117,7 @@ export async function setStudyDurationFromPicker(
   idPrefix: string,
   options: { buttonName: string; expectedLabel: string },
 ): Promise<void> {
-  const dialog = studyDatetimeDialog(page);
+  const dialog = studyTimeDialog(page);
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: options.buttonName }).click();
   await expect(dialog.getByText(options.expectedLabel, { exact: true })).toBeVisible();

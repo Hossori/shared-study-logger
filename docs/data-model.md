@@ -41,7 +41,7 @@ erDiagram
     string id PK
     string group_id FK
     string user_id FK
-    string study_datetime "NULL可"
+    string started_at "NULL可"
     string title
     int duration_minutes "NULL可・分・5分刻み"
     string memo
@@ -78,7 +78,7 @@ erDiagram
 ## 補足
 
 - `users.email`・`push_subscriptions.endpoint` は UNIQUE 制約あり。`study_records.memo`・
-  `study_records.duration_minutes`・`study_records.study_datetime`・`push_subscriptions.user_agent`・`users.bio`・
+  `study_records.duration_minutes`・`study_records.started_at`・`push_subscriptions.user_agent`・`users.bio`・
   `users.avatar_key` は NULL 許可。`duration_minutes` は 5 分刻み（5〜1435、最大 23 時間 55 分）。未設定・0 は NULL。
 - `users.avatar_key` はプリセット画像のキー（例: `avoidy` / `lavender`）。許可リストは
   `shared/avatars.ts` の `AVATAR_KEYS`。`NULL` はクライアントで Lucide アイコン（デフォルト表示）。
@@ -92,7 +92,7 @@ erDiagram
   `GET /api/notifications` で全ユーザーに返す。CRUD は ADMIN のみ。
   本文に `[表示名](https://example.com)` を埋め込むとユーザー画面でリンクになる（`[]` が空なら URL をそのまま表示。http/https のみ）。
 - セッションは D1 ではなく **Cloudflare Workers KV**（`SESSIONS` バインディング）に保存する（`session:{token}` → `{ userId, expiresAt }`）。
-- インデックス: `group_members(user_id)`、`study_records(group_id, COALESCE(study_datetime, created_at) DESC, id DESC)`（`idx_study_records_group_sort`。カーソルページネーション用）、`study_records(user_id)`、`record_reactions(record_id)`、`push_subscriptions(user_id)`、`app_notifications(enabled, created_at DESC)`。
+- インデックス: `group_members(user_id)`、`study_records(group_id, COALESCE(started_at, created_at) DESC, id DESC)`（`idx_study_records_group_sort`。カーソルページネーション用）、`study_records(user_id)`、`record_reactions(record_id)`、`push_subscriptions(user_id)`、`app_notifications(enabled, created_at DESC)`。
 - `record_reactions` は学習記録へのスタンプ。同一ユーザーが同一記録に複数種類つけられる。同一ユーザー×同一スタンプは UNIQUE。記録削除時は CASCADE で消える。安定キーと表示絵文字の対応は `shared/schemas.ts` の `REACTION_STAMP_EMOJI`。
 - スキーマを変更する場合は `migrations/` に新しい番号のマイグレーションファイルを追加すること。適用済みの migration はすべて不変とし、変更したい場合も新しい番号の migration を追加する（既存の `0001_init.sql` は本番適用済みの可能性があるため直接編集しない）。
   - `0004_user_profile.sql`: `users` に `bio` / `avatar_key` を追加。
@@ -103,5 +103,6 @@ erDiagram
   - `0009_duration_minutes_five_minute_step.sql`: `duration_minutes` の CHECK を 5 分刻み（5〜720）に更新。
   - `0010_study_datetime_nullable.sql`: `study_datetime` を NULL 許可にし、ソート用インデックスを `COALESCE(study_datetime, created_at)` 基準に再作成。
   - `0011_duration_minutes_max_23h55m.sql`: `duration_minutes` の上限を 23 時間 55 分（1435）に更新。
+  - `0012_started_at_pair.sql`: `study_datetime` を `started_at` に改名し、`started_at` と `duration_minutes` のペア制約（両方 NULL または両方セット）を追加。開始のみの既存行は両方 NULL に正規化。
 - 本番 D1 は SemVer タグ（`vX.Y.Z`）push 後の [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) の production release で、Time Travel の migration 前復旧ポイントを記録してから apply する。同じ job が migration 完了後に Worker をデプロイするため、Worker が新スキーマを先行して参照しない。`main` へのマージだけでは本番 D1 は更新されない。
 - rename / drop / NOT NULL 化などの破壊的変更は、旧 Worker と共存できる追加変更（expand）と旧スキーマを削除する変更（contract）を別リリースに分ける。Worker のロールバックでは D1 スキーマは戻らないため、必要時は release summary の Time Travel bookmark を使う。

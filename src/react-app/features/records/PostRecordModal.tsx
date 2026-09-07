@@ -19,7 +19,7 @@ export default function PostRecordModal() {
   const createRecordMutation = useCreateRecordMutation(selectedGroupId);
 
   const [values, setValues] = useState<RecordFormValues>({
-    studyDatetime: "",
+    startedAt: "",
     title: "",
     memo: "",
     durationMinutes: null,
@@ -28,7 +28,7 @@ export default function PostRecordModal() {
   useEffect(() => {
     if (isOpen) {
       setValues({
-        studyDatetime: "",
+        startedAt: "",
         title: "",
         memo: "",
         durationMinutes: null,

@@ -198,16 +198,44 @@ export const DurationMinutesSchema = z
   .max(DURATION_MINUTES_MAX)
   .multipleOf(DURATION_MINUTES_STEP);
 
-/** durationMinutes が非 null のとき studyDatetime も必須。 */
-function refineStudyDatetimeDurationPair(
-  data: { studyDatetime: string | null; durationMinutes?: number | null },
+/** startedAt と durationMinutes は両方 null または両方セットのみ許可。 */
+function refineStudyTimePair(
+  data: { startedAt: string | null; durationMinutes?: number | null },
   ctx: z.RefinementCtx,
+  mode: "create" | "update",
 ): void {
-  if (data.durationMinutes != null && data.studyDatetime == null) {
+  if (mode === "create") {
+    const duration =
+      data.durationMinutes === undefined ? null : data.durationMinutes;
+    const hasStart = data.startedAt != null;
+    const hasDuration = duration != null;
+    if (hasStart !== hasDuration) {
+      ctx.addIssue({
+        code: "custom",
+        message: "study_time_pair_required",
+        path: hasStart ? ["durationMinutes"] : ["startedAt"],
+      });
+    }
+    return;
+  }
+
+  const startSet = data.startedAt != null;
+  const startNull = data.startedAt === null;
+  const durationSet = data.durationMinutes != null;
+  const durationNull = data.durationMinutes === null;
+
+  if (startSet && durationNull) {
     ctx.addIssue({
       code: "custom",
-      message: "duration_requires_study_datetime",
+      message: "study_time_pair_required",
       path: ["durationMinutes"],
+    });
+  }
+  if (startNull && durationSet) {
+    ctx.addIssue({
+      code: "custom",
+      message: "study_time_pair_required",
+      path: ["startedAt"],
     });
   }
 }
@@ -218,7 +246,7 @@ export const StudyRecordSchema = z.object({
   userId: z.string(),
   authorDisplayName: z.string().optional(),
   authorAvatarKey: AvatarKeySchema.nullable().optional(),
-  studyDatetime: z.iso.datetime().nullable(),
+  startedAt: z.iso.datetime().nullable(),
   title: z.string().min(1),
   durationMinutes: z.number().int().nullable(),
   memo: z.string().optional().nullable(),
@@ -230,24 +258,24 @@ export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 
 export const CreateStudyRecordRequestSchema = z
   .object({
-    studyDatetime: z.iso.datetime().nullable(),
+    startedAt: z.iso.datetime().nullable(),
     title: z.string().min(1).max(200),
     durationMinutes: DurationMinutesSchema.nullable().optional(),
     memo: z.string().max(2000).optional(),
   })
-  .superRefine(refineStudyDatetimeDurationPair);
+  .superRefine((data, ctx) => refineStudyTimePair(data, ctx, "create"));
 export type CreateStudyRecordRequest = z.infer<
   typeof CreateStudyRecordRequestSchema
 >;
 
 export const UpdateStudyRecordRequestSchema = z
   .object({
-    studyDatetime: z.iso.datetime().nullable(),
+    startedAt: z.iso.datetime().nullable(),
     title: z.string().min(1).max(200),
     durationMinutes: DurationMinutesSchema.nullable().optional(),
     memo: z.string().max(2000).optional(),
   })
-  .superRefine(refineStudyDatetimeDurationPair);
+  .superRefine((data, ctx) => refineStudyTimePair(data, ctx, "update"));
 export type UpdateStudyRecordRequest = z.infer<
   typeof UpdateStudyRecordRequestSchema
 >;
