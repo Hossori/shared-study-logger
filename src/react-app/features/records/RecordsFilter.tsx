@@ -162,7 +162,7 @@ export default function RecordsFilter({
       <Button
         variant="ghost"
         size="sm"
-        className="-ml-1.5 w-fit"
+        className="w-fit px-0 has-data-[icon=inline-start]:pl-0"
         aria-expanded={panelOpen}
         aria-controls={panelId}
         onClick={handlePanelToggle}
@@ -180,33 +180,38 @@ export default function RecordsFilter({
               value={mode}
               onValueChange={handleModeChange}
             >
-              <Field orientation="horizontal" className="w-fit">
-                <RadioGroupItem value="all" id="records-filter-all" />
-                <FieldLabel htmlFor="records-filter-all">全員</FieldLabel>
-              </Field>
-              <Field orientation="horizontal" className="w-fit">
-                <RadioGroupItem value="mine" id="records-filter-mine" />
-                <FieldLabel htmlFor="records-filter-mine">自分のみ</FieldLabel>
-              </Field>
+              <FieldLabel
+                className="w-fit"
+                onClick={() => handleModeChange("all")}
+              >
+                <RadioGroupItem
+                  value="all"
+                  className="pointer-events-none after:hidden"
+                />
+                全員
+              </FieldLabel>
+              <FieldLabel
+                className="w-fit"
+                onClick={() => handleModeChange("mine")}
+              >
+                <RadioGroupItem
+                  value="mine"
+                  className="pointer-events-none after:hidden"
+                />
+                自分のみ
+              </FieldLabel>
               {showSpecifyOption ? (
                 <div ref={specifyAnchorRef} className="w-fit">
-                  <Field
-                    orientation="horizontal"
+                  <FieldLabel
                     className="w-fit"
-                    onClick={() => {
-                      if (mode === "specify" && !pickerOpen) {
-                        openSpecifyPicker();
-                      }
-                    }}
+                    onClick={() => handleModeChange("specify")}
                   >
                     <RadioGroupItem
                       value="specify"
-                      id="records-filter-specify"
+                      className="pointer-events-none after:hidden"
                     />
-                    <FieldLabel htmlFor="records-filter-specify">
-                      指定する
-                    </FieldLabel>
-                  </Field>
+                    指定する
+                  </FieldLabel>
                 </div>
               ) : null}
             </RadioGroup>
@@ -214,26 +219,28 @@ export default function RecordsFilter({
         </div>
       ) : null}
 
-      <Popover open={pickerOpen} onOpenChange={handlePickerOpenChange}>
-        <PopoverContent
-          align="start"
-          className="w-64"
-          anchor={specifyAnchorRef}
-        >
-          <PopoverTitle>メンバーを選択</PopoverTitle>
-          {membersPending || !members ? (
-            <div className="flex justify-center py-2">
-              <Spinner />
-            </div>
-          ) : (
-            <MemberMultiSelectList
-              members={members}
-              draftUserIds={draftUserIds}
-              onDraftUserIdsChange={setDraftUserIds}
-            />
-          )}
-        </PopoverContent>
-      </Popover>
+      {pickerOpen ? (
+        <Popover open onOpenChange={handlePickerOpenChange}>
+          <PopoverContent
+            align="start"
+            className="w-64"
+            anchor={specifyAnchorRef}
+          >
+            <PopoverTitle>メンバーを選択</PopoverTitle>
+            {membersPending || !members ? (
+              <div className="flex justify-center py-2">
+                <Spinner />
+              </div>
+            ) : (
+              <MemberMultiSelectList
+                members={members}
+                draftUserIds={draftUserIds}
+                onDraftUserIdsChange={setDraftUserIds}
+              />
+            )}
+          </PopoverContent>
+        </Popover>
+      ) : null}
     </div>
   );
 }
