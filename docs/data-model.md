@@ -79,7 +79,8 @@ erDiagram
 
 - `users.email`・`push_subscriptions.endpoint` は UNIQUE 制約あり。`study_records.memo`・
   `study_records.duration_minutes`・`study_records.started_at`・`push_subscriptions.user_agent`・`users.bio`・
-  `users.avatar_key` は NULL 許可。`duration_minutes` は 5 分刻み（5〜1435、最大 23 時間 55 分）。未設定・0 は NULL。
+  `users.avatar_key` は NULL 許可。`started_at` と `duration_minutes` は両方 NULL または両方セット
+  （表 CHECK）。`duration_minutes` は 5 分刻み（5〜1435、最大 23 時間 55 分）。未設定・0 は NULL。
 - `users.avatar_key` はプリセット画像のキー（例: `avoidy` / `lavender`）。許可リストは
   `shared/avatars.ts` の `AVATAR_KEYS`。`NULL` はクライアントで Lucide アイコン（デフォルト表示）。
 - `users.role` は `ADMIN` または `USER`（CHECK 制約）。既存行・列省略時のデフォルトは `USER`。
