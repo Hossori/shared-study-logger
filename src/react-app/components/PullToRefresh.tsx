@@ -16,6 +16,8 @@ import {
   applyPullResistance,
   isPullGesture,
   pullIndicatorRotationDeg,
+  pullIndicatorSlotHeight,
+  PULL_REFRESH_HOLD_PX,
   shouldTriggerRefresh,
 } from "../lib/pullToRefresh";
 
@@ -27,9 +29,6 @@ interface PullToRefreshProps {
 
 /** プル確定前の最小移動量（px）。タップ・長押しと区別する */
 const PULL_ACTIVATION_PX = 8;
-
-/** 更新中に表示するインジケータ領域の高さ（px） */
-const REFRESH_HOLD_PX = 40;
 
 function findScrollParent(element: HTMLElement | null): HTMLElement | null {
   let node = element?.parentElement ?? null;
@@ -90,7 +89,7 @@ export default function PullToRefresh({
     if (isRefreshingRef.current) return;
     isRefreshingRef.current = true;
     setIsRefreshing(true);
-    updatePullDistance(REFRESH_HOLD_PX);
+    updatePullDistance(PULL_REFRESH_HOLD_PX);
     try {
       await onRefreshRef.current();
     } finally {
@@ -308,7 +307,7 @@ export default function PullToRefresh({
     };
   }, [ptrEnabled, finishPull, resetPull, updatePullDistance]);
 
-  const indicatorHeight = isRefreshing ? REFRESH_HOLD_PX : pullDistance;
+  const indicatorHeight = pullIndicatorSlotHeight(pullDistance, isRefreshing);
   const showIndicator = pullDistance > 0 || isRefreshing;
 
   return (

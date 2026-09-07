@@ -8,6 +8,12 @@ export const PULL_REFRESH_THRESHOLD = 64;
 /** 引っ張りの最大表示距離（px） */
 export const PULL_REFRESH_MAX = 96;
 
+/** 引っ張り中インジケータの最小高さ（size-5 がクリップされない） */
+export const PULL_INDICATOR_MIN_PX = 28;
+
+/** 更新中に表示するインジケータ領域の高さ（px） */
+export const PULL_REFRESH_HOLD_PX = 40;
+
 /** 生の deltaY に抵抗をかけた表示距離 */
 const PULL_RESISTANCE_RATIO = 0.5;
 
@@ -33,4 +39,13 @@ export function pullIndicatorRotationDeg(
   threshold: number = PULL_REFRESH_THRESHOLD,
 ): number {
   return Math.min(1, pullDistance / threshold) * 360;
+}
+
+export function pullIndicatorSlotHeight(
+  pullDistance: number,
+  isRefreshing: boolean,
+): number {
+  if (isRefreshing) return PULL_REFRESH_HOLD_PX;
+  if (pullDistance <= 0) return 0;
+  return Math.max(pullDistance, PULL_INDICATOR_MIN_PX);
 }

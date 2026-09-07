@@ -3,6 +3,9 @@ import {
   applyPullResistance,
   isPullGesture,
   pullIndicatorRotationDeg,
+  pullIndicatorSlotHeight,
+  PULL_INDICATOR_MIN_PX,
+  PULL_REFRESH_HOLD_PX,
   PULL_REFRESH_MAX,
   PULL_REFRESH_THRESHOLD,
   shouldTriggerRefresh,
@@ -54,6 +57,31 @@ describe("pullToRefresh", () => {
     it("accepts custom threshold", () => {
       expect(pullIndicatorRotationDeg(20, 40)).toBe(180);
       expect(pullIndicatorRotationDeg(80, 40)).toBe(360);
+    });
+  });
+
+  describe("pullIndicatorSlotHeight", () => {
+    it("returns 0 when idle", () => {
+      expect(pullIndicatorSlotHeight(0, false)).toBe(0);
+    });
+
+    it("returns hold height while refreshing", () => {
+      expect(pullIndicatorSlotHeight(0, true)).toBe(PULL_REFRESH_HOLD_PX);
+      expect(pullIndicatorSlotHeight(50, true)).toBe(PULL_REFRESH_HOLD_PX);
+    });
+
+    it("enforces minimum height for small pull distances", () => {
+      expect(pullIndicatorSlotHeight(4, false)).toBe(PULL_INDICATOR_MIN_PX);
+      expect(pullIndicatorSlotHeight(PULL_INDICATOR_MIN_PX - 1, false)).toBe(
+        PULL_INDICATOR_MIN_PX,
+      );
+    });
+
+    it("uses pull distance when above minimum", () => {
+      expect(pullIndicatorSlotHeight(50, false)).toBe(50);
+      expect(pullIndicatorSlotHeight(PULL_REFRESH_MAX, false)).toBe(
+        PULL_REFRESH_MAX,
+      );
     });
   });
 

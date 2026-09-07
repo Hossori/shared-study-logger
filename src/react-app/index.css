@@ -63,7 +63,7 @@
 html,
 body,
 #root {
-  height: 100dvh;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -188,7 +188,7 @@ body {
   }
   /* PC: オーバーレイの scroll-lock でスクロールバーが消えても幅が変わらないようにする */
   @media (hover: hover) and (pointer: fine) {
-    html {
+    [data-layout-scroll] {
       scrollbar-gutter: stable;
     }
   }
