@@ -14,8 +14,10 @@
   fetch・キャッシュ・invalidateをすべてここに集約する。ミューテーション成功時は関連する
   クエリキーを`invalidateQueries`して再取得させる方式で、キャッシュを手動で書き換える箇所は
   ログイン/ログアウト時およびプロフィール更新時の`authQueryKeys.me`への`setQueryData`と、
-  リアクション付与/取消の件数楽観更新（`recordsQueryKeys.list` の infinite cache。失敗時は
-  `onMutate` のスナップショットへ戻し、`onSettled` で invalidate）のみ。
+  リアクション付与/取消の件数楽観更新（`recordsQueryKeys.list` prefix への
+  `setQueriesData`。失敗時は `onMutate` のスナップショットへ戻し、`onSettled` で invalidate）のみ。
+  記録一覧のユーザーフィルタ（全員 / 自分のみ / 指定する）はコンポーネント state（Zustand 禁止）。
+  クエリキーは `recordsQueryKeys.listPage(groupId, sortedUserIds)`。
   `queryFn`/`mutationFn`は実際のHTTP通信を`src/react-app/lib/api.ts`の
   `apiGet`/`apiPost`/`apiPatch`/`apiDelete`（axiosの`instance`をラップした薄い関数）に
   委譲しており、`queries/*.ts`側はaxios自体を意識しない（採用理由は

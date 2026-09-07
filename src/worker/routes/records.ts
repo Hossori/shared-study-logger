@@ -50,6 +50,7 @@ recordsRoutes.get("/:groupId/records", async (c) => {
   const parsedQuery = ListStudyRecordsQuerySchema.safeParse({
     cursor: c.req.query("cursor"),
     limit: c.req.query("limit"),
+    userIds: c.req.queries("userIds"),
   });
   if (!parsedQuery.success) {
     return c.json(

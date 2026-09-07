@@ -15,6 +15,7 @@ import {
 	UpdateStudyRecordRequestSchema,
 	UserRoleSchema,
 	UserSchema,
+	ListStudyRecordsQuerySchema,
 } from "../../shared/schemas";
 
 describe("LoginRequestSchema", () => {
@@ -443,6 +444,53 @@ describe("ReactionStampSchema", () => {
 			cry: "泣く",
 			muscle: "がんばれ",
 		});
+	});
+});
+
+describe("ListStudyRecordsQuerySchema", () => {
+	it("normalizes a single userIds string to an array", () => {
+		const result = ListStudyRecordsQuerySchema.safeParse({ userIds: "a" });
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.userIds).toEqual(["a"]);
+		}
+	});
+
+	it("accepts userIds array", () => {
+		const result = ListStudyRecordsQuerySchema.safeParse({
+			userIds: ["a", "b"],
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.userIds).toEqual(["a", "b"]);
+		}
+	});
+
+	it("treats empty userIds as unspecified", () => {
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({ userIds: [] }).success,
+		).toBe(true);
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({ userIds: [] }).data?.userIds,
+		).toBeUndefined();
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({}).data?.userIds,
+		).toBeUndefined();
+	});
+
+	it("rejects more than 50 userIds", () => {
+		const userIds = Array.from({ length: 51 }, (_, i) => `id-${i}`);
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({ userIds }).success,
+		).toBe(false);
+	});
+
+	it("keeps default limit of 20", () => {
+		const result = ListStudyRecordsQuerySchema.safeParse({});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.limit).toBe(20);
+		}
 	});
 });
 

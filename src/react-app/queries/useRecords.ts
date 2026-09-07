@@ -37,21 +37,24 @@ const RECORDS_PAGE_LIMIT = 20;
 
 export const recordsQueryKeys = {
   all: ["records"] as const,
-  list: (groupId: string | null) => ["records", groupId] as const,
+  list: (groupId: string | null) => ["records", groupId, "list"] as const,
+  listPage: (groupId: string | null, userIds: string[]) =>
+    ["records", groupId, "list", userIds] as const,
   reactions: (groupId: string | null, recordId: string) =>
     ["records", groupId, recordId, "reactions"] as const,
 };
 
 type RecordsInfiniteData = InfiniteData<RecordsPage, string | undefined>;
 
-function patchRecordReactions(
+function patchRecordReactionsInCache(
   queryClient: QueryClient,
   groupId: string | null,
   recordId: string,
   updater: (reactions: ReactionSummary[]) => ReactionSummary[],
 ) {
-  queryClient.setQueryData<RecordsInfiniteData>(
-    recordsQueryKeys.list(groupId),
+  const listKey = recordsQueryKeys.list(groupId);
+  queryClient.setQueriesData<RecordsInfiniteData>(
+    { queryKey: listKey },
     (current) => {
       if (!current) return current;
       return {
@@ -69,21 +72,30 @@ function patchRecordReactions(
   );
 }
 
-export function useRecordsQuery(groupId: string | null) {
+export function useRecordsQuery(
+  groupId: string | null,
+  userIds?: string[],
+  options?: { enabled?: boolean },
+) {
+  const sortedUserIds = userIds?.length ? [...userIds].sort() : [];
+
   return useInfiniteQuery({
-    queryKey: recordsQueryKeys.list(groupId),
+    queryKey: recordsQueryKeys.listPage(groupId, sortedUserIds),
     queryFn: async ({ pageParam }): Promise<RecordsPage> => {
       const params = new URLSearchParams({
         limit: String(RECORDS_PAGE_LIMIT),
       });
       if (pageParam) params.set("cursor", pageParam);
+      for (const id of sortedUserIds) {
+        params.append("userIds", id);
+      }
       return apiGet<RecordsPage>(
         `/api/groups/${groupId}/records?${params.toString()}`,
       );
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: groupId !== null,
+    enabled: (options?.enabled ?? true) && groupId !== null,
   });
 }
 
@@ -179,25 +191,25 @@ export function useAddRecordReactionMutation(groupId: string | null) {
     },
     onMutate: async ({ recordId, stamp }) => {
       const listKey = recordsQueryKeys.list(groupId);
-      await queryClient.cancelQueries({ queryKey: listKey, exact: true });
-      const previous = queryClient.getQueryData<RecordsInfiniteData>(listKey);
-      patchRecordReactions(queryClient, groupId, recordId, (reactions) =>
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const previous = queryClient.getQueriesData<RecordsInfiniteData>({
+        queryKey: listKey,
+      });
+      patchRecordReactionsInCache(queryClient, groupId, recordId, (reactions) =>
         applyAddReaction(reactions, stamp),
       );
       return { previous };
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(
-          recordsQueryKeys.list(groupId),
-          context.previous,
-        );
+        for (const [queryKey, data] of context.previous) {
+          queryClient.setQueryData(queryKey, data);
+        }
       }
     },
     onSettled: async (_data, _error, variables) => {
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.list(groupId),
-        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.reactions(groupId, variables.recordId),
@@ -223,25 +235,25 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
     },
     onMutate: async ({ recordId, stamp }) => {
       const listKey = recordsQueryKeys.list(groupId);
-      await queryClient.cancelQueries({ queryKey: listKey, exact: true });
-      const previous = queryClient.getQueryData<RecordsInfiniteData>(listKey);
-      patchRecordReactions(queryClient, groupId, recordId, (reactions) =>
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const previous = queryClient.getQueriesData<RecordsInfiniteData>({
+        queryKey: listKey,
+      });
+      patchRecordReactionsInCache(queryClient, groupId, recordId, (reactions) =>
         applyRemoveReaction(reactions, stamp),
       );
       return { previous };
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(
-          recordsQueryKeys.list(groupId),
-          context.previous,
-        );
+        for (const [queryKey, data] of context.previous) {
+          queryClient.setQueryData(queryKey, data);
+        }
       }
     },
     onSettled: async (_data, _error, variables) => {
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.list(groupId),
-        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.reactions(groupId, variables.recordId),
