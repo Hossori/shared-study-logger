@@ -37,8 +37,10 @@ import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
 import {
+  DURATION_BADGE_TIER_CLASS,
   formatDurationMinutes,
   formatRecordCardDatetime,
+  getDurationBadgeTier,
   shouldShowDurationBadge,
 } from "./recordFormUtils";
 import RecordReactions from "./RecordReactions";
@@ -111,7 +113,14 @@ function RecordCard({
               {formatRecordCardDatetime(record)}
             </span>
             {shouldShowDurationBadge(record) ? (
-              <Badge variant="secondary">
+              <Badge
+                variant="secondary"
+                className={
+                  DURATION_BADGE_TIER_CLASS[
+                    getDurationBadgeTier(record.durationMinutes!)
+                  ]
+                }
+              >
                 {formatDurationMinutes(record.durationMinutes!)}
               </Badge>
             ) : null}

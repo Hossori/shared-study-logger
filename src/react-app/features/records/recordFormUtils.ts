@@ -102,6 +102,26 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}時間${rest}分`;
 }
 
+export type DurationBadgeTier =
+  "under1h" | "h1to3" | "h3to5" | "h5to10" | "h10plus";
+
+/** 学習時間バッジの段階（半開区間）。 */
+export function getDurationBadgeTier(minutes: number): DurationBadgeTier {
+  if (minutes < 60) return "under1h";
+  if (minutes < 180) return "h1to3";
+  if (minutes < 300) return "h3to5";
+  if (minutes < 600) return "h5to10";
+  return "h10plus";
+}
+
+export const DURATION_BADGE_TIER_CLASS: Record<DurationBadgeTier, string> = {
+  under1h: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+  h1to3: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200",
+  h3to5: "bg-cyan-200 text-cyan-900 dark:bg-cyan-800 dark:text-cyan-100",
+  h5to10: "bg-cyan-300 text-cyan-950 dark:bg-cyan-700 dark:text-cyan-50",
+  h10plus: "bg-cyan-400 text-cyan-950 dark:bg-cyan-600 dark:text-cyan-50",
+};
+
 /** 時刻表示（時はゼロ埋めなし、分は 2 桁）。 */
 export function formatClockTime(hour: number, minute: number): string {
   return `${hour}:${String(minute).padStart(2, "0")}`;
