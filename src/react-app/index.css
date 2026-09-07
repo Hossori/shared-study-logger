@@ -178,6 +178,7 @@ body {
   }
   html {
     @apply font-sans;
+    overscroll-behavior-y: none;
   }
   /* PC: オーバーレイの scroll-lock でスクロールバーが消えても幅が変わらないようにする */
   @media (hover: hover) and (pointer: fine) {

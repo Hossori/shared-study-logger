@@ -27,7 +27,9 @@
     `getStudyRecord`/`updateStudyRecord`/`deleteStudyRecord`/
     `addRecordReaction`/`deleteRecordReaction`/`listRecordReactions`
   - フロント: `src/react-app/features/records/RecordsList.tsx`（3 行カード、一覧表示、「もっと見る」、
-    自分の記録の編集・削除UI）、
+    自分の記録の編集・削除UI、`PullToRefresh` で包んで引っ張って更新）、
+    `src/react-app/components/PullToRefresh.tsx`（一覧先頭の PTR UI）、
+    `src/react-app/lib/pullToRefresh.ts`（PTR 距離・ジェスチャ判定の純関数）、
     `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム、学習日時は未設定で開始）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
@@ -75,6 +77,9 @@
     を `created_at, id` 昇順。フロントは付与済みスタンプの長押しでポップアップを開き、
     指を離しても開いたままにする。他箇所クリックまたは Escape で閉じる。
     開いているあいだだけ `useQuery`。各行は表示名と絵文字。リストアイコンは出さない。
+  - 引っ張って更新: 一覧先頭（`main` の `scrollTop === 0`）で下に引っ張ると
+    `PullToRefresh` が `invalidateQueries(recordsQueryKeys.list(groupId))` を呼ぶ。
+    記録一覧（`reactions` 集計込み）とリアクションユーザー一覧クエリ（キー prefix 一致）を再取得する。
 - **注意点・既知の制約**:
   - 編集・削除は投稿者本人のみ可能（グループ所属だけでは不可）。他人の記録には
     フロントでも操作UIを出さない（`useMeQuery`の`user.id`と`record.userId`を比較）。

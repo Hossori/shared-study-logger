@@ -3,13 +3,16 @@
  * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
+ * 一覧先頭で下に引っ張ると PullToRefresh 経由で再取得する。
  */
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
 import { useMeQuery } from "../../queries/useAuth";
 import {
+  recordsQueryKeys,
   useDeleteRecordMutation,
   useRecordsQuery,
 } from "../../queries/useRecords";
@@ -32,6 +35,7 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import PullToRefresh from "../../components/PullToRefresh";
 import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
@@ -193,6 +197,7 @@ function RecordsListFrame({ children }: { children: ReactNode }) {
 
 export default function RecordsList() {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+  const queryClient = useQueryClient();
   const { data: me } = useMeQuery();
   const {
     data,
@@ -212,6 +217,13 @@ export default function RecordsList() {
   // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
   const isInitialLoading = isPending || (isFetching && !data);
 
+  const handleRefresh = async () => {
+    if (!selectedGroupId) return;
+    await queryClient.invalidateQueries({
+      queryKey: recordsQueryKeys.list(selectedGroupId),
+    });
+  };
+
   const handleDelete = async (record: StudyRecord) => {
     const confirmed = await confirm({
       title: "記録の削除",
@@ -227,99 +239,93 @@ export default function RecordsList() {
     }
   };
 
+  let bodyContent: ReactNode;
+
   if (!selectedGroupId) {
-    return (
-      <RecordsListFrame>
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>グループを選択してください。</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </RecordsListFrame>
+    bodyContent = (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>グループを選択してください。</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     );
-  }
-
-  if (isInitialLoading) {
-    return (
-      <RecordsListFrame>
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-      </RecordsListFrame>
+  } else if (isInitialLoading) {
+    bodyContent = (
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
     );
-  }
-
-  if (isError) {
-    return (
-      <RecordsListFrame>
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </RecordsListFrame>
+  } else if (isError) {
+    bodyContent = (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     );
-  }
+  } else {
+    const records = data?.pages.flatMap((page) => page.records) ?? [];
 
-  const records = data?.pages.flatMap((page) => page.records) ?? [];
+    if (records.length === 0) {
+      bodyContent = <EmptyRecordsMessage />;
+    } else {
+      bodyContent = (
+        <>
+          <ul className="flex flex-col gap-3">
+            {records.map((record) => (
+              <RecordCard
+                key={record.id}
+                groupId={selectedGroupId}
+                record={record}
+                isOwner={me?.id === record.userId}
+                onEdit={(record) => {
+                  setEditSession((session) => session + 1);
+                  setEditingRecord(record);
+                }}
+                onDelete={handleDelete}
+                isDeleting={
+                  deleteRecordMutation.isPending &&
+                  deleteRecordMutation.variables === record.id
+                }
+              />
+            ))}
+          </ul>
 
-  if (records.length === 0) {
-    return (
-      <RecordsListFrame>
-        <EmptyRecordsMessage />
-      </RecordsListFrame>
-    );
+          {hasNextPage && (
+            <div className="mt-4 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    読み込み中...
+                  </>
+                ) : (
+                  "もっと見る"
+                )}
+              </Button>
+            </div>
+          )}
+
+          <EditRecordModal
+            key={editSession}
+            record={editingRecord}
+            open={editingRecord !== null}
+            onClose={() => setEditingRecord(null)}
+          />
+        </>
+      );
+    }
   }
 
   return (
-    <RecordsListFrame>
-      <ul className="flex flex-col gap-3">
-        {records.map((record) => (
-          <RecordCard
-            key={record.id}
-            groupId={selectedGroupId}
-            record={record}
-            isOwner={me?.id === record.userId}
-            onEdit={(record) => {
-              setEditSession((session) => session + 1);
-              setEditingRecord(record);
-            }}
-            onDelete={handleDelete}
-            isDeleting={
-              deleteRecordMutation.isPending &&
-              deleteRecordMutation.variables === record.id
-            }
-          />
-        ))}
-      </ul>
-
-      {hasNextPage && (
-        <div className="mt-4 flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-          >
-            {isFetchingNextPage ? (
-              <>
-                <Spinner data-icon="inline-start" />
-                読み込み中...
-              </>
-            ) : (
-              "もっと見る"
-            )}
-          </Button>
-        </div>
-      )}
-
-      <EditRecordModal
-        key={editSession}
-        record={editingRecord}
-        open={editingRecord !== null}
-        onClose={() => setEditingRecord(null)}
-      />
-    </RecordsListFrame>
+    <PullToRefresh onRefresh={handleRefresh} disabled={!selectedGroupId}>
+      <RecordsListFrame>{bodyContent}</RecordsListFrame>
+    </PullToRefresh>
   );
 }
