@@ -3,7 +3,7 @@
 [← SKILL.md](../SKILL.md)
 
 - **概要**: 学習日時（任意）・学習時間（任意・分）・タイトル・メモ（任意）を投稿し、グループ内で
-  `COALESCE(study_datetime, created_at)` の新しい順に一覧表示する。一覧はカーソルページネーション。
+  `COALESCE(started_at, created_at)` の新しい順に一覧表示する。一覧はカーソルページネーション。
   自分の記録は編集・削除可能。
   学習日時は投稿/編集フォームの 1 ボタン（ClockPlus + ラベル）。未設定時のラベルは
   「学習日時を設定」、設定済みは `2026年12月28日(月) 23:30-25:00`。押下でネスト Dialog を開く。
@@ -43,7 +43,7 @@
     `AddRecordReactionRequestSchema`/`RecordReactionEntrySchema`
 - **データフロー**:
   - 一覧取得: `GET /:groupId/records?cursor=...&limit=...` → 所属チェック →
-    zodでクエリ検証 → `listStudyRecords`が`COALESCE(study_datetime, created_at)`+`id`を複合キーとした
+    zodでクエリ検証 → `listStudyRecords`が`COALESCE(started_at, created_at)`+`id`を複合キーとした
     base64エンコードカーソル（`sortKey|id` の 2 要素、`sortKey` は ISO 文字列）で
     `limit+1`件取得し、`limit`件を超えていれば`nextCursor`を返す。同じページの record id を
     `IN`して`record_reactions`を`GROUP BY record_id, stamp`で1回集計し、各記録の

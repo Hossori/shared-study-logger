@@ -6,7 +6,7 @@ import type { StudyRecord } from "../../../../shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {
-  studyDatetime: string;
+  startedAt: string;
   title: string;
   memo: string;
   durationMinutes: number | null;
@@ -196,11 +196,8 @@ export function formatStudyDatetimeLabel(
 
 /** 記録カードの日時表示。 */
 export function formatRecordCardDatetime(record: StudyRecord): string {
-  if (record.studyDatetime) {
-    return formatStudyDatetimeLabel(
-      record.studyDatetime,
-      record.durationMinutes,
-    );
+  if (record.startedAt) {
+    return formatStudyDatetimeLabel(record.startedAt, record.durationMinutes);
   }
   const created = new Date(record.createdAt);
   if (Number.isNaN(created.getTime())) return record.createdAt;
@@ -210,7 +207,7 @@ export function formatRecordCardDatetime(record: StudyRecord): string {
 /** 学習時間バッジを表示するか（学習日時と duration の両方が正の値）。 */
 export function shouldShowDurationBadge(record: StudyRecord): boolean {
   return (
-    record.studyDatetime != null &&
+    record.startedAt != null &&
     record.durationMinutes != null &&
     record.durationMinutes > 0
   );
@@ -223,7 +220,7 @@ export function notifyFormInput(node: EventTarget | null): void {
 
 /** フォーム値から API 用ペイロードを組み立てる。不正なら null。 */
 export function buildRecordRequestPayload(values: RecordFormValues): {
-  studyDatetime: string | null;
+  startedAt: string | null;
   title: string;
   memo: string | undefined;
   durationMinutes: number | null;
@@ -234,27 +231,28 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
   const memo = values.memo.trim();
   const memoField = memo ? memo : undefined;
 
-  if (!values.studyDatetime) {
+  if (!values.startedAt) {
     return {
-      studyDatetime: null,
+      startedAt: null,
       title,
       memo: memoField,
       durationMinutes: null,
     };
   }
 
-  const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
-  if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime) {
+  const startedAt = parseDatetimeLocalToIso(values.startedAt);
+  if (!parseRecordDatetime(values.startedAt) || !startedAt) {
+    return null;
+  }
+
+  if (values.durationMinutes == null || values.durationMinutes <= 0) {
     return null;
   }
 
   return {
-    studyDatetime,
+    startedAt,
     title,
     memo: memoField,
-    durationMinutes:
-      values.durationMinutes == null || values.durationMinutes <= 0
-        ? null
-        : values.durationMinutes,
+    durationMinutes: values.durationMinutes,
   };
 }
