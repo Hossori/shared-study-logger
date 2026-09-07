@@ -1,5 +1,5 @@
 /**
- * スクロール親（Layout の main）先頭で下に引っ張ると onRefresh を呼ぶ。
+ * スクロール親（Layout のヘッダ下ラッパ）先頭で下に引っ張ると onRefresh を呼ぶ。
  * 入れ子スクロールは作らず、最近傍の overflow-y auto/scroll 祖先を追跡する。
  */
 import {
@@ -9,12 +9,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMaxSm } from "../features/notifications/useIsMaxSm";
 import {
   applyPullResistance,
   isPullGesture,
+  pullIndicatorRotationDeg,
   shouldTriggerRefresh,
 } from "../lib/pullToRefresh";
 
@@ -308,6 +309,7 @@ export default function PullToRefresh({
   }, [ptrEnabled, finishPull, resetPull, updatePullDistance]);
 
   const indicatorHeight = isRefreshing ? REFRESH_HOLD_PX : pullDistance;
+  const showIndicator = pullDistance > 0 || isRefreshing;
 
   return (
     <div
@@ -319,7 +321,22 @@ export default function PullToRefresh({
         style={{ height: indicatorHeight }}
         aria-hidden={indicatorHeight === 0}
       >
-        {isRefreshing && <Spinner className="size-5" />}
+        {showIndicator && (
+          <Loader2Icon
+            className={cn(
+              "text-muted-foreground size-5",
+              isRefreshing && "animate-spin",
+            )}
+            style={
+              isRefreshing
+                ? undefined
+                : {
+                    transform: `rotate(${pullIndicatorRotationDeg(pullDistance)}deg)`,
+                  }
+            }
+            aria-hidden
+          />
+        )}
       </div>
       {children}
     </div>

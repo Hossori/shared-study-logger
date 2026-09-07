@@ -26,3 +26,11 @@ export function shouldTriggerRefresh(
 export function isPullGesture(deltaX: number, deltaY: number): boolean {
   return deltaY > 0 && deltaY > Math.abs(deltaX);
 }
+
+/** 引っ張りインジケータの回転角（deg）。閾値以上は 360 で固定 */
+export function pullIndicatorRotationDeg(
+  pullDistance: number,
+  threshold: number = PULL_REFRESH_THRESHOLD,
+): number {
+  return Math.min(1, pullDistance / threshold) * 360;
+}

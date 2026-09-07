@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPullResistance,
   isPullGesture,
+  pullIndicatorRotationDeg,
   PULL_REFRESH_MAX,
   PULL_REFRESH_THRESHOLD,
   shouldTriggerRefresh,
@@ -35,6 +36,24 @@ describe("pullToRefresh", () => {
     it("accepts custom threshold", () => {
       expect(shouldTriggerRefresh(30, 40)).toBe(false);
       expect(shouldTriggerRefresh(40, 40)).toBe(true);
+    });
+  });
+
+  describe("pullIndicatorRotationDeg", () => {
+    it("scales rotation with pull distance up to threshold", () => {
+      expect(pullIndicatorRotationDeg(0)).toBe(0);
+      expect(pullIndicatorRotationDeg(PULL_REFRESH_THRESHOLD / 2)).toBe(180);
+      expect(pullIndicatorRotationDeg(PULL_REFRESH_THRESHOLD)).toBe(360);
+    });
+
+    it("clamps at 360 when pull exceeds threshold", () => {
+      expect(pullIndicatorRotationDeg(PULL_REFRESH_MAX)).toBe(360);
+      expect(pullIndicatorRotationDeg(PULL_REFRESH_THRESHOLD + 20)).toBe(360);
+    });
+
+    it("accepts custom threshold", () => {
+      expect(pullIndicatorRotationDeg(20, 40)).toBe(180);
+      expect(pullIndicatorRotationDeg(80, 40)).toBe(360);
     });
   });
 

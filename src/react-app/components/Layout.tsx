@@ -51,9 +51,11 @@ export default function Layout({
         </div>
       </header>
 
-      <main className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto overscroll-y-none pt-4 pr-[max(0.75rem,var(--safe-area-inset-right))] pb-[max(1rem,var(--safe-area-inset-bottom))] pl-[max(0.75rem,var(--safe-area-inset-left))] sm:pt-8 sm:pr-[max(1.5rem,var(--safe-area-inset-right))] sm:pb-[max(2rem,var(--safe-area-inset-bottom))] sm:pl-[max(1.5rem,var(--safe-area-inset-left))]">
-        {children}
-      </main>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-none">
+        <main className="mx-auto w-full max-w-4xl pt-4 pr-[max(0.75rem,var(--safe-area-inset-right))] pb-[max(1rem,var(--safe-area-inset-bottom))] pl-[max(0.75rem,var(--safe-area-inset-left))] sm:pt-8 sm:pr-[max(1.5rem,var(--safe-area-inset-right))] sm:pb-[max(2rem,var(--safe-area-inset-bottom))] sm:pl-[max(1.5rem,var(--safe-area-inset-left))]">
+          {children}
+        </main>
+      </div>
 
       {showRecordActions && (
         <>
