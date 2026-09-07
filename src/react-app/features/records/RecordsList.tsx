@@ -3,13 +3,16 @@
  * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
+ * 一覧先頭で下に引っ張ると PullToRefresh 経由で再取得する。
  */
 import { useState, type ReactNode } from "react";
 import { Link, useOutletContext } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
 import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import {
+  recordsQueryKeys,
   useDeleteRecordMutation,
   useRecordsQuery,
 } from "../../queries/useRecords";
@@ -32,6 +35,7 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import PullToRefresh from "../../components/PullToRefresh";
 import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
@@ -362,9 +366,18 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
 
 export default function RecordsList() {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+  const queryClient = useQueryClient();
 
+  const handleRefresh = async () => {
+    if (!selectedGroupId) return;
+    await queryClient.invalidateQueries({
+      queryKey: recordsQueryKeys.list(selectedGroupId),
+    });
+  };
+
+  let body: ReactNode;
   if (!selectedGroupId) {
-    return (
+    body = (
       <RecordsListFrame>
         <Empty>
           <EmptyHeader>
@@ -373,9 +386,15 @@ export default function RecordsList() {
         </Empty>
       </RecordsListFrame>
     );
+  } else {
+    body = (
+      <GroupRecordsContent key={selectedGroupId} groupId={selectedGroupId} />
+    );
   }
 
   return (
-    <GroupRecordsContent key={selectedGroupId} groupId={selectedGroupId} />
+    <PullToRefresh onRefresh={handleRefresh} disabled={!selectedGroupId}>
+      {body}
+    </PullToRefresh>
   );
 }
