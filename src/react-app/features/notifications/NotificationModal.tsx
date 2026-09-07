@@ -31,7 +31,7 @@ import {
   PUSH_OPT_IN_NOTIFICATION_ID,
 } from "./useAppNotifications";
 import { parseNotificationBody } from "./notificationBodyLinks";
-import { useIsMaxSm } from "./useIsMaxSm";
+import { useIsMaxSm } from "../../components/useIsMaxSm";
 
 const bodyLinkClassName = "text-primary underline underline-offset-3";
 

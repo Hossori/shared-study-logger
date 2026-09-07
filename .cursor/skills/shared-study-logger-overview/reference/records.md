@@ -30,8 +30,11 @@
     自分の記録の編集・削除UI、`PullToRefresh` で包んで引っ張って更新）、
     `src/react-app/features/records/RecordsFilter.tsx`（「表示フィルター」開示。投稿者はラジオ: 全員 / 自分のみ / 指定する。指定するはポップアップ複数選択、閉じたら適用）、
     `src/react-app/components/PullToRefresh.tsx`（一覧先頭の PTR UI）、
+    `src/react-app/components/LayoutScrollContext.tsx`（Layout の `data-layout-scroll` ref）、
+    `src/react-app/components/useTopEdgeGesture.ts`（先頭ジェスチャの DOM アダプタ）、
     `src/react-app/components/usePreventTopOverscroll.ts`（Layout 先頭オーバースクロール抑止）、
-    `src/react-app/lib/pullToRefresh.ts`（PTR 距離・ジェスチャ判定の純関数）、
+    `src/react-app/lib/pullGesture.ts`（先頭ジェスチャの状態機械）、
+    `src/react-app/lib/pullToRefresh.ts`（PTR 距離・回転の純関数）、
     `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム、学習日時は未設定で開始）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
@@ -92,7 +95,11 @@
     ヘッダ下ラッパ（`data-layout-scroll`）1 本のみ（`html`/`body`/`#root` は `height: 100%` +
     `overflow: hidden`）。PC の `scrollbar-gutter: stable` もこのラッパに付ける（`html` ではない）。
     その先頭（`scrollTop === 0`）で下に引っ張ると
-    `PullToRefresh` が `invalidateQueries(recordsQueryKeys.list(groupId))` を呼ぶ。
+    `PullToRefresh` が `LayoutScrollContext` のスクロール容器を使い、
+    `invalidateQueries(recordsQueryKeys.list(groupId))` を呼ぶ（overflow 祖先の探索はしない）。
+    先頭ジェスチャは `reducePullGesture`（`pullGesture.ts`）が状態機械として扱い、
+    `useTopEdgeGesture` が Touch / Pointer を正規化して渡す。記録一覧で PTR が活性なあいだは
+    Layout の `usePreventTopOverscroll` は付けない（listener は PTR の 1 組）。
     タッチ実機・DevTools デバイスモードでは `touchmove`（`{ passive: false }`）で
     ネイティブ縦パンを止めてから引っ張り距離を反映する。狭いウィンドウのマウス操作は pointer イベントで扱う。
     引っ張り開始直後からサークルが見える（インジケータ最小高さ 28px）。引っ張り中は距離に連動して回転し、

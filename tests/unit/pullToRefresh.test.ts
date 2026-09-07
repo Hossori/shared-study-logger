@@ -30,15 +30,10 @@ describe("pullToRefresh", () => {
   });
 
   describe("shouldTriggerRefresh", () => {
-    it("uses default threshold", () => {
+    it("uses PULL_REFRESH_THRESHOLD", () => {
       expect(shouldTriggerRefresh(PULL_REFRESH_THRESHOLD - 1)).toBe(false);
       expect(shouldTriggerRefresh(PULL_REFRESH_THRESHOLD)).toBe(true);
       expect(shouldTriggerRefresh(PULL_REFRESH_THRESHOLD + 10)).toBe(true);
-    });
-
-    it("accepts custom threshold", () => {
-      expect(shouldTriggerRefresh(30, 40)).toBe(false);
-      expect(shouldTriggerRefresh(40, 40)).toBe(true);
     });
   });
 
@@ -52,11 +47,6 @@ describe("pullToRefresh", () => {
     it("clamps at 360 when pull exceeds threshold", () => {
       expect(pullIndicatorRotationDeg(PULL_REFRESH_MAX)).toBe(360);
       expect(pullIndicatorRotationDeg(PULL_REFRESH_THRESHOLD + 20)).toBe(360);
-    });
-
-    it("accepts custom threshold", () => {
-      expect(pullIndicatorRotationDeg(20, 40)).toBe(180);
-      expect(pullIndicatorRotationDeg(80, 40)).toBe(360);
     });
   });
 
