@@ -115,11 +115,11 @@ export function getDurationBadgeTier(minutes: number): DurationBadgeTier {
 }
 
 export const DURATION_BADGE_TIER_CLASS: Record<DurationBadgeTier, string> = {
-  under1h: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-  h1to3: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200",
-  h3to5: "bg-cyan-200 text-cyan-900 dark:bg-cyan-800 dark:text-cyan-100",
-  h5to10: "bg-cyan-300 text-cyan-950 dark:bg-cyan-700 dark:text-cyan-50",
-  h10plus: "bg-cyan-400 text-cyan-950 dark:bg-cyan-600 dark:text-cyan-50",
+  under1h: "bg-duration-badge-under1h text-duration-badge-under1h-foreground",
+  h1to3: "bg-duration-badge-h1to3 text-duration-badge-h1to3-foreground",
+  h3to5: "bg-duration-badge-h3to5 text-duration-badge-h3to5-foreground",
+  h5to10: "bg-duration-badge-h5to10 text-duration-badge-h5to10-foreground",
+  h10plus: "bg-duration-badge-h10plus text-duration-badge-h10plus-foreground",
 };
 
 /** 時刻表示（時はゼロ埋めなし、分は 2 桁）。 */
