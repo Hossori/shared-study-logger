@@ -26,6 +26,9 @@ interface PullToRefreshProps {
 /** プル確定前の最小移動量（px）。タップ・長押しと区別する */
 const PULL_ACTIVATION_PX = 8;
 
+/** 更新中に表示するインジケータ領域の高さ（px） */
+const REFRESH_HOLD_PX = 40;
+
 function findScrollParent(element: HTMLElement | null): HTMLElement | null {
   let node = element?.parentElement ?? null;
   while (node) {
@@ -53,6 +56,8 @@ export default function PullToRefresh({
   const pullConfirmedRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -74,18 +79,15 @@ export default function PullToRefresh({
     if (isRefreshingRef.current) return;
     isRefreshingRef.current = true;
     setIsRefreshing(true);
+    updatePullDistance(REFRESH_HOLD_PX);
     try {
-      await onRefresh();
+      await onRefreshRef.current();
     } finally {
       isRefreshingRef.current = false;
       setIsRefreshing(false);
       resetPull();
     }
-  }, [onRefresh, resetPull]);
-
-  useEffect(() => {
-    isRefreshingRef.current = isRefreshing;
-  }, [isRefreshing]);
+  }, [resetPull, updatePullDistance]);
 
   useEffect(() => {
     if (disabled) return;
@@ -182,7 +184,7 @@ export default function PullToRefresh({
     };
   }, [disabled, resetPull, runRefresh, updatePullDistance]);
 
-  const indicatorHeight = isRefreshing ? pullDistance || 40 : pullDistance;
+  const indicatorHeight = isRefreshing ? REFRESH_HOLD_PX : pullDistance;
 
   return (
     <div
@@ -196,16 +198,7 @@ export default function PullToRefresh({
       >
         {(isRefreshing || pullDistance > 0) && <Spinner className="size-5" />}
       </div>
-      <div
-        style={{
-          transform:
-            pullDistance > 0 || isRefreshing
-              ? `translateY(${pullDistance}px)`
-              : undefined,
-        }}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
