@@ -33,8 +33,9 @@ async function createRecord(
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					studyDatetime: "2026-08-10T10:00:00.000Z",
+					startedAt: "2026-08-10T10:00:00.000Z",
 					title,
+					durationMinutes: 60,
 				}),
 			},
 		),

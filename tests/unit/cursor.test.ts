@@ -11,12 +11,12 @@ function encodeCursor(sortKey: string, id: string): string {
 }
 
 function encodeLegacyCursor(
-	studyDatetime: string,
+	startedAt: string,
 	updatedAt: string,
 	id: string,
 ): string {
 	const bytes = new TextEncoder().encode(
-		`${studyDatetime}|${updatedAt}|${id}`,
+		`${startedAt}|${updatedAt}|${id}`,
 	);
 	let binary = "";
 	for (const byte of bytes) {

@@ -45,9 +45,9 @@ type OpenPicker = "date" | "start" | "end" | "durationHelp" | null;
 
 interface StudyDatetimeFieldProps {
   idPrefix: string;
-  studyDatetime: string;
+  startedAt: string;
   durationMinutes: number | null;
-  onChange: (studyDatetime: string, durationMinutes: number | null) => void;
+  onChange: (startedAt: string, durationMinutes: number | null) => void;
 }
 
 interface DraftState {
@@ -100,10 +100,10 @@ function endFromStartAndDuration(
 }
 
 function initDraft(
-  studyDatetime: string,
+  startedAt: string,
   durationMinutes: number | null,
 ): DraftState {
-  const parsed = parseRecordDatetime(studyDatetime);
+  const parsed = parseRecordDatetime(startedAt);
   if (!parsed) {
     const today = nowRecordDatetimeParts();
     return {
@@ -140,18 +140,18 @@ function withEndFromDuration(
 }
 
 function parentFieldLabel(
-  studyDatetime: string,
+  startedAt: string,
   durationMinutes: number | null,
 ): string {
-  if (!studyDatetime) return "学習日時を設定";
-  const iso = parseDatetimeLocalToIso(studyDatetime);
+  if (!startedAt) return "学習日時を設定";
+  const iso = parseDatetimeLocalToIso(startedAt);
   if (!iso) return "学習日時を設定";
   return formatStudyDatetimeLabel(iso, durationMinutes);
 }
 
 export default function StudyDatetimeField({
   idPrefix,
-  studyDatetime,
+  startedAt,
   durationMinutes,
   onChange,
 }: StudyDatetimeFieldProps) {
@@ -159,7 +159,7 @@ export default function StudyDatetimeField({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [openPicker, setOpenPicker] = useState<OpenPicker>(null);
   const [draft, setDraft] = useState<DraftState>(() =>
-    initDraft(studyDatetime, durationMinutes),
+    initDraft(startedAt, durationMinutes),
   );
 
   const dateTriggerId = `${idPrefix}-studyDate`;
@@ -174,14 +174,14 @@ export default function StudyDatetimeField({
   };
 
   const openDialog = () => {
-    setDraft(initDraft(studyDatetime, durationMinutes));
+    setDraft(initDraft(startedAt, durationMinutes));
     setOpenPicker(null);
     setDialogOpen(true);
   };
 
   const handleDialogOpenChange = (open: boolean) => {
     if (open) {
-      setDraft(initDraft(studyDatetime, durationMinutes));
+      setDraft(initDraft(startedAt, durationMinutes));
       setOpenPicker(null);
       setDialogOpen(true);
       return;
@@ -191,10 +191,10 @@ export default function StudyDatetimeField({
   };
 
   const commitToParent = (
-    nextStudyDatetime: string,
+    nextStartedAt: string,
     nextDuration: number | null,
   ) => {
-    onChange(nextStudyDatetime, nextDuration);
+    onChange(nextStartedAt, nextDuration);
     notifyFormInput(fieldRef.current);
   };
 
@@ -235,7 +235,7 @@ export default function StudyDatetimeField({
           onClick={openDialog}
         >
           <ClockPlus />
-          {parentFieldLabel(studyDatetime, durationMinutes)}
+          {parentFieldLabel(startedAt, durationMinutes)}
         </Button>
       </div>
 

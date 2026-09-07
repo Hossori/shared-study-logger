@@ -6,7 +6,7 @@ import type { StudyRecord } from "../../../../shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {
-  studyDatetime: string;
+  startedAt: string;
   title: string;
   memo: string;
   durationMinutes: number | null;
@@ -102,6 +102,26 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}時間${rest}分`;
 }
 
+export type DurationBadgeTier =
+  "under1h" | "h1to3" | "h3to5" | "h5to10" | "h10plus";
+
+/** 学習時間バッジの段階（半開区間）。 */
+export function getDurationBadgeTier(minutes: number): DurationBadgeTier {
+  if (minutes < 60) return "under1h";
+  if (minutes < 180) return "h1to3";
+  if (minutes < 300) return "h3to5";
+  if (minutes < 600) return "h5to10";
+  return "h10plus";
+}
+
+export const DURATION_BADGE_TIER_CLASS: Record<DurationBadgeTier, string> = {
+  under1h: "bg-duration-badge-under1h text-duration-badge-under1h-foreground",
+  h1to3: "bg-duration-badge-h1to3 text-duration-badge-h1to3-foreground",
+  h3to5: "bg-duration-badge-h3to5 text-duration-badge-h3to5-foreground",
+  h5to10: "bg-duration-badge-h5to10 text-duration-badge-h5to10-foreground",
+  h10plus: "bg-duration-badge-h10plus text-duration-badge-h10plus-foreground",
+};
+
 /** 時刻表示（時はゼロ埋めなし、分は 2 桁）。 */
 export function formatClockTime(hour: number, minute: number): string {
   return `${hour}:${String(minute).padStart(2, "0")}`;
@@ -176,11 +196,8 @@ export function formatStudyDatetimeLabel(
 
 /** 記録カードの日時表示。 */
 export function formatRecordCardDatetime(record: StudyRecord): string {
-  if (record.studyDatetime) {
-    return formatStudyDatetimeLabel(
-      record.studyDatetime,
-      record.durationMinutes,
-    );
+  if (record.startedAt) {
+    return formatStudyDatetimeLabel(record.startedAt, record.durationMinutes);
   }
   const created = new Date(record.createdAt);
   if (Number.isNaN(created.getTime())) return record.createdAt;
@@ -190,7 +207,7 @@ export function formatRecordCardDatetime(record: StudyRecord): string {
 /** 学習時間バッジを表示するか（学習日時と duration の両方が正の値）。 */
 export function shouldShowDurationBadge(record: StudyRecord): boolean {
   return (
-    record.studyDatetime != null &&
+    record.startedAt != null &&
     record.durationMinutes != null &&
     record.durationMinutes > 0
   );
@@ -203,7 +220,7 @@ export function notifyFormInput(node: EventTarget | null): void {
 
 /** フォーム値から API 用ペイロードを組み立てる。不正なら null。 */
 export function buildRecordRequestPayload(values: RecordFormValues): {
-  studyDatetime: string | null;
+  startedAt: string | null;
   title: string;
   memo: string | undefined;
   durationMinutes: number | null;
@@ -214,27 +231,28 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
   const memo = values.memo.trim();
   const memoField = memo ? memo : undefined;
 
-  if (!values.studyDatetime) {
+  if (!values.startedAt) {
     return {
-      studyDatetime: null,
+      startedAt: null,
       title,
       memo: memoField,
       durationMinutes: null,
     };
   }
 
-  const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
-  if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime) {
+  const startedAt = parseDatetimeLocalToIso(values.startedAt);
+  if (!parseRecordDatetime(values.startedAt) || !startedAt) {
+    return null;
+  }
+
+  if (values.durationMinutes == null || values.durationMinutes <= 0) {
     return null;
   }
 
   return {
-    studyDatetime,
+    startedAt,
     title,
     memo: memoField,
-    durationMinutes:
-      values.durationMinutes == null || values.durationMinutes <= 0
-        ? null
-        : values.durationMinutes,
+    durationMinutes: values.durationMinutes,
   };
 }

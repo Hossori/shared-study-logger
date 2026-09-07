@@ -138,16 +138,16 @@ function buildStudyRecordStatements(groupId, count, resolveUserId) {
 
   for (let i = 1; i <= count; i++) {
     const userId = resolveUserId(i);
-    const studyDatetime = new Date(
+    const startedAt = new Date(
       SEED_RECORDS_BASE_DATETIME - (i - 1) * dayMs,
     ).toISOString();
-    const createdAt = studyDatetime;
+    const createdAt = startedAt;
     const title = `サンプル学習記録 ${i}`;
     const memo = i % 3 === 0 ? `シード用メモ ${i}` : null;
     const memoSql = memo === null ? "NULL" : `'${sqlEscape(memo)}'`;
 
     statements.push(
-      `INSERT OR IGNORE INTO study_records (id, group_id, user_id, study_datetime, title, memo, created_at, updated_at) VALUES ('${seedRecordId(i)}', '${groupId}', '${userId}', '${studyDatetime}', '${sqlEscape(title)}', ${memoSql}, '${createdAt}', '${createdAt}');`,
+      `INSERT OR IGNORE INTO study_records (id, group_id, user_id, started_at, title, duration_minutes, memo, created_at, updated_at) VALUES ('${seedRecordId(i)}', '${groupId}', '${userId}', '${startedAt}', '${sqlEscape(title)}', 60, ${memoSql}, '${createdAt}', '${createdAt}');`,
     );
   }
 

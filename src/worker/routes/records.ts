@@ -94,9 +94,9 @@ recordsRoutes.post("/:groupId/records", async (c) => {
     id: crypto.randomUUID(),
     groupId,
     userId: user.id,
-    studyDatetime: parsed.data.studyDatetime,
+    startedAt: parsed.data.startedAt,
     title: parsed.data.title,
-    durationMinutes: parsed.data.durationMinutes,
+    durationMinutes: parsed.data.durationMinutes ?? null,
     memo: parsed.data.memo,
   });
 
@@ -250,11 +250,15 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     parsed.data.durationMinutes === undefined
       ? existing.durationMinutes
       : parsed.data.durationMinutes;
-  if (parsed.data.studyDatetime == null && effectiveDuration != null) {
+  const effectiveStartedAt = parsed.data.startedAt;
+  if (
+    (effectiveStartedAt == null && effectiveDuration != null) ||
+    (effectiveStartedAt != null && effectiveDuration == null)
+  ) {
     return c.json(
       {
         error: "invalid_request",
-        message: "duration_requires_study_datetime",
+        message: "study_time_pair_required",
       },
       400,
     );
@@ -266,7 +270,7 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     recordId,
     user.id,
     {
-      studyDatetime: parsed.data.studyDatetime,
+      startedAt: parsed.data.startedAt,
       title: parsed.data.title,
       durationMinutes: parsed.data.durationMinutes,
       memo: parsed.data.memo,

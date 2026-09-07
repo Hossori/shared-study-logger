@@ -10,6 +10,7 @@ import {
   formatRecordCardDatetime,
   formatRecordDatetime,
   formatStudyDatetimeLabel,
+  getDurationBadgeTier,
   isRecordDateString,
   localDateToRecordDateString,
   parseDatetimeLocalToIso,
@@ -79,6 +80,19 @@ describe("recordFormUtils", () => {
     expect(formatDurationMinutes(1435)).toBe("23時間55分");
   });
 
+  it("getDurationBadgeTier maps minutes to tier boundaries", () => {
+    expect(getDurationBadgeTier(5)).toBe("under1h");
+    expect(getDurationBadgeTier(59)).toBe("under1h");
+    expect(getDurationBadgeTier(60)).toBe("h1to3");
+    expect(getDurationBadgeTier(179)).toBe("h1to3");
+    expect(getDurationBadgeTier(180)).toBe("h3to5");
+    expect(getDurationBadgeTier(299)).toBe("h3to5");
+    expect(getDurationBadgeTier(300)).toBe("h5to10");
+    expect(getDurationBadgeTier(599)).toBe("h5to10");
+    expect(getDurationBadgeTier(600)).toBe("h10plus");
+    expect(getDurationBadgeTier(1435)).toBe("h10plus");
+  });
+
   it("formatClockTime uses unpadded hours and 2-digit minutes", () => {
     expect(formatClockTime(0, 0)).toBe("0:00");
     expect(formatClockTime(23, 30)).toBe("23:30");
@@ -119,7 +133,7 @@ describe("recordFormUtils", () => {
         id: "r1",
         groupId: "g1",
         userId: "u1",
-        studyDatetime: null,
+        startedAt: null,
         title: "t",
         durationMinutes: null,
         createdAt,
@@ -130,14 +144,14 @@ describe("recordFormUtils", () => {
   });
 
   it("formatRecordCardDatetime shows overflow range when duration is set", () => {
-    const studyDatetime = new Date(2026, 11, 28, 23, 30).toISOString();
+    const startedAt = new Date(2026, 11, 28, 23, 30).toISOString();
     const createdAt = new Date(2026, 11, 28, 15, 51).toISOString();
     expect(
       formatRecordCardDatetime({
         id: "r1",
         groupId: "g1",
         userId: "u1",
-        studyDatetime,
+        startedAt,
         title: "t",
         durationMinutes: 90,
         createdAt,
@@ -161,21 +175,21 @@ describe("recordFormUtils", () => {
     expect(
       shouldShowDurationBadge({
         ...base,
-        studyDatetime: null,
+        startedAt: null,
         durationMinutes: 10,
       }),
     ).toBe(false);
     expect(
       shouldShowDurationBadge({
         ...base,
-        studyDatetime: createdAt,
+        startedAt: createdAt,
         durationMinutes: null,
       }),
     ).toBe(false);
     expect(
       shouldShowDurationBadge({
         ...base,
-        studyDatetime: createdAt,
+        startedAt: createdAt,
         durationMinutes: 10,
       }),
     ).toBe(true);
@@ -207,13 +221,13 @@ describe("recordFormUtils", () => {
   it("buildRecordRequestPayload allows unset datetime when title is set", () => {
     expect(
       buildRecordRequestPayload({
-        studyDatetime: "",
+        startedAt: "",
         title: "x",
         memo: "",
         durationMinutes: 30,
       }),
     ).toEqual({
-      studyDatetime: null,
+      startedAt: null,
       title: "x",
       memo: undefined,
       durationMinutes: null,
@@ -223,7 +237,7 @@ describe("recordFormUtils", () => {
   it("buildRecordRequestPayload rejects empty title", () => {
     expect(
       buildRecordRequestPayload({
-        studyDatetime: "",
+        startedAt: "",
         title: "   ",
         memo: "",
         durationMinutes: null,
@@ -233,7 +247,7 @@ describe("recordFormUtils", () => {
 
   it("buildRecordRequestPayload includes duration when set", () => {
     const payload = buildRecordRequestPayload({
-      studyDatetime: "2026-08-01T12:00",
+      startedAt: "2026-08-01T12:00",
       title: "  数学  ",
       memo: "   ",
       durationMinutes: 30,
@@ -247,7 +261,7 @@ describe("recordFormUtils", () => {
   it("buildRecordRequestPayload rejects invalid datetime", () => {
     expect(
       buildRecordRequestPayload({
-        studyDatetime: "T15:58",
+        startedAt: "T15:58",
         title: "x",
         memo: "",
         durationMinutes: null,
@@ -255,22 +269,22 @@ describe("recordFormUtils", () => {
     ).toBeNull();
   });
 
-  it("buildRecordRequestPayload allows legacy datetime without duration", () => {
+  it("buildRecordRequestPayload returns null when start is set without duration", () => {
     expect(
       buildRecordRequestPayload({
-        studyDatetime: "2026-08-01T12:00",
+        startedAt: "2026-08-01T12:00",
         title: "x",
         memo: "",
         durationMinutes: null,
-      })?.durationMinutes,
+      }),
     ).toBeNull();
     expect(
       buildRecordRequestPayload({
-        studyDatetime: "2026-08-01T12:00",
+        startedAt: "2026-08-01T12:00",
         title: "x",
         memo: "",
         durationMinutes: 0,
-      })?.durationMinutes,
+      }),
     ).toBeNull();
   });
 });

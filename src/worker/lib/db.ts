@@ -47,7 +47,7 @@ export interface StudyRecordRow {
   user_id: string;
   author_display_name: string;
   author_avatar_key: string | null;
-  study_datetime: string | null;
+  started_at: string | null;
   title: string;
   duration_minutes: number | null;
   memo: string | null;
@@ -444,7 +444,7 @@ export function parseStudyRecordsCursor(
 }
 
 function studyRecordSortKey(row: StudyRecordRow): string {
-  return row.study_datetime ?? row.created_at;
+  return row.started_at ?? row.created_at;
 }
 
 function toStudyRecord(
@@ -457,7 +457,7 @@ function toStudyRecord(
     userId: row.user_id,
     authorDisplayName: row.author_display_name,
     authorAvatarKey: parseAvatarKey(row.author_avatar_key),
-    studyDatetime: row.study_datetime,
+    startedAt: row.started_at,
     title: row.title,
     durationMinutes: row.duration_minutes ?? null,
     memo: row.memo,
@@ -557,9 +557,9 @@ export async function listStudyRecords(
 
   if (cursorParts) {
     where.push(`(
-      COALESCE(sr.study_datetime, sr.created_at) < ?
+      COALESCE(sr.started_at, sr.created_at) < ?
       OR (
-        COALESCE(sr.study_datetime, sr.created_at) = ?
+        COALESCE(sr.started_at, sr.created_at) = ?
         AND sr.id < ?
       )
     )`);
@@ -569,17 +569,20 @@ export async function listStudyRecords(
   const sql = `
     SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
            u.avatar_key AS author_avatar_key,
-           sr.study_datetime, sr.title, sr.duration_minutes, sr.memo,
+           sr.started_at, sr.title, sr.duration_minutes, sr.memo,
            sr.created_at, sr.updated_at
     FROM study_records sr
     INNER JOIN users u ON u.id = sr.user_id
     WHERE ${where.join(" AND ")}
-    ORDER BY COALESCE(sr.study_datetime, sr.created_at) DESC, sr.id DESC
+    ORDER BY COALESCE(sr.started_at, sr.created_at) DESC, sr.id DESC
     LIMIT ?
   `;
   binds.push(limit + 1);
 
-  const { results } = await db.prepare(sql).bind(...binds).all<StudyRecordRow>();
+  const { results } = await db
+    .prepare(sql)
+    .bind(...binds)
+    .all<StudyRecordRow>();
   const rows = results ?? [];
 
   const hasMore = rows.length > limit;
@@ -608,7 +611,7 @@ export interface CreateStudyRecordInput {
   id: string;
   groupId: string;
   userId: string;
-  studyDatetime: string | null;
+  startedAt: string | null;
   title: string;
   durationMinutes?: number | null;
   memo?: string | null;
@@ -622,14 +625,14 @@ export async function createStudyRecord(
   await db
     .prepare(
       `INSERT INTO study_records
-        (id, group_id, user_id, study_datetime, title, duration_minutes, memo, created_at, updated_at)
+        (id, group_id, user_id, started_at, title, duration_minutes, memo, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       input.id,
       input.groupId,
       input.userId,
-      input.studyDatetime,
+      input.startedAt,
       input.title,
       input.durationMinutes ?? null,
       input.memo ?? null,
@@ -646,7 +649,7 @@ export async function createStudyRecord(
     userId: input.userId,
     authorDisplayName: author?.display_name,
     authorAvatarKey: parseAvatarKey(author?.avatar_key),
-    studyDatetime: input.studyDatetime,
+    startedAt: input.startedAt,
     title: input.title,
     durationMinutes: input.durationMinutes ?? null,
     memo: input.memo ?? null,
@@ -667,7 +670,7 @@ export async function getStudyRecord(
     .prepare(
       `SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
               u.avatar_key AS author_avatar_key,
-              sr.study_datetime, sr.title, sr.duration_minutes, sr.memo,
+              sr.started_at, sr.title, sr.duration_minutes, sr.memo,
               sr.created_at, sr.updated_at
        FROM study_records sr
        INNER JOIN users u ON u.id = sr.user_id
@@ -685,7 +688,7 @@ export async function getStudyRecord(
 }
 
 export interface UpdateStudyRecordInput {
-  studyDatetime: string | null;
+  startedAt: string | null;
   title: string;
   durationMinutes?: number | null;
   memo?: string | null;
@@ -710,11 +713,11 @@ export async function updateStudyRecord(
   const result = await db
     .prepare(
       `UPDATE study_records
-       SET study_datetime = ?, title = ?, duration_minutes = ?, memo = ?, updated_at = ?
+       SET started_at = ?, title = ?, duration_minutes = ?, memo = ?, updated_at = ?
        WHERE group_id = ? AND id = ?`,
     )
     .bind(
-      input.studyDatetime,
+      input.startedAt,
       input.title,
       durationMinutes,
       input.memo ?? null,
@@ -729,7 +732,7 @@ export async function updateStudyRecord(
 
   return {
     ...existing,
-    studyDatetime: input.studyDatetime,
+    startedAt: input.startedAt,
     title: input.title,
     durationMinutes,
     memo: input.memo ?? null,
