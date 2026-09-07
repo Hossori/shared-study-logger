@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { useIsMaxSm } from "../features/notifications/useIsMaxSm";
 import {
   applyPullResistance,
   isPullGesture,
@@ -46,8 +47,10 @@ export default function PullToRefresh({
   disabled = false,
   children,
 }: PullToRefreshProps) {
+  const isMobileLayout = useIsMaxSm();
+  const ptrEnabled = isMobileLayout && !disabled;
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollParentRef = useRef<HTMLElement | null>(null);
   const pointerStartRef = useRef<{
     x: number;
     y: number;
@@ -90,16 +93,16 @@ export default function PullToRefresh({
   }, [resetPull, updatePullDistance]);
 
   useEffect(() => {
-    if (disabled) return;
+    if (!ptrEnabled) return;
     const el = containerRef.current;
     if (!el) return;
 
-    scrollParentRef.current = findScrollParent(el);
+    const scrollParent = findScrollParent(el);
+    if (!scrollParent) return;
 
     const onPointerDown = (event: PointerEvent) => {
       if (isRefreshingRef.current) return;
-      const scrollParent = scrollParentRef.current;
-      if (!scrollParent || scrollParent.scrollTop > 0) return;
+      if (scrollParent.scrollTop > 0) return;
       if (event.pointerType === "mouse" && event.button !== 0) return;
 
       pointerStartRef.current = {
@@ -127,7 +130,7 @@ export default function PullToRefresh({
 
         pullConfirmedRef.current = true;
         setIsPulling(true);
-        el.setPointerCapture(event.pointerId);
+        scrollParent.setPointerCapture(event.pointerId);
       }
 
       if (pullConfirmedRef.current) {
@@ -142,7 +145,7 @@ export default function PullToRefresh({
 
       if (pullConfirmedRef.current) {
         try {
-          el.releasePointerCapture(event.pointerId);
+          scrollParent.releasePointerCapture(event.pointerId);
         } catch {
           // capture されていない場合は無視
         }
@@ -171,18 +174,20 @@ export default function PullToRefresh({
       pointerStartRef.current = null;
     };
 
-    el.addEventListener("pointerdown", onPointerDown);
-    el.addEventListener("pointermove", onPointerMove, { passive: false });
-    el.addEventListener("pointerup", finishPointer);
-    el.addEventListener("pointercancel", onPointerCancel);
+    scrollParent.addEventListener("pointerdown", onPointerDown);
+    scrollParent.addEventListener("pointermove", onPointerMove, {
+      passive: false,
+    });
+    scrollParent.addEventListener("pointerup", finishPointer);
+    scrollParent.addEventListener("pointercancel", onPointerCancel);
 
     return () => {
-      el.removeEventListener("pointerdown", onPointerDown);
-      el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", finishPointer);
-      el.removeEventListener("pointercancel", onPointerCancel);
+      scrollParent.removeEventListener("pointerdown", onPointerDown);
+      scrollParent.removeEventListener("pointermove", onPointerMove);
+      scrollParent.removeEventListener("pointerup", finishPointer);
+      scrollParent.removeEventListener("pointercancel", onPointerCancel);
     };
-  }, [disabled, resetPull, runRefresh, updatePullDistance]);
+  }, [ptrEnabled, resetPull, runRefresh, updatePullDistance]);
 
   const indicatorHeight = isRefreshing ? REFRESH_HOLD_PX : pullDistance;
 
@@ -196,7 +201,7 @@ export default function PullToRefresh({
         style={{ height: indicatorHeight }}
         aria-hidden={indicatorHeight === 0}
       >
-        {(isRefreshing || pullDistance > 0) && <Spinner className="size-5" />}
+        {isRefreshing && <Spinner className="size-5" />}
       </div>
       {children}
     </div>
