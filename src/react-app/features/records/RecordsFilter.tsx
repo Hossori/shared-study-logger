@@ -8,12 +8,7 @@ import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Field,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Popover, PopoverContent, PopoverTitle } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,18 +38,19 @@ function MemberMultiSelectList({
 }) {
   return (
     <FieldSet>
-      <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+      <div className="flex max-h-64 min-w-0 flex-col gap-2 overflow-y-auto">
         {members.map((member) => {
           const checkboxId = `records-filter-member-${member.id}`;
           const checked = draftUserIds.includes(member.id);
           return (
-            <Field key={member.id} orientation="horizontal">
+            <Field key={member.id} orientation="horizontal" className="min-w-0">
               <Checkbox
                 id={checkboxId}
                 checked={checked}
-                onCheckedChange={(nextChecked) => {
+                onCheckedChange={(next) => {
                   onDraftUserIdsChange((current) => {
-                    if (nextChecked === true) {
+                    const selected = next === true;
+                    if (selected) {
                       return current.includes(member.id)
                         ? current
                         : [...current, member.id];
@@ -62,8 +58,7 @@ function MemberMultiSelectList({
                     return current.filter((id) => id !== member.id);
                   });
                 }}
-              />
-              <FieldLabel htmlFor={checkboxId}>
+              >
                 <span className="flex min-w-0 items-center gap-1.5">
                   <UserAvatar
                     avatarKey={member.avatarKey}
@@ -71,7 +66,7 @@ function MemberMultiSelectList({
                   />
                   <span className="truncate">{member.displayName}</span>
                 </span>
-              </FieldLabel>
+              </Checkbox>
             </Field>
           );
         })}
@@ -92,6 +87,7 @@ export default function RecordsFilter({
   const panelId = "records-filter-panel";
   const specifyAnchorRef = useRef<HTMLDivElement>(null);
   const skipApplyOnCloseRef = useRef(false);
+  const ignoreNextPickerCloseRef = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [draftUserIds, setDraftUserIds] = useState<string[]>([]);
 
@@ -104,9 +100,14 @@ export default function RecordsFilter({
   const showSpecifyOption = (members?.length ?? 0) > 1;
 
   const applyDraftAndClose = () => {
-    onSpecifiedUserIdsChange(draftUserIds);
-    if (draftUserIds.length === 0 && mode === "specify") {
-      onModeChange("all");
+    if (draftUserIds.length === 0) {
+      onSpecifiedUserIdsChange([]);
+      if (mode === "specify") {
+        onModeChange("all");
+      }
+    } else {
+      onSpecifiedUserIdsChange(draftUserIds);
+      onModeChange("specify");
     }
     setPickerOpen(false);
   };
@@ -121,7 +122,6 @@ export default function RecordsFilter({
     if (typeof value !== "string" || value.length === 0) return;
     const next = value as RecordsFilterMode;
     if (next === "specify") {
-      onModeChange(next);
       openSpecifyPicker();
       return;
     }
@@ -133,6 +133,10 @@ export default function RecordsFilter({
   const handlePickerOpenChange = (open: boolean) => {
     if (open) {
       openSpecifyPicker();
+      return;
+    }
+    if (ignoreNextPickerCloseRef.current) {
+      ignoreNextPickerCloseRef.current = false;
       return;
     }
     if (skipApplyOnCloseRef.current) {
@@ -162,7 +166,7 @@ export default function RecordsFilter({
       <Button
         variant="ghost"
         size="sm"
-        className="w-fit px-0 has-data-[icon=inline-start]:pl-0"
+        className="w-fit px-0 hover:bg-transparent has-data-[icon=inline-start]:pl-0 aria-expanded:bg-transparent dark:hover:bg-transparent"
         aria-expanded={panelOpen}
         aria-controls={panelId}
         onClick={handlePanelToggle}
@@ -172,46 +176,43 @@ export default function RecordsFilter({
       </Button>
 
       {panelOpen ? (
-        <div id={panelId} className="border-border ml-2 border-l pl-3">
+        <div
+          id={panelId}
+          className="border-border ml-2 border-l pl-3 text-[0.8rem] [&_[data-slot=field-legend]]:text-[0.8rem]"
+        >
           <FieldSet>
             <FieldLegend variant="label">投稿者</FieldLegend>
             <RadioGroup
               className="flex w-auto flex-row flex-wrap items-center gap-x-4 gap-y-2"
-              value={mode}
+              value={pickerOpen ? "specify" : mode}
               onValueChange={handleModeChange}
             >
-              <FieldLabel
-                className="w-fit"
-                onClick={() => handleModeChange("all")}
+              <div
+                onPointerDownCapture={() => {
+                  if (pickerOpen) skipApplyOnCloseRef.current = true;
+                }}
               >
-                <RadioGroupItem
-                  value="all"
-                  className="pointer-events-none after:hidden"
-                />
-                全員
-              </FieldLabel>
-              <FieldLabel
-                className="w-fit"
-                onClick={() => handleModeChange("mine")}
+                <RadioGroupItem value="all">全員</RadioGroupItem>
+              </div>
+              <div
+                onPointerDownCapture={() => {
+                  if (pickerOpen) skipApplyOnCloseRef.current = true;
+                }}
               >
-                <RadioGroupItem
-                  value="mine"
-                  className="pointer-events-none after:hidden"
-                />
-                自分のみ
-              </FieldLabel>
+                <RadioGroupItem value="mine">自分のみ</RadioGroupItem>
+              </div>
               {showSpecifyOption ? (
-                <div ref={specifyAnchorRef} className="w-fit">
-                  <FieldLabel
-                    className="w-fit"
-                    onClick={() => handleModeChange("specify")}
-                  >
-                    <RadioGroupItem
-                      value="specify"
-                      className="pointer-events-none after:hidden"
-                    />
-                    指定する
-                  </FieldLabel>
+                <div
+                  ref={specifyAnchorRef}
+                  className="w-fit"
+                  onClickCapture={() => {
+                    if (mode === "specify" && !pickerOpen) {
+                      ignoreNextPickerCloseRef.current = true;
+                      openSpecifyPicker();
+                    }
+                  }}
+                >
+                  <RadioGroupItem value="specify">指定する</RadioGroupItem>
                 </div>
               ) : null}
             </RadioGroup>
@@ -223,7 +224,7 @@ export default function RecordsFilter({
         <Popover open onOpenChange={handlePickerOpenChange}>
           <PopoverContent
             align="start"
-            className="w-64"
+            className="w-64 text-[0.8rem]"
             anchor={specifyAnchorRef}
           >
             <PopoverTitle>メンバーを選択</PopoverTitle>
