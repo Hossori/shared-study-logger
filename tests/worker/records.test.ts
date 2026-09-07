@@ -573,4 +573,152 @@ describe("records routes", () => {
 		);
 		expect(listRes.status).toBe(400);
 	});
+
+	it("filters records by userIds", async () => {
+		const { cookie: adminCookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const { cookie: testCookie } = await loginAs(
+			workerFetch,
+			SEED.testUser.email,
+			SEED.testUser.password,
+		);
+
+		const post = (
+			cookie: string,
+			title: string,
+			studyDatetime: string,
+		) =>
+			workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records`,
+					{
+						method: "POST",
+						headers: {
+							cookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify({
+							studyDatetime,
+							title,
+						}),
+					},
+				),
+			);
+
+		await post(adminCookie, "Admin record", "2026-08-10T10:00:00.000Z");
+		await post(testCookie, "Test user record", "2026-08-10T11:00:00.000Z");
+
+		const adminOnlyRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records?userIds=${SEED.admin.id}`,
+				{ headers: { cookie: adminCookie } },
+			),
+		);
+		expect(adminOnlyRes.status).toBe(200);
+		const adminOnly = (await adminOnlyRes.json()) as {
+			records: Array<{ title: string; userId: string }>;
+		};
+		expect(adminOnly.records.every((r) => r.userId === SEED.admin.id)).toBe(
+			true,
+		);
+		expect(adminOnly.records.some((r) => r.title === "Admin record")).toBe(
+			true,
+		);
+		expect(
+			adminOnly.records.some((r) => r.title === "Test user record"),
+		).toBe(false);
+
+		const bothRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records?userIds=${SEED.admin.id}&userIds=${SEED.testUser.id}`,
+				{ headers: { cookie: adminCookie } },
+			),
+		);
+		expect(bothRes.status).toBe(200);
+		const both = (await bothRes.json()) as {
+			records: Array<{ title: string }>;
+		};
+		expect(both.records.some((r) => r.title === "Admin record")).toBe(true);
+		expect(both.records.some((r) => r.title === "Test user record")).toBe(
+			true,
+		);
+	});
+
+	it("paginates filtered records with the same userIds", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const post = (title: string, studyDatetime: string) =>
+			workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records`,
+					{
+						method: "POST",
+						headers: {
+							cookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify({
+							studyDatetime,
+							title,
+						}),
+					},
+				),
+			);
+
+		await post("Filter page 1", "2026-08-10T10:00:00.000Z");
+		await post("Filter page 2", "2026-08-10T09:00:00.000Z");
+		await post("Filter page 3", "2026-08-10T08:00:00.000Z");
+
+		const page1Res = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records?userIds=${SEED.admin.id}&limit=1`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(page1Res.status).toBe(200);
+		const page1 = (await page1Res.json()) as {
+			records: Array<{ title: string; userId: string }>;
+			nextCursor: string | null;
+		};
+		expect(page1.records).toHaveLength(1);
+		expect(page1.records[0]!.userId).toBe(SEED.admin.id);
+		expect(page1.records[0]!.title).toBe("Filter page 1");
+		expect(page1.nextCursor).not.toBeNull();
+
+		const page2Res = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records?userIds=${SEED.admin.id}&limit=1&cursor=${encodeURIComponent(page1.nextCursor!)}`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(page2Res.status).toBe(200);
+		const page2 = (await page2Res.json()) as {
+			records: Array<{ title: string; userId: string }>;
+		};
+		expect(page2.records).toHaveLength(1);
+		expect(page2.records[0]!.userId).toBe(SEED.admin.id);
+		expect(page2.records[0]!.title).toBe("Filter page 2");
+	});
+
+	it("returns 403 for non-member even with userIds", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const response = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupOther}/records?userIds=${SEED.admin.id}`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(response.status).toBe(403);
+	});
 });

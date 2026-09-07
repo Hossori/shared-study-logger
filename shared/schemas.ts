@@ -123,6 +123,18 @@ export const AddGroupMemberRequestSchema = z.object({
 });
 export type AddGroupMemberRequest = z.infer<typeof AddGroupMemberRequestSchema>;
 
+/** GET /api/groups/:groupId/members — 所属メンバーの公開情報 */
+export const GroupMemberSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  avatarKey: AvatarKeySchema.nullable(),
+});
+export type GroupMember = z.infer<typeof GroupMemberSchema>;
+
+export const GroupMembersResponseSchema = z.object({
+  members: z.array(GroupMemberSchema),
+});
+
 /** GET /api/admin/groups — 全グループ + メンバー（管理用） */
 export const AdminGroupSchema = GroupSchema.extend({
   members: z.array(UserSchema),
@@ -252,10 +264,23 @@ export type UpdateStudyRecordRequest = z.infer<
   typeof UpdateStudyRecordRequestSchema
 >;
 
+function normalizeUserIdsQuery(value: unknown): unknown {
+  if (value === undefined || value === null || value === "") return undefined;
+  const list = Array.isArray(value) ? value : [value];
+  const ids = list.filter(
+    (item): item is string => typeof item === "string" && item.length > 0,
+  );
+  return ids.length === 0 ? undefined : ids;
+}
+
 // カーソルページネーション（`GET /api/groups/:groupId/records`）用のクエリ
 export const ListStudyRecordsQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  userIds: z.preprocess(
+    normalizeUserIdsQuery,
+    z.array(z.string().min(1)).max(50).optional(),
+  ),
 });
 export type ListStudyRecordsQuery = z.infer<typeof ListStudyRecordsQuerySchema>;
 

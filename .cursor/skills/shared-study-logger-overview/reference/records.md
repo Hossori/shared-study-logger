@@ -28,6 +28,7 @@
     `addRecordReaction`/`deleteRecordReaction`/`listRecordReactions`
   - フロント: `src/react-app/features/records/RecordsList.tsx`（3 行カード、一覧表示、「もっと見る」、
     自分の記録の編集・削除UI）、
+    `src/react-app/features/records/RecordsFilter.tsx`（ユーザーフィルタ: 全員 / 自分のみ / 指定する）、
     `src/react-app/features/records/RecordReactions.tsx`（スタンプピッカー・件数・長押しユーザー一覧）、
     `src/react-app/features/records/PostRecordModal.tsx`（投稿フォーム、学習日時は未設定で開始）、
     `src/react-app/features/records/EditRecordModal.tsx`（編集フォーム）、
@@ -35,20 +36,26 @@
     `src/react-app/features/records/StudyDatetimeField.tsx`（学習日時ネスト Dialog。範囲外クリックで破棄、学習時間ヘルプ）、
     `src/react-app/features/records/recordFormUtils.ts`（24h オーバーフロー表示・ペイロード組み立て）、
     `src/react-app/queries/useRecords.ts`（`useInfiniteQuery`ベースの`useRecordsQuery`、
+    クエリキー `recordsQueryKeys.list` / `listPage(groupId, sortedUserIds)`、
     `useCreateRecordMutation`/`useUpdateRecordMutation`/`useDeleteRecordMutation`、
     `useAddRecordReactionMutation`/`useDeleteRecordReactionMutation`/`useRecordReactionsQuery`）
   - 共通: `shared/schemas.ts`の`StudyRecordSchema`/`CreateStudyRecordRequestSchema`/
-    `UpdateStudyRecordRequestSchema`/`ListStudyRecordsQuerySchema`/
+    `UpdateStudyRecordRequestSchema`/`ListStudyRecordsQuerySchema`（任意 `userIds`）/
     `ReactionStampSchema`/`REACTION_STAMP_EMOJI`/`REACTION_STAMP_LABEL`/`ReactionSummarySchema`/
     `AddRecordReactionRequestSchema`/`RecordReactionEntrySchema`
 - **データフロー**:
-  - 一覧取得: `GET /:groupId/records?cursor=...&limit=...` → 所属チェック →
+  - 一覧取得: `GET /:groupId/records?cursor=...&limit=...&userIds=...`（`userIds` は繰り返し、
+    クライアントはソート済み ID を `append`） → 所属チェック →
     zodでクエリ検証 → `listStudyRecords`が`COALESCE(study_datetime, created_at)`+`id`を複合キーとした
     base64エンコードカーソル（`sortKey|id` の 2 要素、`sortKey` は ISO 文字列）で
-    `limit+1`件取得し、`limit`件を超えていれば`nextCursor`を返す。同じページの record id を
+    `limit+1`件取得し、`limit`件を超えていれば`nextCursor`を返す。`userIds` 指定時は
+    `sr.user_id IN (...)` を WHERE に追加。同じページの record id を
     `IN`して`record_reactions`を`GROUP BY record_id, stamp`で1回集計し、各記録の
     `reactions`（`count` / `reactedByMe`、スタンプ定義順）を付ける。フロントは
     `useInfiniteQuery`の`getNextPageParam`で`nextCursor`をそのままページパラメータに使う。
+    フィルタ UI（`RecordsFilter`）はコンポーネント state のみ（Zustand 禁止）。「自分のみ」は
+    クライアントが `userIds=<me.id>` を付ける。未投稿の空は「まだ学習記録がありません」、
+    フィルタ適用中の空は「条件に合う学習記録がありません」。`selectedGroupId` 変更でフィルタリセット。
   - 投稿: `POST /:groupId/records` → 所属チェック → zod検証 → `createStudyRecord`でD1へINSERT
     → 投稿者以外の全メンバーIDを`getOtherGroupMemberUserIds`で取得し、1人1メッセージを
     `PUSH_QUEUE`へenqueue（ベストエフォート、失敗しても投稿自体は201で成功させる）→
@@ -64,8 +71,8 @@
   - スタンプ付与: `POST /:groupId/records/:recordId/reactions` `{ stamp }` → 所属チェック →
     記録存在確認 → zod検証 → UNIQUE（record_id, user_id, stamp）重複は 409
     `{ error: "already_reacted" }`。成功時 201。フロントは mutation の `onMutate` で
-    一覧キャッシュの件数 / `reactedByMe` を楽観更新し、失敗時はスナップショットへ戻す。
-    `onSettled` で一覧とユーザー一覧を invalidate。自分の投稿にも付けられる。
+    一覧キャッシュの件数 / `reactedByMe` を楽観更新（`setQueriesData({ queryKey: recordsQueryKeys.list(groupId) })`。
+    失敗時はスナップショットへ戻し、`onSettled` で list prefix invalidate）。自分の投稿にも付けられる。
     同種が1件のときは件数バッジを出さない。
   - スタンプ取消: `DELETE /:groupId/records/:recordId/reactions/:stamp` → 所属チェック →
     自分の行だけ DELETE。無ければ 404。カード上のスタンプはクリックでトグル（未付与なら付与、

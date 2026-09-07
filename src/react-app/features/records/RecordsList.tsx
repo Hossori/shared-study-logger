@@ -4,7 +4,7 @@
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
  */
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
@@ -42,6 +42,8 @@ import {
   shouldShowDurationBadge,
 } from "./recordFormUtils";
 import RecordReactions from "./RecordReactions";
+import RecordsFilter from "./RecordsFilter";
+import { isFilterApplied } from "./recordsFilterUtils";
 
 interface RecordCardProps {
   groupId: string;
@@ -151,6 +153,16 @@ function EmptyRecordsMessage() {
   );
 }
 
+function FilteredEmptyRecordsMessage() {
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyTitle>条件に合う学習記録がありません</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
 function RecordsToolbar() {
   const openPostModal = useUiStore((state) => state.openPostModal);
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
@@ -173,18 +185,39 @@ function RecordsToolbar() {
   );
 }
 
-function RecordsListFrame({ children }: { children: ReactNode }) {
+function RecordsListFrame({
+  filter,
+  children,
+}: {
+  filter?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div>
       <RecordsToolbar />
+      {filter}
       {children}
     </div>
   );
 }
 
-export default function RecordsList() {
-  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+function GroupRecordsContent({ groupId }: { groupId: string }) {
   const { data: me } = useMeQuery();
+  const [effectiveUserIds, setEffectiveUserIds] = useState<
+    string[] | undefined
+  >(undefined);
+  const [recordsQueryEnabled, setRecordsQueryEnabled] = useState(true);
+
+  const handleEffectiveUserIdsChange = useCallback(
+    (userIds: string[] | undefined) => {
+      setEffectiveUserIds(userIds);
+    },
+    [],
+  );
+  const handleQueryEnabledChange = useCallback((enabled: boolean) => {
+    setRecordsQueryEnabled(enabled);
+  }, []);
+
   const {
     data,
     isPending,
@@ -193,14 +226,23 @@ export default function RecordsList() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useRecordsQuery(selectedGroupId);
-  const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
+  } = useRecordsQuery(groupId, effectiveUserIds, {
+    enabled: recordsQueryEnabled,
+  });
+  const deleteRecordMutation = useDeleteRecordMutation(groupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
   const [editSession, setEditSession] = useState(0);
 
-  // isLoading(= isPending && isFetching) だけだと fetch 開始前や retry 待ちで
-  // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
+  const filterSlot = (
+    <RecordsFilter
+      groupId={groupId}
+      meId={me?.id}
+      onEffectiveUserIdsChange={handleEffectiveUserIdsChange}
+      onQueryEnabledChange={handleQueryEnabledChange}
+    />
+  );
+
   const isInitialLoading = isPending || (isFetching && !data);
 
   const handleDelete = async (record: StudyRecord) => {
@@ -218,21 +260,9 @@ export default function RecordsList() {
     }
   };
 
-  if (!selectedGroupId) {
-    return (
-      <RecordsListFrame>
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>グループを選択してください。</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </RecordsListFrame>
-    );
-  }
-
   if (isInitialLoading) {
     return (
-      <RecordsListFrame>
+      <RecordsListFrame filter={filterSlot}>
         <div className="flex flex-col gap-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -244,7 +274,7 @@ export default function RecordsList() {
 
   if (isError) {
     return (
-      <RecordsListFrame>
+      <RecordsListFrame filter={filterSlot}>
         <Empty>
           <EmptyHeader>
             <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
@@ -258,19 +288,23 @@ export default function RecordsList() {
 
   if (records.length === 0) {
     return (
-      <RecordsListFrame>
-        <EmptyRecordsMessage />
+      <RecordsListFrame filter={filterSlot}>
+        {isFilterApplied(effectiveUserIds) ? (
+          <FilteredEmptyRecordsMessage />
+        ) : (
+          <EmptyRecordsMessage />
+        )}
       </RecordsListFrame>
     );
   }
 
   return (
-    <RecordsListFrame>
+    <RecordsListFrame filter={filterSlot}>
       <ul className="flex flex-col gap-3">
         {records.map((record) => (
           <RecordCard
             key={record.id}
-            groupId={selectedGroupId}
+            groupId={groupId}
             record={record}
             isOwner={me?.id === record.userId}
             onEdit={(record) => {
@@ -312,5 +346,25 @@ export default function RecordsList() {
         onClose={() => setEditingRecord(null)}
       />
     </RecordsListFrame>
+  );
+}
+
+export default function RecordsList() {
+  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+
+  if (!selectedGroupId) {
+    return (
+      <RecordsListFrame>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>グループを選択してください。</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
+      </RecordsListFrame>
+    );
+  }
+
+  return (
+    <GroupRecordsContent key={selectedGroupId} groupId={selectedGroupId} />
   );
 }
