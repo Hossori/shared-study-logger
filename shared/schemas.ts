@@ -123,6 +123,18 @@ export const AddGroupMemberRequestSchema = z.object({
 });
 export type AddGroupMemberRequest = z.infer<typeof AddGroupMemberRequestSchema>;
 
+/** GET /api/groups/:groupId/members — 所属メンバーの公開情報 */
+export const GroupMemberSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  avatarKey: AvatarKeySchema.nullable(),
+});
+export type GroupMember = z.infer<typeof GroupMemberSchema>;
+
+export const GroupMembersResponseSchema = z.object({
+  members: z.array(GroupMemberSchema),
+});
+
 /** GET /api/admin/groups — 全グループ + メンバー（管理用） */
 export const AdminGroupSchema = GroupSchema.extend({
   members: z.array(UserSchema),
@@ -186,10 +198,10 @@ export type RecordReactionEntry = z.infer<typeof RecordReactionEntrySchema>;
 
 // ---- 学習記録 ---------------------------------------------------------------
 
-/** 学習時間（分）。任意項目。UI は 5 分刻み。 */
+/** 学習時間（分）。任意項目。UI は 5 分刻み。上限は 23 時間 55 分。 */
 export const DURATION_MINUTES_STEP = 5;
 export const DURATION_MINUTES_MIN = 5;
-export const DURATION_MINUTES_MAX = 720;
+export const DURATION_MINUTES_MAX = 1435;
 
 export const DurationMinutesSchema = z
   .number()
@@ -198,13 +210,55 @@ export const DurationMinutesSchema = z
   .max(DURATION_MINUTES_MAX)
   .multipleOf(DURATION_MINUTES_STEP);
 
+/** startedAt と durationMinutes は両方 null または両方セットのみ許可。 */
+function refineStudyTimePair(
+  data: { startedAt: string | null; durationMinutes?: number | null },
+  ctx: z.RefinementCtx,
+  mode: "create" | "update",
+): void {
+  if (mode === "create") {
+    const duration =
+      data.durationMinutes === undefined ? null : data.durationMinutes;
+    const hasStart = data.startedAt != null;
+    const hasDuration = duration != null;
+    if (hasStart !== hasDuration) {
+      ctx.addIssue({
+        code: "custom",
+        message: "study_time_pair_required",
+        path: hasStart ? ["durationMinutes"] : ["startedAt"],
+      });
+    }
+    return;
+  }
+
+  const startSet = data.startedAt != null;
+  const startNull = data.startedAt === null;
+  const durationSet = data.durationMinutes != null;
+  const durationNull = data.durationMinutes === null;
+
+  if (startSet && durationNull) {
+    ctx.addIssue({
+      code: "custom",
+      message: "study_time_pair_required",
+      path: ["durationMinutes"],
+    });
+  }
+  if (startNull && durationSet) {
+    ctx.addIssue({
+      code: "custom",
+      message: "study_time_pair_required",
+      path: ["startedAt"],
+    });
+  }
+}
+
 export const StudyRecordSchema = z.object({
   id: z.string(),
   groupId: z.string(),
   userId: z.string(),
   authorDisplayName: z.string().optional(),
   authorAvatarKey: AvatarKeySchema.nullable().optional(),
-  studyDatetime: z.string(),
+  startedAt: z.iso.datetime().nullable(),
   title: z.string().min(1),
   durationMinutes: z.number().int().nullable(),
   memo: z.string().optional().nullable(),
@@ -214,30 +268,47 @@ export const StudyRecordSchema = z.object({
 });
 export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 
-export const CreateStudyRecordRequestSchema = z.object({
-  studyDatetime: z.iso.datetime(),
-  title: z.string().min(1).max(200),
-  durationMinutes: DurationMinutesSchema.nullable().optional(),
-  memo: z.string().max(2000).optional(),
-});
+export const CreateStudyRecordRequestSchema = z
+  .object({
+    startedAt: z.iso.datetime().nullable(),
+    title: z.string().min(1).max(200),
+    durationMinutes: DurationMinutesSchema.nullable().optional(),
+    memo: z.string().max(2000).optional(),
+  })
+  .superRefine((data, ctx) => refineStudyTimePair(data, ctx, "create"));
 export type CreateStudyRecordRequest = z.infer<
   typeof CreateStudyRecordRequestSchema
 >;
 
-export const UpdateStudyRecordRequestSchema = z.object({
-  studyDatetime: z.iso.datetime(),
-  title: z.string().min(1).max(200),
-  durationMinutes: DurationMinutesSchema.nullable().optional(),
-  memo: z.string().max(2000).optional(),
-});
+export const UpdateStudyRecordRequestSchema = z
+  .object({
+    startedAt: z.iso.datetime().nullable(),
+    title: z.string().min(1).max(200),
+    durationMinutes: DurationMinutesSchema.nullable().optional(),
+    memo: z.string().max(2000).optional(),
+  })
+  .superRefine((data, ctx) => refineStudyTimePair(data, ctx, "update"));
 export type UpdateStudyRecordRequest = z.infer<
   typeof UpdateStudyRecordRequestSchema
 >;
+
+function normalizeUserIdsQuery(value: unknown): unknown {
+  if (value === undefined || value === null || value === "") return undefined;
+  const list = Array.isArray(value) ? value : [value];
+  const ids = list.filter(
+    (item): item is string => typeof item === "string" && item.length > 0,
+  );
+  return ids.length === 0 ? undefined : ids;
+}
 
 // カーソルページネーション（`GET /api/groups/:groupId/records`）用のクエリ
 export const ListStudyRecordsQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  userIds: z.preprocess(
+    normalizeUserIdsQuery,
+    z.array(z.string().min(1)).max(50).optional(),
+  ),
 });
 export type ListStudyRecordsQuery = z.infer<typeof ListStudyRecordsQuerySchema>;
 

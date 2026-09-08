@@ -47,11 +47,28 @@
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  /* 学習時間バッジ（段階色。ダークは .dark で同名を上書き） */
+  --duration-badge-under1h: var(--color-slate-100);
+  --duration-badge-under1h-foreground: var(--color-slate-600);
+  --duration-badge-h1to3: var(--color-cyan-100);
+  --duration-badge-h1to3-foreground: var(--color-cyan-800);
+  --duration-badge-h3to5: var(--color-cyan-200);
+  --duration-badge-h3to5-foreground: var(--color-cyan-900);
+  --duration-badge-h5to10: var(--color-cyan-300);
+  --duration-badge-h5to10-foreground: var(--color-cyan-950);
+  --duration-badge-h10plus: var(--color-cyan-400);
+  --duration-badge-h10plus-foreground: var(--color-cyan-950);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
   margin: 0;
-  min-height: 100dvh;
   min-width: 320px;
   position: relative;
 }
@@ -90,6 +107,16 @@ body {
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-duration-badge-under1h: var(--duration-badge-under1h);
+  --color-duration-badge-under1h-foreground: var(--duration-badge-under1h-foreground);
+  --color-duration-badge-h1to3: var(--duration-badge-h1to3);
+  --color-duration-badge-h1to3-foreground: var(--duration-badge-h1to3-foreground);
+  --color-duration-badge-h3to5: var(--duration-badge-h3to5);
+  --color-duration-badge-h3to5-foreground: var(--duration-badge-h3to5-foreground);
+  --color-duration-badge-h5to10: var(--duration-badge-h5to10);
+  --color-duration-badge-h5to10-foreground: var(--duration-badge-h5to10-foreground);
+  --color-duration-badge-h10plus: var(--duration-badge-h10plus);
+  --color-duration-badge-h10plus-foreground: var(--duration-badge-h10plus-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -132,6 +159,16 @@ body {
   --sidebar-accent-foreground: oklch(0.9 0.025 195);
   --sidebar-border: oklch(0.93 0.02 210 / 14%);
   --sidebar-ring: oklch(0.78 0.11 195);
+  --duration-badge-under1h: var(--color-slate-700);
+  --duration-badge-under1h-foreground: var(--color-slate-300);
+  --duration-badge-h1to3: var(--color-cyan-950);
+  --duration-badge-h1to3-foreground: var(--color-cyan-200);
+  --duration-badge-h3to5: var(--color-cyan-800);
+  --duration-badge-h3to5-foreground: var(--color-cyan-100);
+  --duration-badge-h5to10: var(--color-cyan-700);
+  --duration-badge-h5to10-foreground: var(--color-cyan-50);
+  --duration-badge-h10plus: var(--color-cyan-600);
+  --duration-badge-h10plus-foreground: var(--color-cyan-50);
 }
 
 @layer base {
@@ -147,10 +184,11 @@ body {
   }
   html {
     @apply font-sans;
+    overscroll-behavior-y: none;
   }
   /* PC: オーバーレイの scroll-lock でスクロールバーが消えても幅が変わらないようにする */
   @media (hover: hover) and (pointer: fine) {
-    html {
+    [data-layout-scroll] {
       scrollbar-gutter: stable;
     }
   }

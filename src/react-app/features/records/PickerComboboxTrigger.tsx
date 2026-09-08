@@ -55,13 +55,19 @@ const PickerComboboxTrigger = forwardRef<
           onOpenChange(!open);
         }
       }}
-      className={cn("w-full justify-between py-1 font-normal", className)}
+      className={cn(
+        "w-full min-w-0 justify-between overflow-hidden py-1 font-normal",
+        className,
+      )}
       {...rest}
     >
-      <span className="tabular-nums">{children}</span>
+      <span className="min-w-0 truncate tabular-nums">{children}</span>
       <Icon
         data-icon="inline-end"
-        className={cn(open && Icon === ChevronDownIcon && "rotate-180")}
+        className={cn(
+          "shrink-0",
+          open && Icon === ChevronDownIcon && "rotate-180",
+        )}
       />
     </Button>
   );

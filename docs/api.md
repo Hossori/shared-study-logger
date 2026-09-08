@@ -13,7 +13,8 @@
 | POST | `/api/auth/password` | 必要 | パスワード変更（現在のパスワード検証 + PBKDF2再ハッシュ） |
 | GET | `/api/users/:userId` | 必要 | 公開プロフィール取得（`displayName` / `bio` / `avatarKey`。email なし） |
 | GET | `/api/groups` | 必要 | 自分が所属するグループ一覧 |
-| GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順。`durationMinutes` は未設定なら `null`） |
+| GET | `/api/groups/:groupId/members` | 必要+所属チェック | 所属メンバーの公開情報（`id` / `displayName` / `avatarKey` のみ） |
+| GET | `/api/groups/:groupId/records` | 必要+所属チェック | 記録一覧（カーソルページネーション、新しい順。任意 `userIds` 繰り返し、最大 50、空は未指定。`durationMinutes` は未設定なら `null`） |
 | POST | `/api/groups/:groupId/records` | 必要+所属チェック | 記録投稿（成功時に他メンバーへPush enqueue。`durationMinutes` は任意） |
 | PATCH | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の編集（`durationMinutes` 省略時は既存値を維持、`null` で未設定に戻す） |
 | DELETE | `/api/groups/:groupId/records/:recordId` | 必要+所属+投稿者チェック | 自分の記録の削除 |
@@ -69,3 +70,21 @@ API互換性を壊すリリースでは、同ファイルの
 
 ステータスは `426 Upgrade Required`、レスポンスは `Cache-Control: no-store` とする。
 ブリッジリリースでは最小版を `null` にして版検証を無効化し、更新UIを配布してから強制する。
+
+## 学習記録 API（`startedAt` / `durationMinutes`）
+
+`GET` / `POST` / `PATCH` の記録レスポンス・リクエストでは `startedAt` は ISO 8601 または `null`（未設定）。
+`durationMinutes` は 5 分刻み（5〜1435、最大 23 時間 55 分）または `null`（未設定）。
+
+**ペア規則（POST / PATCH 共通）**
+
+- 両方 `null` … 学習日時未設定（一覧では `createdAt` を表示）
+- 両方セット … 通常の学習日時 + 学習時間
+- 片方のみセット … 400（`study_time_pair_required`）
+
+**一覧ソート・カーソル（`GET /api/groups/:groupId/records`）**
+
+- 並び順: `COALESCE(started_at, created_at) DESC, id DESC`（新しい順）
+- 任意クエリ `userIds`（繰り返し `userIds=a&userIds=b`、最大 50、空配列 / 空文字は未指定）を指定すると `sr.user_id IN (...)` で絞り込む。カーソル条件は同じ（フィルタ後の集合に対してページネーション）
+- カーソル: base64 エンコードの `sortKey|id`（2 要素）。`sortKey` は各行の
+  `COALESCE(started_at, created_at)` の ISO 文字列

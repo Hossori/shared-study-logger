@@ -3,13 +3,16 @@
  * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
+ * 一覧先頭で下に引っ張ると PullToRefresh 経由で再取得する。
  */
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useOutletContext } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
-import { useMeQuery } from "../../queries/useAuth";
+import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
 import {
+  recordsQueryKeys,
   useDeleteRecordMutation,
   useRecordsQuery,
 } from "../../queries/useRecords";
@@ -18,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -33,25 +35,25 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import PullToRefresh from "../../components/PullToRefresh";
 import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
-import { formatDurationMinutes } from "./recordFormUtils";
+import {
+  DURATION_BADGE_TIER_CLASS,
+  formatDurationMinutes,
+  formatRecordCardDatetime,
+  getDurationBadgeTier,
+  shouldShowDurationBadge,
+} from "./recordFormUtils";
 import RecordReactions from "./RecordReactions";
-
-function formatStudyDatetime(studyDatetime: string): string {
-  const date = new Date(studyDatetime);
-  if (Number.isNaN(date.getTime())) return studyDatetime;
-  return date.toLocaleString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import RecordsFilter from "./RecordsFilter";
+import {
+  computeEffectiveUserIds,
+  isFilterApplied,
+  type RecordsFilterMode,
+} from "./recordsFilterUtils";
 
 interface RecordCardProps {
   groupId: string;
@@ -75,50 +77,61 @@ function RecordCard({
   return (
     <li>
       <Card size="sm">
-        <CardHeader>
-          <CardDescription>
-            <Link
-              to={`/users/${record.userId}`}
-              className="focus-visible:ring-ring inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
-              aria-label={`${authorName}のユーザーページ`}
-            >
-              <UserAvatar
-                avatarKey={record.authorAvatarKey ?? null}
-                className="size-6"
-              />
-              <span className="truncate">{authorName}</span>
-            </Link>
-          </CardDescription>
-          {isOwner && (
-            <CardAction className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(record)}
-                aria-label="編集"
-                title="編集"
+        <CardHeader className="flex flex-col">
+          <div className="flex w-full min-w-0 items-center justify-between gap-1">
+            <CardDescription className="min-w-0 flex-1">
+              <Link
+                to={`/users/${record.userId}`}
+                className="focus-visible:ring-ring inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2"
+                aria-label={`${authorName}のユーザーページ`}
               >
-                <Pencil aria-hidden />
-                <span className="sr-only">編集</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(record)}
-                disabled={isDeleting}
-                aria-label="削除"
-                title="削除"
-              >
-                <Trash2 aria-hidden />
-                <span className="sr-only">削除</span>
-              </Button>
-            </CardAction>
-          )}
+                <UserAvatar
+                  avatarKey={record.authorAvatarKey ?? null}
+                  className="size-6 shrink-0"
+                />
+                <span className="truncate">{authorName}</span>
+              </Link>
+            </CardDescription>
+            {isOwner ? (
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(record)}
+                  aria-label="編集"
+                  title="編集"
+                >
+                  <Pencil aria-hidden />
+                  <span className="sr-only">編集</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(record)}
+                  disabled={isDeleting}
+                  aria-label="削除"
+                  title="削除"
+                >
+                  <Trash2 aria-hidden />
+                  <span className="sr-only">削除</span>
+                </Button>
+              </div>
+            ) : null}
+          </div>
           <CardDescription className="flex flex-wrap items-center gap-2">
-            <span>{formatStudyDatetime(record.studyDatetime)}</span>
-            {record.durationMinutes != null && record.durationMinutes > 0 ? (
-              <Badge variant="secondary">
-                {formatDurationMinutes(record.durationMinutes)}
+            <span className="tabular-nums">
+              {formatRecordCardDatetime(record)}
+            </span>
+            {shouldShowDurationBadge(record) ? (
+              <Badge
+                variant="secondary"
+                className={
+                  DURATION_BADGE_TIER_CLASS[
+                    getDurationBadgeTier(record.durationMinutes!)
+                  ]
+                }
+              >
+                {formatDurationMinutes(record.durationMinutes!)}
               </Badge>
             ) : null}
           </CardDescription>
@@ -157,12 +170,22 @@ function EmptyRecordsMessage() {
   );
 }
 
+function FilteredEmptyRecordsMessage() {
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyTitle>条件に合う学習記録がありません</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
 function RecordsToolbar() {
   const openPostModal = useUiStore((state) => state.openPostModal);
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
+    <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
       <div className="min-w-0 flex-1">
         <GroupSwitcher />
       </div>
@@ -179,18 +202,36 @@ function RecordsToolbar() {
   );
 }
 
-function RecordsListFrame({ children }: { children: ReactNode }) {
+function RecordsListFrame({
+  filter,
+  children,
+}: {
+  filter?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div>
       <RecordsToolbar />
+      {filter}
       {children}
     </div>
   );
 }
 
-export default function RecordsList() {
-  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
-  const { data: me } = useMeQuery();
+function GroupRecordsContent({ groupId }: { groupId: string }) {
+  const { user } = useOutletContext<AuthenticatedOutletContext>();
+  const meId = user.id;
+
+  const [mode, setMode] = useState<RecordsFilterMode>("all");
+  const [specifiedUserIds, setSpecifiedUserIds] = useState<string[]>([]);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const effectiveUserIds = computeEffectiveUserIds(
+    mode,
+    specifiedUserIds,
+    meId,
+  );
+
   const {
     data,
     isPending,
@@ -199,14 +240,24 @@ export default function RecordsList() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useRecordsQuery(selectedGroupId);
-  const deleteRecordMutation = useDeleteRecordMutation(selectedGroupId);
+  } = useRecordsQuery(groupId, effectiveUserIds);
+  const deleteRecordMutation = useDeleteRecordMutation(groupId);
   const confirm = useConfirm();
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
   const [editSession, setEditSession] = useState(0);
 
-  // isLoading(= isPending && isFetching) だけだと fetch 開始前や retry 待ちで
-  // isError / 空表示へ落ちるため、データ未取得中はローディングを優先する。
+  const filterSlot = (
+    <RecordsFilter
+      groupId={groupId}
+      mode={mode}
+      onModeChange={setMode}
+      specifiedUserIds={specifiedUserIds}
+      onSpecifiedUserIdsChange={setSpecifiedUserIds}
+      panelOpen={panelOpen}
+      onPanelOpenChange={setPanelOpen}
+    />
+  );
+
   const isInitialLoading = isPending || (isFetching && !data);
 
   const handleDelete = async (record: StudyRecord) => {
@@ -224,21 +275,9 @@ export default function RecordsList() {
     }
   };
 
-  if (!selectedGroupId) {
-    return (
-      <RecordsListFrame>
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>グループを選択してください。</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </RecordsListFrame>
-    );
-  }
-
   if (isInitialLoading) {
     return (
-      <RecordsListFrame>
+      <RecordsListFrame filter={filterSlot}>
         <div className="flex flex-col gap-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -250,7 +289,7 @@ export default function RecordsList() {
 
   if (isError) {
     return (
-      <RecordsListFrame>
+      <RecordsListFrame filter={filterSlot}>
         <Empty>
           <EmptyHeader>
             <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
@@ -264,21 +303,25 @@ export default function RecordsList() {
 
   if (records.length === 0) {
     return (
-      <RecordsListFrame>
-        <EmptyRecordsMessage />
+      <RecordsListFrame filter={filterSlot}>
+        {isFilterApplied(effectiveUserIds) ? (
+          <FilteredEmptyRecordsMessage />
+        ) : (
+          <EmptyRecordsMessage />
+        )}
       </RecordsListFrame>
     );
   }
 
   return (
-    <RecordsListFrame>
+    <RecordsListFrame filter={filterSlot}>
       <ul className="flex flex-col gap-3">
         {records.map((record) => (
           <RecordCard
             key={record.id}
-            groupId={selectedGroupId}
+            groupId={groupId}
             record={record}
-            isOwner={me?.id === record.userId}
+            isOwner={meId === record.userId}
             onEdit={(record) => {
               setEditSession((session) => session + 1);
               setEditingRecord(record);
@@ -318,5 +361,40 @@ export default function RecordsList() {
         onClose={() => setEditingRecord(null)}
       />
     </RecordsListFrame>
+  );
+}
+
+export default function RecordsList() {
+  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+  const queryClient = useQueryClient();
+
+  const handleRefresh = async () => {
+    if (!selectedGroupId) return;
+    await queryClient.invalidateQueries({
+      queryKey: recordsQueryKeys.list(selectedGroupId),
+    });
+  };
+
+  let body: ReactNode;
+  if (!selectedGroupId) {
+    body = (
+      <RecordsListFrame>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>グループを選択してください。</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
+      </RecordsListFrame>
+    );
+  } else {
+    body = (
+      <GroupRecordsContent key={selectedGroupId} groupId={selectedGroupId} />
+    );
+  }
+
+  return (
+    <PullToRefresh onRefresh={handleRefresh} disabled={!selectedGroupId}>
+      {body}
+    </PullToRefresh>
   );
 }

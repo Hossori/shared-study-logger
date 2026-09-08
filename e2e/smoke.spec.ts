@@ -8,6 +8,7 @@ import {
   setStudyDurationFromPicker,
   SEED_ADMIN,
 } from "./helpers";
+import { STUDY_DURATION_HELP_TEXT } from "../src/react-app/features/records/recordFormUtils";
 
 test.describe.configure({ mode: "serial" });
 
@@ -44,7 +45,7 @@ test("ログイン成功でグループ切替が表示される", async ({ page 
       contentType: "application/json",
       body: JSON.stringify({
         error: "client_update_required",
-        minimumClientApiVersion: "2.0.0",
+        minimumClientApiVersion: "3.0.0",
       }),
     });
   });
@@ -98,10 +99,29 @@ test("学習記録を投稿できる", async ({ page }) => {
 
   const title = `e2e-record-${Date.now()}`;
   await openPostModal(page);
-  await fillStudyDatetime(page, "post", "2026-08-10", 12, 0);
-  await page.locator("#post-duration").click();
-  const durationPicker = page.locator("#post-duration-picker");
-  await expect(durationPicker).toBeVisible();
+
+  await page.getByRole("button", { name: "学習日時を設定" }).click();
+  const datetimeDialog = page.getByRole("dialog", { name: "学習日時を設定" });
+  await expect(datetimeDialog).toBeVisible();
+  await page.mouse.click(10, 10);
+  await expect(datetimeDialog).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "学習記録を投稿" }),
+  ).toBeVisible();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "学習日時を設定" }).click();
+  await expect(datetimeDialog).toBeVisible();
+  await datetimeDialog
+    .getByRole("button", { name: "学習時間のヘルプ" })
+    .click();
+  await expect(page.getByText(STUDY_DURATION_HELP_TEXT)).toBeVisible();
+  await datetimeDialog
+    .getByRole("button", { name: "学習時間のヘルプ" })
+    .click();
+  await expect(page.getByText(STUDY_DURATION_HELP_TEXT)).toBeHidden();
+
+  await fillStudyDatetime(page, "post", "2026-12-28", 12, 0);
   await setStudyDurationFromPicker(page, "post", {
     buttonName: "+10分",
     expectedLabel: "10分",
@@ -121,6 +141,7 @@ test("学習記録を投稿できる", async ({ page }) => {
   ).toBeTruthy();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
   const card = page.locator("li").filter({ hasText: title });
+  await expect(card.getByText("12:00-12:10")).toBeVisible();
   await expect(card.getByText("10分", { exact: true })).toBeVisible();
 
   await card.getByRole("button", { name: "リアクションを付ける" }).click();
@@ -179,7 +200,6 @@ test("自分の学習記録を削除できる", async ({ page }) => {
 
   const title = `e2e-delete-${Date.now()}`;
   await openPostModal(page);
-  await fillStudyDatetime(page, "post", "2026-08-10", 12, 0);
   await page.locator("#post-title").fill(title);
 
   const responsePromise = page.waitForResponse(
@@ -225,7 +245,9 @@ test("ADMIN は通知管理でき、USER は 403", async ({ page }) => {
   const linkUrl = "https://example.com/e2e-notice";
   const linkLabel = "e2eリンク";
   await page.locator("#admin-notification-title").fill(title);
-  await page.locator("#admin-notification-body").fill(`e2e 本文 [${linkLabel}](${linkUrl})`);
+  await page
+    .locator("#admin-notification-body")
+    .fill(`e2e 本文 [${linkLabel}](${linkUrl})`);
 
   const createPromise = page.waitForResponse(
     (response) =>

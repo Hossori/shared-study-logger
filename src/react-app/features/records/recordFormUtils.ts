@@ -2,10 +2,11 @@
  * 学習記録フォームの日時変換・ペイロード組み立て（コンポーネント非依存）。
  */
 import { DURATION_MINUTES_MAX } from "../../../../shared/schemas";
+import type { StudyRecord } from "../../../../shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {
-  studyDatetime: string;
+  startedAt: string;
   title: string;
   memo: string;
   durationMinutes: number | null;
@@ -16,6 +17,8 @@ export interface RecordDatetimeParts {
   hour: number;
   minute: number;
 }
+
+const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
 /** datetime-local 入力値を ISO 文字列に変換。不正なら null。 */
 export function parseDatetimeLocalToIso(datetimeLocal: string): string | null {
@@ -40,11 +43,6 @@ export function toDatetimeLocalString(iso: string): string {
   const snapped = applyClockMinuteSnap(date);
   const parts = partsFromDate(snapped);
   return formatRecordDatetime(parts.date, parts.hour, parts.minute);
-}
-
-/** 現在時刻を datetime-local 用のローカル文字列で返す。 */
-export function nowDatetimeLocalString(): string {
-  return toDatetimeLocalString(new Date().toISOString());
 }
 
 export function nowRecordDatetimeParts(): RecordDatetimeParts {
@@ -104,14 +102,115 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}時間${rest}分`;
 }
 
-/** 学習時間の加減算。未設定は 0 として計算し、0 以下は null、上限は MAX でクランプ。 */
-export function applyDurationMinutesDelta(
-  current: number | null,
-  delta: number,
-): number | null {
-  const base = current ?? 0;
-  const next = Math.min(Math.max(base + delta, 0), DURATION_MINUTES_MAX);
-  return next <= 0 ? null : next;
+export type DurationBadgeTier =
+  "under1h" | "h1to3" | "h3to5" | "h5to10" | "h10plus";
+
+/** 学習時間バッジの段階（半開区間）。 */
+export function getDurationBadgeTier(minutes: number): DurationBadgeTier {
+  if (minutes < 60) return "under1h";
+  if (minutes < 180) return "h1to3";
+  if (minutes < 300) return "h3to5";
+  if (minutes < 600) return "h5to10";
+  return "h10plus";
+}
+
+export const DURATION_BADGE_TIER_CLASS: Record<DurationBadgeTier, string> = {
+  under1h: "bg-duration-badge-under1h text-duration-badge-under1h-foreground",
+  h1to3: "bg-duration-badge-h1to3 text-duration-badge-h1to3-foreground",
+  h3to5: "bg-duration-badge-h3to5 text-duration-badge-h3to5-foreground",
+  h5to10: "bg-duration-badge-h5to10 text-duration-badge-h5to10-foreground",
+  h10plus: "bg-duration-badge-h10plus text-duration-badge-h10plus-foreground",
+};
+
+/** 時刻表示（時はゼロ埋めなし、分は 2 桁）。 */
+export function formatClockTime(hour: number, minute: number): string {
+  return `${hour}:${String(minute).padStart(2, "0")}`;
+}
+
+/** 日付 + 曜日（例: 2026年12月28日(月)）。 */
+export function formatJaDateWithWeekday(date: Date): string {
+  const weekday = WEEKDAY_LABELS[date.getDay()];
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${weekday})`;
+}
+
+export interface ClockEndDisplay {
+  displayHour: number;
+  displayMinute: number;
+}
+
+/** 開始時刻 + 学習時間から終了時刻（24h オーバーフロー表示）を算出。 */
+export function addDurationToClock(
+  startHour: number,
+  startMinute: number,
+  durationMinutes: number,
+): ClockEndDisplay {
+  const endAbsoluteMin = startHour * 60 + startMinute + durationMinutes;
+  return {
+    displayHour: Math.floor(endAbsoluteMin / 60),
+    displayMinute: endAbsoluteMin % 60,
+  };
+}
+
+/** 開始・終了時計（0–23）から学習時間（分）を算出。 */
+export function durationFromStartAndEndClock(
+  startH: number,
+  startM: number,
+  endClockH: number,
+  endClockM: number,
+): number {
+  if (startH === endClockH && startM === endClockM) return 0;
+  const startMin = startH * 60 + startM;
+  let endMin = endClockH * 60 + endClockM;
+  if (endMin < startMin) endMin += 24 * 60;
+  const duration = endMin - startMin;
+  return Math.min(duration, DURATION_MINUTES_MAX);
+}
+
+export const STUDY_DURATION_HELP_TEXT = "学習日時の終了時刻と連動します";
+
+/** 学習時間ドラフトの加減算（0..MAX、0 は null にしない）。 */
+export function clampDurationDraft(current: number, delta: number): number {
+  return Math.min(Math.max(current + delta, 0), DURATION_MINUTES_MAX);
+}
+
+/** 一覧・フォーム用の学習日時ラベル。 */
+export function formatStudyDatetimeLabel(
+  iso: string,
+  durationMinutes: number | null,
+): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const datePart = formatJaDateWithWeekday(date);
+  const startPart = formatClockTime(date.getHours(), date.getMinutes());
+  if (durationMinutes == null || durationMinutes <= 0) {
+    return `${datePart} ${startPart}`;
+  }
+  const end = addDurationToClock(
+    date.getHours(),
+    date.getMinutes(),
+    durationMinutes,
+  );
+  const endPart = formatClockTime(end.displayHour, end.displayMinute);
+  return `${datePart} ${startPart}-${endPart}`;
+}
+
+/** 記録カードの日時表示。 */
+export function formatRecordCardDatetime(record: StudyRecord): string {
+  if (record.startedAt) {
+    return formatStudyDatetimeLabel(record.startedAt, record.durationMinutes);
+  }
+  const created = new Date(record.createdAt);
+  if (Number.isNaN(created.getTime())) return record.createdAt;
+  return `${formatJaDateWithWeekday(created)} ${formatClockTime(created.getHours(), created.getMinutes())}`;
+}
+
+/** 学習時間バッジを表示するか（学習日時と duration の両方が正の値）。 */
+export function shouldShowDurationBadge(record: StudyRecord): boolean {
+  return (
+    record.startedAt != null &&
+    record.durationMinutes != null &&
+    record.durationMinutes > 0
+  );
 }
 
 /** 未保存ガードが拾えるよう、フォームへ input イベントをバブリングする。 */
@@ -121,24 +220,39 @@ export function notifyFormInput(node: EventTarget | null): void {
 
 /** フォーム値から API 用ペイロードを組み立てる。不正なら null。 */
 export function buildRecordRequestPayload(values: RecordFormValues): {
-  studyDatetime: string;
+  startedAt: string | null;
   title: string;
   memo: string | undefined;
   durationMinutes: number | null;
 } | null {
-  const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
   const title = values.title.trim();
-  if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime || !title) {
+  if (!title) return null;
+
+  const memo = values.memo.trim();
+  const memoField = memo ? memo : undefined;
+
+  if (!values.startedAt) {
+    return {
+      startedAt: null,
+      title,
+      memo: memoField,
+      durationMinutes: null,
+    };
+  }
+
+  const startedAt = parseDatetimeLocalToIso(values.startedAt);
+  if (!parseRecordDatetime(values.startedAt) || !startedAt) {
     return null;
   }
-  const memo = values.memo.trim();
+
+  if (values.durationMinutes == null || values.durationMinutes <= 0) {
+    return null;
+  }
+
   return {
-    studyDatetime,
+    startedAt,
     title,
-    memo: memo ? memo : undefined,
-    durationMinutes:
-      values.durationMinutes == null || values.durationMinutes <= 0
-        ? null
-        : values.durationMinutes,
+    memo: memoField,
+    durationMinutes: values.durationMinutes,
   };
 }

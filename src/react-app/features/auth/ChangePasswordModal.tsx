@@ -143,7 +143,7 @@ export default function ChangePasswordModal({
             <Field
               data-invalid={Boolean(fieldErrors.currentPassword) || undefined}
             >
-              <FieldLabel htmlFor="modal-currentPassword">
+              <FieldLabel htmlFor="modal-currentPassword" required>
                 現在のパスワード
               </FieldLabel>
               <Input
@@ -169,7 +169,7 @@ export default function ChangePasswordModal({
             </Field>
 
             <Field data-invalid={Boolean(fieldErrors.newPassword) || undefined}>
-              <FieldLabel htmlFor="modal-newPassword">
+              <FieldLabel htmlFor="modal-newPassword" required>
                 新しいパスワード
               </FieldLabel>
               <Input
@@ -199,7 +199,7 @@ export default function ChangePasswordModal({
             <Field
               data-invalid={Boolean(fieldErrors.confirmPassword) || undefined}
             >
-              <FieldLabel htmlFor="modal-confirmPassword">
+              <FieldLabel htmlFor="modal-confirmPassword" required>
                 新しいパスワード（確認）
               </FieldLabel>
               <Input

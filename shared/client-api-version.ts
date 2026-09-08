@@ -3,13 +3,13 @@
  *
  * pre-release や build metadata は API 互換性の判定対象にしないため受け付けない。
  */
-export const CLIENT_API_VERSION = "2.0.0";
+export const CLIENT_API_VERSION = "3.0.0";
 
 /**
  * 受け入れる最小クライアント API 版。
  * 旧版・ヘッダ欠落・不正な版は 426 で拒否する。
  */
-export const MIN_SUPPORTED_CLIENT_API_VERSION = "2.0.0";
+export const MIN_SUPPORTED_CLIENT_API_VERSION = "3.0.0";
 
 export const CLIENT_API_VERSION_HEADER = "X-Client-Api-Version";
 

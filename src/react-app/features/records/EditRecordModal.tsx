@@ -31,12 +31,14 @@ export default function EditRecordModal({
   const [values, setValues] = useState<RecordFormValues>(() =>
     record
       ? {
-          studyDatetime: toDatetimeLocalString(record.studyDatetime),
+          startedAt: record.startedAt
+            ? toDatetimeLocalString(record.startedAt)
+            : "",
           title: record.title,
           memo: record.memo ?? "",
           durationMinutes: record.durationMinutes ?? null,
         }
-      : { studyDatetime: "", title: "", memo: "", durationMinutes: null },
+      : { startedAt: "", title: "", memo: "", durationMinutes: null },
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

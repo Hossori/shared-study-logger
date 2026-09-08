@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import type { Group } from "../../../shared/schemas";
-import { getGroupsForUser } from "../lib/db";
+import { getGroupsForUser, isUserInGroup, listGroupMembers } from "../lib/db";
 import type { AuthVariables } from "../middleware/requireAuth";
 
 /**
- * グループAPI（GET /api/groups）
+ * グループAPI
+ * - GET /              所属グループ一覧
+ * - GET /:groupId/members  所属メンバーの公開情報
  * requireAuthはindex.tsでマウント時に適用される。
- * ログイン中ユーザーが所属するグループ一覧をD1から取得して返す。
  */
 export const groupsRoutes = new Hono<{
   Bindings: Env;
@@ -22,4 +23,15 @@ groupsRoutes.get("/", async (c) => {
     createdAt: row.created_at,
   }));
   return c.json({ groups });
+});
+
+groupsRoutes.get("/:groupId/members", async (c) => {
+  const user = c.get("user");
+  const groupId = c.req.param("groupId");
+  const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
+  if (!isMember) {
+    return c.json({ error: "forbidden" }, 403);
+  }
+  const members = await listGroupMembers(c.env.DB, groupId);
+  return c.json({ members });
 });

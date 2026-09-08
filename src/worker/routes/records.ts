@@ -50,6 +50,7 @@ recordsRoutes.get("/:groupId/records", async (c) => {
   const parsedQuery = ListStudyRecordsQuerySchema.safeParse({
     cursor: c.req.query("cursor"),
     limit: c.req.query("limit"),
+    userIds: c.req.queries("userIds"),
   });
   if (!parsedQuery.success) {
     return c.json(
@@ -93,9 +94,9 @@ recordsRoutes.post("/:groupId/records", async (c) => {
     id: crypto.randomUUID(),
     groupId,
     userId: user.id,
-    studyDatetime: parsed.data.studyDatetime,
+    startedAt: parsed.data.startedAt,
     title: parsed.data.title,
-    durationMinutes: parsed.data.durationMinutes,
+    durationMinutes: parsed.data.durationMinutes ?? null,
     memo: parsed.data.memo,
   });
 
@@ -245,13 +246,31 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
   }
 
+  const effectiveDuration =
+    parsed.data.durationMinutes === undefined
+      ? existing.durationMinutes
+      : parsed.data.durationMinutes;
+  const effectiveStartedAt = parsed.data.startedAt;
+  if (
+    (effectiveStartedAt == null && effectiveDuration != null) ||
+    (effectiveStartedAt != null && effectiveDuration == null)
+  ) {
+    return c.json(
+      {
+        error: "invalid_request",
+        message: "study_time_pair_required",
+      },
+      400,
+    );
+  }
+
   const record = await updateStudyRecord(
     c.env.DB,
     groupId,
     recordId,
     user.id,
     {
-      studyDatetime: parsed.data.studyDatetime,
+      startedAt: parsed.data.startedAt,
       title: parsed.data.title,
       durationMinutes: parsed.data.durationMinutes,
       memo: parsed.data.memo,

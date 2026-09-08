@@ -12,8 +12,10 @@ import {
 	REACTION_STAMP_LABEL,
 	UpdateInAppNotificationRequestSchema,
 	UpdateProfileRequestSchema,
+	UpdateStudyRecordRequestSchema,
 	UserRoleSchema,
 	UserSchema,
+	ListStudyRecordsQuerySchema,
 } from "../../shared/schemas";
 
 describe("LoginRequestSchema", () => {
@@ -74,45 +76,49 @@ describe("ChangePasswordRequestSchema", () => {
 });
 
 describe("CreateStudyRecordRequestSchema", () => {
-	it("accepts ISO datetime and title", () => {
+	it("rejects startedAt without durationMinutes", () => {
 		const result = CreateStudyRecordRequestSchema.safeParse({
-			studyDatetime: "2026-08-01T12:00:00.000Z",
+			startedAt: "2026-08-01T12:00:00.000Z",
 			title: "数学",
 			memo: "演習",
 		});
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.durationMinutes).toBeUndefined();
-		}
+		expect(result.success).toBe(false);
 	});
 
 	it("accepts optional durationMinutes in 5-minute steps", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				studyDatetime: "2026-08-01T12:00:00.000Z",
+				startedAt: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 5,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				studyDatetime: "2026-08-01T12:00:00.000Z",
+				startedAt: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 15,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				studyDatetime: "2026-08-01T12:00:00.000Z",
+				startedAt: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 30,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				studyDatetime: "2026-08-01T12:00:00.000Z",
+				startedAt: "2026-08-01T12:00:00.000Z",
 				title: "数学",
-				durationMinutes: null,
+				durationMinutes: 720,
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 1435,
 			}).success,
 		).toBe(true);
 	});
@@ -120,26 +126,125 @@ describe("CreateStudyRecordRequestSchema", () => {
 	it("rejects durationMinutes that are not 5-minute steps", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				studyDatetime: "2026-08-01T12:00:00.000Z",
+				startedAt: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 7,
 			}).success,
 		).toBe(false);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				studyDatetime: "2026-08-01T12:00:00.000Z",
+				startedAt: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 0,
+			}).success,
+		).toBe(false);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 1440,
 			}).success,
 		).toBe(false);
 	});
 
 	it("rejects empty title", () => {
 		const result = CreateStudyRecordRequestSchema.safeParse({
-			studyDatetime: "2026-08-01T12:00:00.000Z",
+			startedAt: "2026-08-01T12:00:00.000Z",
 			title: "",
+			durationMinutes: 30,
 		});
 		expect(result.success).toBe(false);
+	});
+
+	it("accepts both startedAt and durationMinutes null", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: null,
+				title: "数学",
+			}).success,
+		).toBe(true);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: null,
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(true);
+	});
+
+	it("rejects startedAt set with durationMinutes null or omitted", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+			}).success,
+		).toBe(false);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(false);
+	});
+
+	it("accepts both startedAt and durationMinutes set", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: 30,
+			}).success,
+		).toBe(true);
+	});
+
+	it("rejects durationMinutes without startedAt", () => {
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: null,
+				title: "数学",
+				durationMinutes: 30,
+			}).success,
+		).toBe(false);
+		expect(
+			CreateStudyRecordRequestSchema.safeParse({
+				startedAt: null,
+				title: "数学",
+				durationMinutes: 5,
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("UpdateStudyRecordRequestSchema", () => {
+	it("rejects durationMinutes without startedAt", () => {
+		expect(
+			UpdateStudyRecordRequestSchema.safeParse({
+				startedAt: null,
+				title: "数学",
+				durationMinutes: 30,
+			}).success,
+		).toBe(false);
+	});
+
+	it("rejects startedAt set with durationMinutes null", () => {
+		expect(
+			UpdateStudyRecordRequestSchema.safeParse({
+				startedAt: "2026-08-01T12:00:00.000Z",
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(false);
+	});
+
+	it("accepts both null", () => {
+		expect(
+			UpdateStudyRecordRequestSchema.safeParse({
+				startedAt: null,
+				title: "数学",
+				durationMinutes: null,
+			}).success,
+		).toBe(true);
 	});
 });
 
@@ -339,6 +444,53 @@ describe("ReactionStampSchema", () => {
 			cry: "泣く",
 			muscle: "がんばれ",
 		});
+	});
+});
+
+describe("ListStudyRecordsQuerySchema", () => {
+	it("normalizes a single userIds string to an array", () => {
+		const result = ListStudyRecordsQuerySchema.safeParse({ userIds: "a" });
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.userIds).toEqual(["a"]);
+		}
+	});
+
+	it("accepts userIds array", () => {
+		const result = ListStudyRecordsQuerySchema.safeParse({
+			userIds: ["a", "b"],
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.userIds).toEqual(["a", "b"]);
+		}
+	});
+
+	it("treats empty userIds as unspecified", () => {
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({ userIds: [] }).success,
+		).toBe(true);
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({ userIds: [] }).data?.userIds,
+		).toBeUndefined();
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({}).data?.userIds,
+		).toBeUndefined();
+	});
+
+	it("rejects more than 50 userIds", () => {
+		const userIds = Array.from({ length: 51 }, (_, i) => `id-${i}`);
+		expect(
+			ListStudyRecordsQuerySchema.safeParse({ userIds }).success,
+		).toBe(false);
+	});
+
+	it("keeps default limit of 20", () => {
+		const result = ListStudyRecordsQuerySchema.safeParse({});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.limit).toBe(20);
+		}
 	});
 });
 

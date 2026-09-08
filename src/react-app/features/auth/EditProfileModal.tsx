@@ -160,7 +160,9 @@ export default function EditProfileModal({
             </FieldSet>
 
             <Field data-invalid={displayNameInvalid || undefined}>
-              <FieldLabel htmlFor="edit-displayName">表示名</FieldLabel>
+              <FieldLabel htmlFor="edit-displayName" required>
+                表示名
+              </FieldLabel>
               <Input
                 id="edit-displayName"
                 required
