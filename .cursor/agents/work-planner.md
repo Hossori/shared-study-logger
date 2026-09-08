@@ -23,6 +23,13 @@ description: 作業単位の調査・計画・実装委譲。親が分割した�
 - 実装・検索・テストは implementer 自身が行う前提で、プロンプトを自己完結させる。
 - 計画が曖昧なら渡さず、先に質問を親へ返す。
 
+## ツール
+
+- MCP は親セッションから全部継承される。Cursor のカスタムエージェント frontmatter に個別の tools/mcp 許可フィールドは無いので書かない。
+- Cloudflare Docs MCP は Worker / D1 / KV / Queue / Wrangler の確認に使ってよい（親に接続されている場合）。
+- GitHub の PR 作成・更新・レビュー投稿は、ツールが見えていても使わない。親の役割。
+- 実装は implementer に委譲する。MCP で実装を拡大しない。
+
 ## 制約
 
 - 親が develop から切った作業ブランチ上で進める。未作成なら AGENTS.md と development-manual Skill どおり切ってから implementer に渡す。

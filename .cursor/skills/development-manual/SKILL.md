@@ -51,14 +51,21 @@ git checkout -b fix-login-bug     # プレフィックス欠落
 
 ## GitHub 操作
 
-`push` / `commit` など git ローカル操作は `shell` や implementer でよいが、**GitHub 書き込み（PR 作成など）は親が MCP で行う**。
+`push` / `commit` など git ローカル操作は `shell` や implementer でよい。**GitHub 書き込み（PR 作成・更新など）は親が行う**。Cloud Agent では親の PR ツール、ローカル Cursor では GitHub 連携。サブエージェントは `git push` まで担当し、PR 用パラメータを親へ返す。
 
 ```text
 # ✅ GOOD
-親が user-github MCP で create_pull_request
+親が PR を作成・更新する
 implementer / shell は git push まで担当し、PR 用パラメータを親へ返す
 
 # ❌ BAD
-shell に「gh pr create」や「MCP で PR 作成」を丸投げする
+shell に「gh pr create」を丸投げする
 implementer が PR を作成する
 ```
+
+## MCP
+
+- **ローカル IDE**: プロジェクトの `.cursor/mcp.json`（Playwright / shadcn / Cloudflare Docs）。承認は `.cursor/permissions.json` の `mcpAllowlist`。
+- **Cloud Agent**: リポジトリの `mcp.json` は乗らない。HTTP MCP は [cursor.com/agents](https://cursor.com/agents) の MCP（または Dashboard → Integrations & MCP）に追加する。Cloudflare Docs は `https://docs.mcp.cloudflare.com/mcp`。Playwright / shadcn の stdio は Cloud ダッシュボードに足さない（Cloud は Computer Use と shadcn CLI + Skill）。
+- サブエージェントは親の MCP を全部継承する。エージェント frontmatter でサーバ単位の許可はできない。
+- GitHub 書き込み MCP と Cloudflare アカウント連携（Bindings/API）はプロジェクトに入れない。
