@@ -24,7 +24,7 @@ pnpm test:worker       # Workers 統合
 pnpm test:e2e          # Playwright スモーク（要 seed。初回は pnpm playwright:install）
 pnpm playwright:install # Chromium + chromium-headless-shell を %LOCALAPPDATA%\ms-playwright へ
 pnpm run typecheck     # tsc -b（app/node/worker/sw + tests/unit + tests/worker）
-pnpm lint && pnpm run format:check && pnpm run check:zod-deprecated
+pnpm lint && pnpm run format:check && pnpm run check:zod-deprecated && pnpm run check:d1-migrations
 ```
 
 ## テスト対象
@@ -82,7 +82,7 @@ pnpm lint && pnpm run format:check && pnpm run check:zod-deprecated
 1. 純関数 → `tests/unit` → `pnpm test`
 2. API → `pnpm test:worker`（migrations setup 維持）
 3. 画面 → `pnpm test:e2e`
-4. 静的ゲート → `pnpm run typecheck` / `lint` / `format:check` / `check:zod-deprecated`
+4. 静的ゲート → `pnpm run typecheck` / `lint` / `format:check` / `check:zod-deprecated` / `check:d1-migrations`
 
 ## コミット前ゲート（必須）
 
@@ -95,6 +95,7 @@ pnpm lint && pnpm run format:check && pnpm run check:zod-deprecated
 | `pnpm lint`          | ESLint                                                                          |
 | `pnpm run format:check` | Prettier と Tailwind クラス順序                                                |
 | `pnpm run check:zod-deprecated` | 非推奨の Zod 文字列フォーマット API                                      |
+| `pnpm run check:d1-migrations` | D1 migration CASCADE/DROP 安全検査                                      |
 | `pnpm run typecheck` | `tsc -b`                                                                        |
 
 - UI・アクセシブルネーム・ルーティング・記録 CRUD など画面契約に触れる変更では、e2e を省略しない（CI の E2E smoke と同じ失敗をローカルで先に拾う）。
