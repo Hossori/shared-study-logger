@@ -185,7 +185,7 @@ function RecordsToolbar() {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
+    <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
       <div className="min-w-0 flex-1">
         <GroupSwitcher />
       </div>
