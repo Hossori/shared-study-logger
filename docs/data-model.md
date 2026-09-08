@@ -107,3 +107,6 @@ erDiagram
   - `0012_started_at_pair.sql`: `study_datetime` を `started_at` に改名し、`started_at` と `duration_minutes` のペア制約（両方 NULL または両方セット）を追加。開始のみの既存行は両方 NULL に正規化。
 - 本番 D1 は SemVer タグ（`vX.Y.Z`）push 後の [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) の production release で、Time Travel の migration 前復旧ポイントを記録してから apply する。同じ job が migration 完了後に Worker をデプロイするため、Worker が新スキーマを先行して参照しない。`main` へのマージだけでは本番 D1 は更新されない。
 - rename / drop / NOT NULL 化などの破壊的変更は、旧 Worker と共存できる追加変更（expand）と旧スキーマを削除する変更（contract）を別リリースに分ける。Worker のロールバックでは D1 スキーマは戻らないため、必要時は release summary の Time Travel bookmark を使う。
+- **D1 migration と CASCADE:** リモート D1 では migration 中の `PRAGMA foreign_keys=OFF` は無効（暗黙トランザクション）。`defer_foreign_keys=ON` も `ON DELETE CASCADE` を止めない。CHECK 制約の変更は `ALTER TABLE … ADD COLUMN … CHECK` で足りるなら rebuild しない（`0008_optional_duration_minutes.sql` 型）。rebuild が必要なら **Detach**（子を CASCADE なしで作り直し + 行コピー）→ 親 rebuild → **Reattach**（CASCADE 復帰）の順にする。
+- **`0009`–`0012`:** リモート適用時に `record_reactions` を空にした既知事実。SQL は不変・再適用しない（本番適用済み・このパターンをコピー禁止）。
+- 新規 migration は `pnpm run check:d1-migrations` が静的ゲート。production release job は apply 前後のコアテーブル行数を比較し、減少時は Worker をデプロイしない。

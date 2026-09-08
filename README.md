@@ -162,7 +162,8 @@ pnpm build           # tsc -b && vite build（本番ビルド。dist/client にS
 pnpm lint            # ESLint
 pnpm test            # Vitest unit（tests/unit）
 pnpm test:worker     # Workers 統合（tests/worker、@cloudflare/vitest-pool-workers）
-pnpm test:e2e        # Playwright スモーク（e2e、≤7本。要 seed。初回 pnpm playwright:install）
+pnpm test:e2e        # Playwright スモーク（e2e、≤7本。要 seed。初回 pnpm playwright:install。ローカル D1 のみ）
+pnpm run check:d1-migrations  # D1 migration の CASCADE/DROP 安全検査（Quality CI / コミット前ゲート）
 pnpm playwright:install # Chromium + headless-shell（%LOCALAPPDATA%\ms-playwright）
 pnpm dev             # ローカル開発サーバー（Vite）
 pnpm run format:check # Prettier（+ prettier-plugin-tailwindcssによるTailwindクラス並び順）の整形チェック
@@ -222,8 +223,18 @@ git push origin v1.1.0
 ```
 
 1. D1 Time Travel のデータを含む migration 前の復旧ポイントを記録する
-2. リモート D1 マイグレーションを適用し、未適用がないことを確認する
+2. リモート D1 マイグレーションを適用し、未適用がないことを確認する（apply 前後でコアテーブル行数を比較し、いずれかが減った場合は Worker をデプロイせず失敗する）
 3. 同じコミットの Worker と静的アセットをデプロイする（`pnpm build && pnpm run deploy`）
+
+行数が減った場合の復旧は、release summary に記録された Time Travel bookmark から D1 を復元する。
+
+リモート D1 は migration を暗黙トランザクションで実行するため `PRAGMA foreign_keys=OFF` は無効で、
+`defer_foreign_keys=ON` も `ON DELETE CASCADE` を止めない。`study_records` を DROP して作り直すと
+`record_reactions` が空になる。CHECK 変更は ALTER で足りるなら rebuild しない。必要な場合は
+Detach（子を CASCADE なしで作り直し + 行コピー）→ 親 rebuild → Reattach（CASCADE 復帰）。
+手順の正は [`docs/data-model.md`](docs/data-model.md)。`0009`–`0012` はリモート適用時に
+`record_reactions` を空にした既知事実で、SQL は不変・再適用しない。新規 migration は
+`pnpm run check:d1-migrations` がゲートする。
 
 Time Travel の復旧ポイントと、Wrangler が migration 成功後に作成するバックアップを利用するため、
 通常のリリースでは SQL dump の外部保管は行いません。

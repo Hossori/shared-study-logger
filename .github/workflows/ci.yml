@@ -29,6 +29,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm run format:check
       - run: pnpm run check:zod-deprecated
+      - run: pnpm run check:d1-migrations
       # tsc -b: app/node/worker/sw + unit/worker tests（tsconfig.* references）
       - run: pnpm run typecheck
 
@@ -84,6 +85,7 @@ jobs:
         run: pnpm exec playwright install-deps chromium
       - name: Prepare local D1 + seed
         run: |
+          # --local と seed はローカル D1 のみ。本番 D1 には触れない。
           pnpm exec wrangler d1 migrations apply shared-study-logger-db --local
           pnpm seed
       - name: Create .dev.vars for Vite
@@ -159,6 +161,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # CASCADE wipe canary: apply 前のコア表件数。パーサは scripts/parse-wrangler-d1-json.mjs。
+      - name: Snapshot D1 row counts before migration
+        shell: bash
+        run: bash scripts/d1-row-count-canary.sh snapshot /tmp/d1-counts-before.json
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: List pending remote D1 migrations
         run: pnpm exec wrangler d1 migrations list shared-study-logger-db --remote
         env:
@@ -167,6 +176,12 @@ jobs:
       - name: Apply remote D1 migrations
         # Wrangler は migration 成功後にも D1 バックアップを取得する。
         run: pnpm exec wrangler d1 migrations apply shared-study-logger-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Compare D1 row counts after migration
+        shell: bash
+        run: bash scripts/d1-row-count-canary.sh compare /tmp/d1-counts-before.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
