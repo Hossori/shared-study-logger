@@ -162,7 +162,7 @@ export default function RecordsFilter({
   };
 
   return (
-    <div className="mb-4 flex flex-col gap-2">
+    <div className="mb-3 flex flex-col gap-2">
       <Button
         variant="ghost"
         size="sm"
@@ -178,7 +178,7 @@ export default function RecordsFilter({
       {panelOpen ? (
         <div
           id={panelId}
-          className="border-border ml-2 border-l pl-3 text-[0.8rem] [&_[data-slot=field-legend]]:text-[0.8rem]"
+          className="border-border mb-2 ml-2 border-l pl-3 text-[0.8rem] **:data-[slot=field-legend]:text-[0.8rem]"
         >
           <FieldSet>
             <FieldLegend variant="label">投稿者</FieldLegend>
