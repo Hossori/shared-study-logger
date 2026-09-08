@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isDocker = process.env.DOCKER === "1";
 
 export default defineConfig({
 	resolve: {
@@ -14,6 +15,15 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "./src/react-app"),
 		},
 	},
+	...(isDocker
+		? {
+				server: {
+					watch: {
+						usePolling: true,
+					},
+				},
+			}
+		: {}),
 	plugins: [
 		react(),
 		cloudflare(),
