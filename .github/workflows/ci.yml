@@ -29,6 +29,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm run format:check
       - run: pnpm run check:zod-deprecated
+      - run: pnpm run check:d1-migrations
       # tsc -b: app/node/worker/sw + unit/worker tests（tsconfig.* references）
       - run: pnpm run typecheck
 
@@ -84,6 +85,7 @@ jobs:
         run: pnpm exec playwright install-deps chromium
       - name: Prepare local D1 + seed
         run: |
+          # --local と seed はローカル D1 のみ。本番 D1 には触れない。
           pnpm exec wrangler d1 migrations apply shared-study-logger-db --local
           pnpm seed
       - name: Create .dev.vars for Vite
