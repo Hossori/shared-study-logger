@@ -162,7 +162,8 @@ pnpm build           # tsc -b && vite build（本番ビルド。dist/client にS
 pnpm lint            # ESLint
 pnpm test            # Vitest unit（tests/unit）
 pnpm test:worker     # Workers 統合（tests/worker、@cloudflare/vitest-pool-workers）
-pnpm test:e2e        # Playwright スモーク（e2e、≤7本。要 seed。初回 pnpm playwright:install）
+pnpm test:e2e        # Playwright スモーク（e2e、≤7本。要 seed。初回 pnpm playwright:install。ローカル D1 のみ）
+pnpm run check:d1-migrations  # D1: CASCADE 親の DROP 前に子退避があるか（取りこぼし用。手順は docs/data-model.md）
 pnpm playwright:install # Chromium + headless-shell（%LOCALAPPDATA%\ms-playwright）
 pnpm dev             # ローカル開発サーバー（Vite）
 pnpm run format:check # Prettier（+ prettier-plugin-tailwindcssによるTailwindクラス並び順）の整形チェック

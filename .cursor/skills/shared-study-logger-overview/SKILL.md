@@ -54,8 +54,7 @@ wrangler.jsonc / vite.config.ts
 ## データモデル（D1 / SQLite）
 
 テーブルは `users` / `groups` / `group_members` / `study_records` / `record_reactions` / `push_subscriptions` / `app_notifications` の7つ。
-`users.role` は `ADMIN` または `USER`（既存行・未指定は `USER`）。セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。
-詳細は [docs/data-model.md](/docs/data-model.md)。
+`users.role` は `ADMIN` または `USER`（既存行・未指定は `USER`）。セッションは Workers KV（`SESSIONS`）。スキーマ変更は `migrations/` に新規番号を追加（`0001_init.sql`は直接編集しない）。親テーブルを rebuild するときは CASCADE 子を先に退避する（リモート D1 は `PRAGMA foreign_keys=OFF` で CASCADE を止めない）。手順の正は [docs/data-model.md](/docs/data-model.md)。
 
 ## API
 
