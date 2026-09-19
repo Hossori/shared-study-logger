@@ -23,9 +23,6 @@ description: 明確な実装計画をコードに落とす実行役。work-plann
 
 ## ツール
 
-- MCP は親セッションから全部継承される。Cursor のカスタムエージェント frontmatter に個別の tools/mcp 許可フィールドは無いので書かない。
-- Cloudflare Docs MCP は Worker / D1 / KV / Queue / Wrangler の確認に使ってよい（親に接続されている場合）。
-- GitHub の PR 作成・更新・レビュー投稿は、ツールが見えていても使わない。親の役割。
 - shadcn は MCP が無い環境（Cloud Agent など）では CLI + `.agents/skills/shadcn` Skill で行う。Playwright MCP が無い環境では `pnpm test:e2e` と既存の検証手段を使う。
 - サブエージェント（Task）は起動できない。
 
