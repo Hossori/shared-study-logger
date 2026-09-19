@@ -27,7 +27,8 @@
     `getStudyRecord`/`updateStudyRecord`/`deleteStudyRecord`/
     `addRecordReaction`/`deleteRecordReaction`/`listRecordReactions`
   - フロント: `src/react-app/features/records/RecordsList.tsx`（3 行カード、一覧表示、「もっと見る」、
-    自分の記録の編集・削除UI、`PullToRefresh` で包んで引っ張って更新）、
+    自分の記録の編集・削除UI、デスクトップ CTA / モバイル FAB / 投稿モーダル開閉、
+    `PullToRefresh` で包んで引っ張って更新）、
     `src/react-app/features/records/RecordsFilter.tsx`（「表示フィルター」開示。投稿者はラジオ: 全員 / 自分のみ / 指定する。指定するはポップアップ複数選択、閉じたら適用）、
     `src/react-app/components/PullToRefresh.tsx`（一覧先頭の PTR UI）、
     `src/react-app/components/LayoutScrollContext.tsx`（Layout の `data-layout-scroll` ref）、

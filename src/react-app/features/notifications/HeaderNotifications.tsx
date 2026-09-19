@@ -1,16 +1,14 @@
 /**
  * ヘッダ差し込み用の通知 UI（ベル + バッジ + 一覧モーダル）。
- * Layout 側は本コンポーネントをスロットに置くだけでよい。
+ * 開閉はコンポーネント state。Layout 側は本コンポーネントをスロットに置くだけでよい。
  */
+import { useState } from "react";
 import NotificationBell from "./NotificationBell";
 import NotificationModal from "./NotificationModal";
-import { useNotificationStore } from "./notificationStore";
 import { useAppNotifications } from "./useAppNotifications";
 
 export default function HeaderNotifications() {
-  const isModalOpen = useNotificationStore((s) => s.isModalOpen);
-  const openModal = useNotificationStore((s) => s.openModal);
-  const closeModal = useNotificationStore((s) => s.closeModal);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const controller = useAppNotifications();
 
   return (
@@ -19,13 +17,12 @@ export default function HeaderNotifications() {
         badgeCount={controller.badgeCount}
         open={isModalOpen}
         onClick={() => {
-          if (isModalOpen) closeModal();
-          else openModal();
+          setIsModalOpen((open) => !open);
         }}
       />
       <NotificationModal
         open={isModalOpen}
-        onClose={closeModal}
+        onClose={() => setIsModalOpen(false)}
         items={controller.items}
         pwa={controller.pwa}
         dismiss={controller.dismiss}

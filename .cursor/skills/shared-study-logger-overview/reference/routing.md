@@ -19,8 +19,8 @@
 - **`ProtectedRoute`**: 認証済みの `user`（`User` 型、null 非許容）を `outlet` の
   `context` 経由で子ルート（`routes/HomePage.tsx`・`UserPage`・`MyPage` 等）に渡す。
   子ルート側で `useMeQuery()` を呼び直して `User | null | undefined` を再度絞り込む必要が無い。
-- **画面の分担**: `routes/HomePage.tsx` が `Layout` + `RecordsList` を描画し、
-  （ヘッダ/FAB と同居するため） `Layout` が `PostRecordModal` を描画する。
+- **画面の分担**: `routes/HomePage.tsx` が `Layout` + `RecordsList` を描画する。
+  記録追加（デスクトップ CTA・モバイル FAB・投稿モーダル）は `RecordsList` が描画する。
   ユーザーページは `features/auth/UserPage.tsx`。自分のときのみヘッダとプロフィールの間に
   Push 設定カードを表示する。`/mypage` は `MyPage.tsx` が自分の
   UserPage へ Navigate する。管理者の通知管理は

@@ -12,9 +12,15 @@ import {
   type RecordFormValues,
 } from "./recordFormUtils";
 
-export default function PostRecordModal() {
-  const isOpen = useUiStore((state) => state.isPostModalOpen);
-  const closePostModal = useUiStore((state) => state.closePostModal);
+interface PostRecordModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function PostRecordModal({
+  open,
+  onClose,
+}: PostRecordModalProps) {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
   const createRecordMutation = useCreateRecordMutation(selectedGroupId);
 
@@ -26,7 +32,7 @@ export default function PostRecordModal() {
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       setValues({
         startedAt: "",
         title: "",
@@ -36,7 +42,7 @@ export default function PostRecordModal() {
       createRecordMutation.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [open]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,7 +51,7 @@ export default function PostRecordModal() {
 
     try {
       await createRecordMutation.mutateAsync(payload);
-      closePostModal();
+      onClose();
     } catch {
       // エラーメッセージはmutation.isErrorから表示するため、ここでは握りつぶす
     }
@@ -53,9 +59,9 @@ export default function PostRecordModal() {
 
   return (
     <RecordModalShell
-      open={isOpen}
+      open={open}
       title="学習記録を投稿"
-      onClose={closePostModal}
+      onClose={onClose}
       onSubmit={handleSubmit}
       errorMessage={
         createRecordMutation.isError
