@@ -1,6 +1,5 @@
 /**
- * クライアント状態（選択中グループID、投稿モーダル開閉状態、通知許可状態など）を管理するZustandストア。
- * サーバー状態（記録一覧・グループ一覧等）はTanStack Query側（`src/react-app/queries/`）で扱う。
+ * 画面を跨いで残すクライアント状態（選択中グループID、通知許可状態）を管理するZustandストア。
  */
 import { create } from "zustand";
 
@@ -14,10 +13,6 @@ interface UiState {
   selectedGroupId: string | null;
   setSelectedGroupId: (groupId: string | null) => void;
 
-  isPostModalOpen: boolean;
-  openPostModal: () => void;
-  closePostModal: () => void;
-
   notificationStatus: NotificationOptInStatus;
   setNotificationStatus: (status: NotificationOptInStatus) => void;
 }
@@ -25,10 +20,6 @@ interface UiState {
 export const useUiStore = create<UiState>((set) => ({
   selectedGroupId: null,
   setSelectedGroupId: (groupId) => set({ selectedGroupId: groupId }),
-
-  isPostModalOpen: false,
-  openPostModal: () => set({ isPostModalOpen: true }),
-  closePostModal: () => set({ isPostModalOpen: false }),
 
   notificationStatus: "default",
   setNotificationStatus: (status) => set({ notificationStatus: status }),

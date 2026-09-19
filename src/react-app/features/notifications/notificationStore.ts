@@ -1,5 +1,5 @@
 /**
- * 通知モーダル開閉と、ローカル通知の dismiss 状態。
+ * ローカル通知の dismiss 状態。
  * dismiss は localStorage に永続化し、同一ブラウザでは再表示しない。
  */
 import { create } from "zustand";
@@ -27,19 +27,12 @@ function writeDismissedIds(ids: string[]) {
 }
 
 interface NotificationUiState {
-  isModalOpen: boolean;
-  openModal: () => void;
-  closeModal: () => void;
   dismissedIds: string[];
   dismiss: (id: string) => void;
   isDismissed: (id: string) => boolean;
 }
 
 export const useNotificationStore = create<NotificationUiState>((set, get) => ({
-  isModalOpen: false,
-  openModal: () => set({ isModalOpen: true }),
-  closeModal: () => set({ isModalOpen: false }),
-
   dismissedIds: typeof window === "undefined" ? [] : readDismissedIds(),
 
   dismiss: (id) => {

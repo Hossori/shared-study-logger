@@ -1,11 +1,12 @@
 /**
  * 選択中グループの学習記録一覧（学習日時・学習時間・投稿者・タイトル・メモを表示）。
- * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は Layout の FAB。
+ * 上部ツールバーにグループ切替と「記録を追加」（PC）。モバイル追加は FAB。
  * 「もっと見る」でカーソルページネーションの次ページを取得する。
  * 自分の記録には編集・削除操作を表示する。
  * 一覧先頭で下に引っ張ると PullToRefresh 経由で再取得する。
  */
 import { useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link, useOutletContext } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -40,6 +41,7 @@ import UserAvatar from "../../components/UserAvatar";
 import { useConfirm } from "../../components/useConfirm";
 import GroupSwitcher from "../groups/GroupSwitcher";
 import EditRecordModal from "./EditRecordModal";
+import PostRecordModal from "./PostRecordModal";
 import {
   DURATION_BADGE_TIER_CLASS,
   formatDurationMinutes,
@@ -180,8 +182,7 @@ function FilteredEmptyRecordsMessage() {
   );
 }
 
-function RecordsToolbar() {
-  const openPostModal = useUiStore((state) => state.openPostModal);
+function RecordsToolbar({ onOpenPost }: { onOpenPost: () => void }) {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
 
   return (
@@ -190,10 +191,7 @@ function RecordsToolbar() {
         <GroupSwitcher />
       </div>
       {selectedGroupId && (
-        <Button
-          onClick={openPostModal}
-          className="hidden shrink-0 sm:inline-flex"
-        >
+        <Button onClick={onOpenPost} className="hidden shrink-0 sm:inline-flex">
           <Plus data-icon="inline-start" aria-hidden />
           記録を追加
         </Button>
@@ -203,22 +201,30 @@ function RecordsToolbar() {
 }
 
 function RecordsListFrame({
+  onOpenPost,
   filter,
   children,
 }: {
+  onOpenPost: () => void;
   filter?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div>
-      <RecordsToolbar />
+      <RecordsToolbar onOpenPost={onOpenPost} />
       {filter}
       {children}
     </div>
   );
 }
 
-function GroupRecordsContent({ groupId }: { groupId: string }) {
+function GroupRecordsContent({
+  groupId,
+  onOpenPost,
+}: {
+  groupId: string;
+  onOpenPost: () => void;
+}) {
   const { user } = useOutletContext<AuthenticatedOutletContext>();
   const meId = user.id;
 
@@ -277,7 +283,7 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
 
   if (isInitialLoading) {
     return (
-      <RecordsListFrame filter={filterSlot}>
+      <RecordsListFrame onOpenPost={onOpenPost} filter={filterSlot}>
         <div className="flex flex-col gap-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -289,7 +295,7 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
 
   if (isError) {
     return (
-      <RecordsListFrame filter={filterSlot}>
+      <RecordsListFrame onOpenPost={onOpenPost} filter={filterSlot}>
         <Empty>
           <EmptyHeader>
             <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
@@ -303,7 +309,7 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
 
   if (records.length === 0) {
     return (
-      <RecordsListFrame filter={filterSlot}>
+      <RecordsListFrame onOpenPost={onOpenPost} filter={filterSlot}>
         {isFilterApplied(effectiveUserIds) ? (
           <FilteredEmptyRecordsMessage />
         ) : (
@@ -314,7 +320,7 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
   }
 
   return (
-    <RecordsListFrame filter={filterSlot}>
+    <RecordsListFrame onOpenPost={onOpenPost} filter={filterSlot}>
       <ul className="flex flex-col gap-3">
         {records.map((record) => (
           <RecordCard
@@ -367,6 +373,9 @@ function GroupRecordsContent({ groupId }: { groupId: string }) {
 export default function RecordsList() {
   const selectedGroupId = useUiStore((state) => state.selectedGroupId);
   const queryClient = useQueryClient();
+  const [postOpen, setPostOpen] = useState(false);
+  const openPost = () => setPostOpen(true);
+  const closePost = () => setPostOpen(false);
 
   const handleRefresh = async () => {
     if (!selectedGroupId) return;
@@ -378,7 +387,7 @@ export default function RecordsList() {
   let body: ReactNode;
   if (!selectedGroupId) {
     body = (
-      <RecordsListFrame>
+      <RecordsListFrame onOpenPost={openPost}>
         <Empty>
           <EmptyHeader>
             <EmptyTitle>グループを選択してください。</EmptyTitle>
@@ -388,13 +397,35 @@ export default function RecordsList() {
     );
   } else {
     body = (
-      <GroupRecordsContent key={selectedGroupId} groupId={selectedGroupId} />
+      <GroupRecordsContent
+        key={selectedGroupId}
+        groupId={selectedGroupId}
+        onOpenPost={openPost}
+      />
     );
   }
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} disabled={!selectedGroupId}>
-      {body}
-    </PullToRefresh>
+    <>
+      <PullToRefresh onRefresh={handleRefresh} disabled={!selectedGroupId}>
+        {body}
+      </PullToRefresh>
+      {selectedGroupId ? (
+        <>
+          <PostRecordModal open={postOpen} onClose={closePost} />
+          {createPortal(
+            <Button
+              size="icon-lg"
+              onClick={openPost}
+              aria-label="記録を追加"
+              className="fixed right-[max(1.25rem,calc(1.25rem+var(--safe-area-inset-right)))] bottom-[max(1.25rem,calc(1.25rem+var(--safe-area-inset-bottom)))] z-20 size-14 rounded-full sm:hidden"
+            >
+              <Plus aria-hidden />
+            </Button>,
+            document.body,
+          )}
+        </>
+      ) : null}
+    </>
   );
 }
