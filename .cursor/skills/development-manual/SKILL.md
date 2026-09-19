@@ -7,21 +7,6 @@ description: 作業の分割、ブランチ作成、コミット前ゲート、G
 
 役割プロンプトは `.cursor/agents/` の `work-planner` / `implementer` / `reviewer` に置く。モデルと PR 先の常時ポリシーは [AGENTS.md](/AGENTS.md)。ゲートのコマンド正は [testing-strategy](../testing-strategy/SKILL.md) の「コミット前ゲート」。
 
-## ブランチ
-
-```bash
-# ✅ GOOD
-git fetch origin
-git checkout develop
-git pull origin develop
-git checkout -b feature/notification-opt-in
-
-# ❌ BAD
-git checkout -b feature/foo       # develop 以外から切っている可能性
-git checkout -b feat/foo          # プレフィックス不一致
-git checkout -b fix-login-bug     # プレフィックス欠落
-```
-
 ## 委譲
 
 - 作業は適切な単位に分割し、可能であれば並行する。分割の目安: 独立して実装・レビューできるまとまり（機能単位、関心の分離、衝突しにくい範囲）。
@@ -52,20 +37,3 @@ git checkout -b fix-login-bug     # プレフィックス欠落
 ## GitHub 操作
 
 `push` / `commit` など git ローカル操作は `shell` や implementer でよい。**GitHub 書き込み（PR 作成・更新など）は親が行う**。Cloud Agent では親の PR ツール、ローカル Cursor では GitHub 連携。サブエージェントは `git push` まで担当し、PR 用パラメータを親へ返す。
-
-```text
-# ✅ GOOD
-親が PR を作成・更新する
-implementer / shell は git push まで担当し、PR 用パラメータを親へ返す
-
-# ❌ BAD
-shell に「gh pr create」を丸投げする
-implementer が PR を作成する
-```
-
-## MCP
-
-- **ローカル IDE**: プロジェクトの `.cursor/mcp.json`（Playwright / shadcn / Cloudflare Docs）。承認は `.cursor/permissions.json` の `mcpAllowlist`。
-- **Cloud Agent**: リポジトリの `mcp.json` は乗らない。HTTP MCP は [cursor.com/agents](https://cursor.com/agents) の MCP（または Dashboard → Integrations & MCP）に追加する。Cloudflare Docs は `https://docs.mcp.cloudflare.com/mcp`。Playwright / shadcn の stdio は Cloud ダッシュボードに足さない（Cloud は Computer Use と shadcn CLI + Skill）。
-- サブエージェントは親の MCP を全部継承する。エージェント frontmatter でサーバ単位の許可はできない。
-- GitHub 書き込み MCP と Cloudflare アカウント連携（Bindings/API）はプロジェクトに入れない。
