@@ -1,6 +1,6 @@
 /**
  * Workers 統合テスト用ヘルパー（seed・Cookie）。
- * 固定アカウント方針は `.cursor/skills/testing-strategy/SKILL.md` を参照。
+ * 固定アカウント方針は `docs/testing.md` を参照。
  */
 import { env, exports } from "cloudflare:workers";
 import {

@@ -6,7 +6,7 @@
  * 実装する後続エージェント（backend-auth / backend-records / push-notifications /
  * frontend-store 等）が拡張する。
  *
- * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.cursor/skills/zod-schemas/SKILL.md`）。
+ * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.agents/skills/zod-schemas/SKILL.md`）。
  */
 import { z } from "zod";
 import { AvatarKeySchema } from "./avatars";

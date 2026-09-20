@@ -4,9 +4,11 @@
 知らせる学習記録共有アプリです。Cloudflare Workers 上に単一の Worker（API + 静的アセット配信）
 としてデプロイされ、PWA としてスマートフォンのホーム画面にも追加できます。
 
-このプロジェクトの正本ドキュメントは、この `README.md`・
-[`.cursor/skills/shared-study-logger-overview/SKILL.md`](.cursor/skills/shared-study-logger-overview/SKILL.md)・
+このプロジェクトの正本ドキュメントは、この `README.md`（セットアップ・デプロイ）・
+[`docs/architecture.md`](docs/architecture.md)・
+[`docs/api.md`](docs/api.md)・
 [`docs/data-model.md`](docs/data-model.md)・
+[`docs/testing.md`](docs/testing.md)・
 `migrations/` 配下のマイグレーションファイル（gitで管理されているもの）です。
 
 ## 主な機能
@@ -38,7 +40,7 @@
 
 ## データモデル
 
-D1 のテーブル定義・ER図・インデックス・マイグレーション運用については [docs/data-model.md](docs/data-model.md) を参照。
+D1 のテーブル定義・ER図・インデックス・マイグレーション運用については [docs/data-model.md](docs/data-model.md)。機能の地図は [docs/architecture.md](docs/architecture.md)。
 
 ## ディレクトリ構成（概要）
 
@@ -152,47 +154,14 @@ pnpm dev
 D1・KV・Queueのバインディング（`DB` / `SESSIONS` / `PUSH_QUEUE`）は `wrangler.jsonc` で
 設定済みのため、環境変数としての追加設定は不要です。
 
-## ビルド・検証コマンド
+## ビルド・検証
 
-```bash
-pnpm exec tsc -b     # 型チェック（フロント・バックエンド両方、noEmit）
-pnpm run typecheck   # 同上（CI / 品質ゲート用エイリアス）
-pnpm build           # tsc -b && vite build（本番ビルド。dist/client にService Worker含む静的アセット、
-                     #   dist/shared_study_logger にWorkerバンドルを出力）
-pnpm lint            # ESLint
-pnpm test            # Vitest unit（tests/unit）
-pnpm test:worker     # Workers 統合（tests/worker、@cloudflare/vitest-pool-workers）
-pnpm test:e2e        # Playwright スモーク（e2e、≤7本。要 seed。初回 pnpm playwright:install。ローカル D1 のみ）
-pnpm run check:d1-migrations  # D1: CASCADE 親の DROP 前に子退避があるか（取りこぼし用。手順は docs/data-model.md）
-pnpm playwright:install # Chromium + headless-shell（%LOCALAPPDATA%\ms-playwright）
-pnpm dev             # ローカル開発サーバー（Vite）
-pnpm run format:check # Prettier（+ prettier-plugin-tailwindcssによるTailwindクラス並び順）の整形チェック
-                       # 対象は src/react-app/**/*.{ts,tsx} と shared/**/*.ts
-pnpm run format        # 上記を実際に整形して上書きする
-```
+ローカル開発は `pnpm dev`。本番ビルドは `pnpm build`（`dist/client` に静的アセットと `sw.js`、
+`dist/shared_study_logger` に Worker バンドル）。整形は `pnpm run format` / `pnpm run format:check`。
 
-テスト方針（ピラミッド・Push/PWA除外・seed/Cookie前提）は
-[`.cursor/skills/testing-strategy/SKILL.md`](.cursor/skills/testing-strategy/SKILL.md)。
-E2E 前提の短い手順は [`e2e/README.md`](e2e/README.md)。
-`pnpm build` では `vite-plugin-pwa`（`injectManifest`戦略）により `public/sw.ts` が
-コンパイルされ、`self.__WB_MANIFEST` にプリキャッシュ対象が注入された `dist/client/sw.js` が
-生成されます。ビルド時に `sw.mjs`（コンパイル後の生ソース）と `sw.js`（マニフェスト注入後の最終版）の
-両方が出力されますが、実際に登録されるのは `sw.js` です（`src/react-app/main.tsx`参照）。
-
-## PWA更新とAPI互換性
-
-クライアントの変更で新しいService Workerが待機状態になると、アプリは「更新して再読み込み」を
-表示します。更新操作は新SWを有効化してから再読み込みするため、ログインの `session` Cookie は
-維持されたまま最新画面へ戻ります。通常のブラウザ再読み込みだけでは待機中のSWは有効化されません。
-
-API互換性を壊す変更では、`shared/client-api-version.ts` の
-`CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を同じ新しい値へ更新します。
-強制版ではWorkerが旧版・版ヘッダなしのAPI呼び出しを426 `client_update_required`で副作用前に拒否します。
-
-強制化の前には、ブリッジリリースで更新UIを既存PWAへ配布します。移行マーカーを持たない
-既存PWAだけは自動再読み込みされ、未保存入力が失われる可能性があります。以後の更新は利用者の
-明示操作でのみ行います。問題時は、Workerを後方互換な版へ戻すか、
-`MIN_SUPPORTED_CLIENT_API_VERSION` を下げて旧クライアントを再許可します。
+テストとコミット前ゲートは [`docs/testing.md`](docs/testing.md)。
+E2E の前提手順は [`e2e/README.md`](e2e/README.md)。
+PWA の更新フローと API 版は [`docs/features/pwa.md`](docs/features/pwa.md) と [`docs/api.md`](docs/api.md)。
 
 ## サンプルログイン情報（開発用）
 
@@ -336,21 +305,9 @@ preview に Queue は無い。本番の `push-notifications` には接続しな�
 
 ## Push通知・VAPID鍵について
 
-- Web Push通知は [VAPID](https://datatracker.ietf.org/doc/html/rfc8292)（Voluntary Application
-  Server Identification）方式で送信しており、`@pushforge/builder` を使って署名・送信しています。
-- 記録投稿時（`POST /api/groups/:groupId/records`）、投稿者以外の同グループメンバー全員に対して
-  1人1メッセージを `PUSH_QUEUE`（Cloudflare Queues）へenqueueし、`queue()`ハンドラが非同期で
-  実際のPush送信を行います（ベストエフォート。送信失敗はDLQへ）。
-- 購読先エンドポイントが410/404を返した場合（ブラウザ側で購読が失効した場合）、該当の
-  `push_subscriptions`レコードをD1から自動削除します。
-- iOSでPush通知を利用するには、PWAをホーム画面に追加（standaloneモード）する必要があります。
-  アプリ内通知（ヘッダーベル）がUser-AgentベースでiOS Safari（非standalone）を検出し、
-  ホーム画面への追加を案内します。
+VAPID 鍵の置き場所は「環境変数・シークレット一覧」。送信フロー・iOS 制約は [`docs/features/push.md`](docs/features/push.md)。
 
 ## 既知の注意点・制約
 
-- 認証Cookie（`session`）は本番（HTTPS配信）では`Secure`属性付きで発行されます。ローカル開発
-  （`http://localhost`）でもログインCookieが保存されるよう、`Secure`属性はリクエストURLの
-  プロトコル判定で動的に切り替えています（本番の挙動には影響しません）。
-- iOS実機でのホーム画面追加・Push受信確認は開発環境の制約により未実施です。実運用前に実機での
-  最終確認を推奨します。
+Cookie `Secure` の切り替えは [`docs/features/auth.md`](docs/features/auth.md)。
+iOS 実機のホーム画面追加・Push 受信は [`docs/manual-checklist.md`](docs/manual-checklist.md)。
