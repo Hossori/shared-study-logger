@@ -32,7 +32,7 @@ import {
 /**
  * 認証API（login / logout / me / プロフィール更新 / パスワード変更）
  * 認証・セッションフローの詳細は
- * `.cursor/skills/shared-study-logger-overview/reference/auth.md` を参照。
+ * `docs/features/auth.md` を参照。
  */
 export const authRoutes = new Hono<{
   Bindings: Env;

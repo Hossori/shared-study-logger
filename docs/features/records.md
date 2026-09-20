@@ -1,0 +1,35 @@
+# 学習記録
+
+学習日時・学習時間（任意）・タイトル・メモを投稿し、グループ内で `COALESCE(started_at, created_at)` の新しい順に一覧する。カーソルページネーション。編集・削除は投稿者本人。
+
+API のペア規則・カーソルは [api.md](../api.md)。
+
+## 不変条件
+
+- 編集・削除は `record.userId === user.id`
+- `startedAt` と `durationMinutes` は両方 `null` または両方セット
+- スタンプはグループメンバーが付与できる。同一ユーザー×同一スタンプは UNIQUE。付与時に Push は出さない
+- 引っ張って更新は `sm` 未満のみ。縦スクロールは Layout の `data-layout-scroll` 1 本
+
+## 流れ
+
+一覧: `GET .../records?cursor&limit&userIds` → 所属チェック → `listStudyRecords`。カーソルは base64 の `sortKey|id`。同じページのリアクションを集計して返す。フロントは `useInfiniteQuery`。フィルタはコンポーネント state（全員 / 自分のみ / 指定する）。
+
+投稿: `POST` → INSERT → 他メンバーへ `PUSH_QUEUE` を 1 人 1 メッセージ（失敗しても 201）。フロントは一覧を invalidate。
+
+編集・削除: 所属 + 投稿者チェック。削除時 `record_reactions` は CASCADE。Push は出さない。
+
+スタンプ: POST で付与（重複 409 `already_reacted`）、DELETE で取消。一覧キャッシュを楽観更新し、`onSettled` で invalidate。長押しでユーザー一覧（`created_at, id` 昇順）。
+
+PTR: `PullToRefresh` が `recordsQueryKeys.list(groupId)` を invalidate。ジェスチャの純関数は `src/react-app/lib/pullToRefresh.ts` / `pullGesture.ts`。
+
+## 変更するとき
+
+スキーマは `shared/schemas.ts`。画面契約なら `pnpm test:e2e`。API なら `pnpm test:worker`。[testing.md](../testing.md)。
+
+## 入口
+
+- `src/worker/routes/records.ts`
+- `src/react-app/features/records/RecordsList.tsx`
+- `src/react-app/queries/useRecords.ts`
+- `src/react-app/components/PullToRefresh.tsx`

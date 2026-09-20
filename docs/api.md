@@ -1,7 +1,7 @@
 # API エンドポイント一覧
 
 本ドキュメントが API 一覧の正本です。概要・機能索引は
-[`.cursor/skills/shared-study-logger-overview/SKILL.md`](../.cursor/skills/shared-study-logger-overview/SKILL.md)
+[architecture.md](architecture.md)
 を参照。
 
 | メソッド | パス | 認証 | 概要 |
