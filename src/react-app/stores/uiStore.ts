@@ -1,5 +1,6 @@
 /**
- * 画面を跨いで残すクライアント状態（選択中グループID、通知許可状態）を管理するZustandストア。
+ * 画面を跨ぐクライアント状態（通知許可状態など）の実行時キャッシュ。
+ * 選択中グループの正本は URL + localStorage（docs/features/routing.md）。
  */
 import { create } from "zustand";
 

@@ -53,7 +53,7 @@ test("ログイン成功でグループ切替が表示される", async ({ page 
   await expect(
     page.getByRole("heading", { name: "アプリの更新が必要です" }),
   ).toBeVisible();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL((url) => new URL(url).pathname === "/");
 });
 
 test("学習記録を投稿できる", async ({ page }) => {
