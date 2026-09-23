@@ -22,11 +22,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import UserAvatar from "../../components/UserAvatar";
-import ErrorMessage from "../../components/ui/ErrorMessage";
-import { useUnsavedCloseGuard } from "../../components/useUnsavedCloseGuard";
-import { useUpdateProfileMutation } from "../../queries/useAuth";
-import { ApiError } from "../../lib/api";
+import UserAvatar from "@/components/UserAvatar";
+import ErrorMessage from "@/components/ui/ErrorMessage";
+import { useUnsavedCloseGuard } from "@/hooks/useUnsavedCloseGuard";
+import { useUpdateProfileMutation } from "./api/useAuth";
+import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 function profileErrorMessage(error: unknown): string {
@@ -42,6 +42,7 @@ interface EditProfileModalProps {
   initialBio: string;
   initialAvatarKey: AvatarKey | null;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
 export default function EditProfileModal({
@@ -50,6 +51,7 @@ export default function EditProfileModal({
   initialBio,
   initialAvatarKey,
   onClose,
+  onSaved,
 }: EditProfileModalProps) {
   const updateProfileMutation = useUpdateProfileMutation();
   const { reset: resetUpdateProfile } = updateProfileMutation;
@@ -87,6 +89,7 @@ export default function EditProfileModal({
         bio: bio.trim() ? bio.trim() : null,
         avatarKey,
       });
+      onSaved?.();
       onClose();
     } catch {
       // エラーメッセージは mutation.isError から表示する

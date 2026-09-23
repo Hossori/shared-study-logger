@@ -35,4 +35,48 @@ export default tseslint.config(
 			],
 		},
 	},
+	{
+		files: ["src/react-app/features/**/*.{ts,tsx}"],
+		rules: {
+			"no-restricted-imports": [
+				"error",
+				{
+					patterns: [
+						{
+							regex: "^@/(features|app|pages)(/|$)",
+							message:
+								"feature は他 feature・app・pages を import しない。合成は pages と app で行う。",
+						},
+						{
+							regex:
+								"^(\\.\\./)+((auth|groups|records|notifications|push|pwa)(/|$)|features/|app(/|$)|pages(/|$))",
+							message:
+								"feature は他 feature・app・pages を import しない。合成は pages と app で行う。",
+						},
+					],
+				},
+			],
+		},
+	},
+	{
+		files: [
+			"src/react-app/app/**/*.{ts,tsx}",
+			"src/react-app/pages/**/*.{ts,tsx}",
+			"src/react-app/main.tsx",
+		],
+		rules: {
+			"no-restricted-imports": [
+				"error",
+				{
+					patterns: [
+						{
+							regex: "^@/features/[^/]+/.+",
+							message:
+								"feature の外からは各 feature の index だけを import する。",
+						},
+					],
+				},
+			],
+		},
+	},
 );
