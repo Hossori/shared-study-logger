@@ -9,7 +9,7 @@ import {
   PULL_REFRESH_MAX,
   PULL_REFRESH_THRESHOLD,
   shouldTriggerRefresh,
-} from "../../src/react-app/lib/pullToRefresh";
+} from "../../src/react-app/app/shell/pullRefresh";
 
 describe("pullToRefresh", () => {
   describe("applyPullResistance", () => {

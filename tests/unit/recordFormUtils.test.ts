@@ -19,7 +19,7 @@ import {
   shouldShowDurationBadge,
   STUDY_DURATION_HELP_TEXT,
   toDatetimeLocalString,
-} from "../../src/react-app/features/records/recordFormUtils";
+} from "../../src/react-app/features/records/form/recordFormUtils";
 
 describe("recordFormUtils", () => {
   it("parseDatetimeLocalToIso returns ISO or null", () => {

@@ -1,6 +1,6 @@
 # ルーティング
 
-`createBrowserRouter` + `RouterProvider`（`src/react-app/routes/router.tsx`）。採用理由は [design-decisions.md](../design-decisions.md)。
+`createBrowserRouter` + `RouterProvider`（`src/react-app/app/router.tsx`）。採用理由は [design-decisions.md](../design-decisions.md)。
 
 ## ルート
 
@@ -14,14 +14,14 @@
 
 ## 選択中グループ（ホーム）
 
-正本は URL と localStorage。`uiStore.selectedGroupId` は実行時キャッシュ（[state-management.md](state-management.md)）。
+正本は URL と localStorage。`selectedGroupStore.selectedGroupId` は実行時キャッシュ（[state-management.md](state-management.md)）。
 
 - クエリキー `group`。例: `/?group=<id>`
 - localStorage キー `selectedGroupId`（定数 `SELECTED_GROUP_STORAGE_KEY`）
 - 所属一覧が未取得・失敗のときは URL / storage / store を変更しない。空配列 `[]` のときだけ `null` に揃える
 - パス化しない（`/users/:userId` や `/admin/*` を壊さない）
 - `/` 以外の画面に `group` クエリは必須にしない
-- ロゴ `Link to="/"`（`Layout.tsx`）はクエリ無しのまま。ホーム再訪時に localStorage → URL へ寄せる
+- ロゴ `Link to="/"`（`app/shell/Layout.tsx`）はクエリ無しのまま。ホーム再訪時に localStorage → URL へ寄せる
 - `GuestRoute` の `Navigate to="/"` もクエリ無しでよい
 - URL 更新は `replace: true`。他の search param は消さない
 - `?group=`（空文字）は「URL にグループ無し」
@@ -36,14 +36,14 @@
 
 所属が空なら URL / storage の値に関わらず `null`。解決後、ホーム上で URL・store・storage を一致させる。
 
-実装: `src/react-app/lib/selectedGroup.ts`（`GroupSwitcher` が配線）。
+実装: `src/react-app/features/groups/selectedGroup.ts`（`GroupSwitcher` が配線）。
 
 新しい画面は `router.tsx` に追加し、認証要否に応じてガード配下に置く。
 
 ## 入口
 
-- `src/react-app/routes/router.tsx`
-- `src/react-app/routes/ProtectedRoute.tsx`
-- `src/react-app/routes/GuestRoute.tsx`
-- `src/react-app/routes/HomePage.tsx`
-- `src/react-app/lib/selectedGroup.ts`
+- `src/react-app/app/router.tsx`
+- `src/react-app/app/guards/ProtectedRoute.tsx`
+- `src/react-app/app/guards/GuestRoute.tsx`
+- `src/react-app/pages/HomePage.tsx`
+- `src/react-app/features/groups/selectedGroup.ts`

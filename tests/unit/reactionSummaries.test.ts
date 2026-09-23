@@ -4,7 +4,7 @@ import {
 	applyAddReaction,
 	applyRemoveReaction,
 	sortReactionSummaries,
-} from "../../src/react-app/lib/reactionSummaries";
+} from "../../src/react-app/features/records/api/reactionSummaries";
 
 describe("sortReactionSummaries", () => {
 	it("orders by stamp definition", () => {
