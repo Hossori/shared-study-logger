@@ -31,7 +31,7 @@ import {
 } from "./types";
 import { parseNotificationBody } from "./notificationBodyLinks";
 import { useIsMaxSm } from "@/hooks/useIsMaxSm";
-import { iosHomeScreenInstallHint } from "@/features/pwa/pwaInstall";
+import { iosHomeScreenInstallHint } from "@/lib/iosHomeScreenInstallHint";
 
 const bodyLinkClassName = "text-primary underline underline-offset-3";
 
