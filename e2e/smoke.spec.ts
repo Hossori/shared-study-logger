@@ -8,7 +8,7 @@ import {
   setStudyDurationFromPicker,
   SEED_ADMIN,
 } from "./helpers";
-import { STUDY_DURATION_HELP_TEXT } from "../src/react-app/features/records/form/recordFormUtils";
+import { STUDY_DURATION_HELP_TEXT } from "../src/react-app/features/records/recordFormUtils";
 
 test.describe.configure({ mode: "serial" });
 

@@ -24,13 +24,14 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import type { AppNotificationItem, PwaInstallActions } from "./types";
+import type { AppNotificationItem } from "./types";
+import type { AppNotificationsController } from "./useAppNotifications";
 import {
   PWA_INSTALL_NOTIFICATION_ID,
   PUSH_OPT_IN_NOTIFICATION_ID,
-} from "./types";
+} from "./useAppNotifications";
 import { parseNotificationBody } from "./notificationBodyLinks";
-import { useIsMaxSm } from "@/hooks/useIsMaxSm";
+import { useIsMaxSm } from "../../components/useIsMaxSm";
 
 const bodyLinkClassName = "text-primary underline underline-offset-3";
 
@@ -38,7 +39,7 @@ interface NotificationModalProps {
   open: boolean;
   onClose: () => void;
   items: AppNotificationItem[];
-  pwa: PwaInstallActions;
+  pwa: AppNotificationsController["pwa"];
   dismiss: (id: string) => void;
 }
 
@@ -114,7 +115,7 @@ export default function NotificationModal({
 
 interface NotificationListItemProps {
   item: AppNotificationItem;
-  pwa: PwaInstallActions;
+  pwa: AppNotificationsController["pwa"];
   onDismiss: () => void;
   onClose: () => void;
 }

@@ -4,15 +4,15 @@
  */
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
-import { useGroupsQuery } from "./api/useGroups";
-import { useSelectedGroupStore } from "./selectedGroupStore";
+import { useGroupsQuery } from "../../queries/useGroups";
+import { useUiStore } from "../../stores/uiStore";
 import {
   parseQueryGroupId,
   persistSelectedGroupId,
   readStoredSelectedGroupId,
   resolveSelectedGroupId,
   SELECTED_GROUP_QUERY_KEY,
-} from "./selectedGroup";
+} from "../../lib/selectedGroup";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronsUpDown } from "lucide-react";
 import {
@@ -40,12 +40,8 @@ function buildSearchParamsWithGroup(
 
 export default function GroupSwitcher() {
   const { data: groups, isLoading, isError } = useGroupsQuery();
-  const selectedGroupId = useSelectedGroupStore(
-    (state) => state.selectedGroupId,
-  );
-  const setSelectedGroupId = useSelectedGroupStore(
-    (state) => state.setSelectedGroupId,
-  );
+  const selectedGroupId = useUiStore((state) => state.selectedGroupId);
+  const setSelectedGroupId = useUiStore((state) => state.setSelectedGroupId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
 

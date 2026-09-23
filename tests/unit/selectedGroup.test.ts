@@ -5,7 +5,7 @@ import {
 	persistSelectedGroupId,
 	readStoredSelectedGroupId,
 	resolveSelectedGroupId,
-} from "../../src/react-app/features/groups/selectedGroup";
+} from "../../src/react-app/lib/selectedGroup";
 
 function createMemoryStorage(initial: Record<string, string> = {}) {
 	const data = { ...initial };

@@ -27,7 +27,7 @@
 | フロントエンド   | React 19 + Vite 7、TypeScript                                                                                                         |
 | 状態管理         | Zustand（UI状態）、TanStack Query（サーバー状態・キャッシュ）                                                                         |
 | API通信          | axios（`src/react-app/lib/api.ts`でinterceptorを使い共通エラーハンドリング）                                                          |
-| スタイリング     | Tailwind CSS v4（`@tailwindcss/vite`）、`clsx`（条件分岐によるクラス名組み立て。`src/react-app/lib/utils.ts`の`cn()`ヘルパー経由で使用） |
+| スタイリング     | Tailwind CSS v4（`@tailwindcss/vite`）、`clsx`（条件分岐によるクラス名組み立て。`src/react-app/lib/cn.ts`の`cn()`ヘルパー経由で使用） |
 | コード整形       | Prettier + `prettier-plugin-tailwindcss`（Tailwindクラスの並び順を自動統一。`pnpm run format` / `pnpm run format:check`）             |
 | バックエンド     | Hono（Cloudflare Workers 上で動作するAPIフレームワーク）                                                                              |
 | インフラ         | Cloudflare Workers（単一Worker + Static Assets）                                                                                      |
@@ -54,13 +54,13 @@ shared-study-logger/
       middleware/        # 認証ミドルウェア
       types/env.d.ts     # wrangler typesが生成しないシークレットの型補完
     react-app/         # Reactフロントエンド
-      app/               # 起動、ルータ、ガード、シェル、横断エフェクト
-      pages/             # URL に対応する画面（複数 feature の合成）
-      features/          # 認証・グループ・記録・通知・Push・PWA（他 feature を import しない）
-      stores/            # アプリ全体の設定（preferencesStore。正本は localStorage）
-      components/        # 共有 UI。ui/ はドメイン非依存（Button, FormField, ErrorMessage）
-      hooks/             # 共有 hook
-      lib/               # api.ts(axios) / theme.ts / utils.ts（cn）
+      stores/            # Zustand
+      queries/           # TanStack Queryフック
+      features/          # 認証・グループ切替・記録一覧/投稿・通知UI（ドメイン固有ロジック）
+      routes/            # react-router定義・認証ガード(ProtectedRoute/GuestRoute)・404/HomePage
+      components/        # 横断的なUI（Layout, LoadingScreen, ThemeToggle）
+      components/ui/     # ドメイン非依存の汎用UI部品（Button, FormField, ErrorMessage）
+      lib/               # api.ts(axios) / push.ts / cn.ts(clsxラッパー) / theme.ts
   shared/
     schemas.ts         # Zodスキーマ（Worker/フロント共通）
   migrations/           # D1マイグレーション

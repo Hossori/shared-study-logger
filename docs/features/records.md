@@ -21,7 +21,7 @@ API のペア規則・カーソルは [api.md](../api.md)。
 
 スタンプ: POST で付与（重複 409 `already_reacted`）、DELETE で取消。一覧キャッシュを楽観更新し、`onSettled` で invalidate。長押しでユーザー一覧（`created_at, id` 昇順）。
 
-PTR: ホーム画面の `PullToRefresh` が `recordsQueryKeys.list(groupId)` を invalidate。ジェスチャの純関数は `src/react-app/app/shell/pullRefresh.ts` / `pullGesture.ts`。
+PTR: `PullToRefresh` が `recordsQueryKeys.list(groupId)` を invalidate。ジェスチャの純関数は `src/react-app/lib/pullToRefresh.ts` / `pullGesture.ts`。
 
 ## 変更するとき
 
@@ -30,6 +30,6 @@ PTR: ホーム画面の `PullToRefresh` が `recordsQueryKeys.list(groupId)` を
 ## 入口
 
 - `src/worker/routes/records.ts`
-- `src/react-app/features/records/list/RecordsList.tsx`
-- `src/react-app/features/records/api/useRecords.ts`
-- `src/react-app/app/shell/PullToRefresh.tsx`
+- `src/react-app/features/records/RecordsList.tsx`
+- `src/react-app/queries/useRecords.ts`
+- `src/react-app/components/PullToRefresh.tsx`
