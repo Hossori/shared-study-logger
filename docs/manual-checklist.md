@@ -22,7 +22,7 @@ Push / PWA / iOS は自動化していない。リリース前や関連変更時
 
 ## iOS
 
-- [ ] Safari 非 standalone でホーム画面追加案内が出る
+- [ ] iOS 非スタンドアロン（Safari / Chrome / Firefox / Edge）で、そのブラウザの共有ボタンを指す案内が出る
 - [ ] ホーム画面追加後（standalone）で Push 購読できる
 - [ ] 実機で投稿通知を受信できる
 

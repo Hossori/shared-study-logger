@@ -31,6 +31,7 @@ import {
 } from "./types";
 import { parseNotificationBody } from "./notificationBodyLinks";
 import { useIsMaxSm } from "@/hooks/useIsMaxSm";
+import { iosHomeScreenInstallHint } from "@/features/pwa/pwaInstall";
 
 const bodyLinkClassName = "text-primary underline underline-offset-3";
 
@@ -173,7 +174,9 @@ function NotificationListItem({
       {item.kind === "pwa-install" && pwa.isIosGuide ? (
         <Alert className="mt-2">
           <AlertDescription>
-            Safari の共有ボタン →「ホーム画面に追加」
+            {iosHomeScreenInstallHint(
+              typeof navigator !== "undefined" ? navigator.userAgent : "",
+            )}
           </AlertDescription>
         </Alert>
       ) : null}
