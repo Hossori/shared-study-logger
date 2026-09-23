@@ -6,13 +6,13 @@ import {
   type PullGestureEvent,
   type PullGestureOptions,
   type PullGestureState,
-} from "../../src/react-app/lib/pullGesture";
+} from "../../src/react-app/app/shell/pullGesture";
 import {
   applyPullResistance,
   PULL_ACTIVATION_PX,
   PULL_REFRESH_HOLD_PX,
   PULL_REFRESH_THRESHOLD,
-} from "../../src/react-app/lib/pullToRefresh";
+} from "../../src/react-app/app/shell/pullRefresh";
 
 const TRACK: PullGestureOptions = { trackPull: true };
 const PREVENT: PullGestureOptions = { trackPull: false };

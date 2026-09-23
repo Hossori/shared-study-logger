@@ -15,7 +15,7 @@ import {
   getServiceWorkerUpdateSnapshot,
   requestServiceWorkerUpdate,
   subscribeServiceWorkerUpdate,
-} from "@/lib/serviceWorkerUpdate";
+} from "./serviceWorkerUpdate";
 import {
   getClientApiUpdateRequiredEvent,
   subscribeClientApiUpdateRequired,

@@ -21,6 +21,6 @@
 
 - `src/worker/routes/groups.ts`
 - `src/worker/routes/admin-directory.ts`
-- `src/react-app/lib/selectedGroup.ts`
+- `src/react-app/features/groups/selectedGroup.ts`
 - `src/react-app/features/groups/GroupSwitcher.tsx`
-- `src/react-app/stores/uiStore.ts`
+- `src/react-app/features/groups/selectedGroupStore.ts`

@@ -36,4 +36,6 @@ Atomic Design の 5 階層はコンポーネント数が少なく過剰で、`fe
 
 ### テーマは `html.dark` + localStorage
 
-shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に合わせ、クラス戦略で切り替える。未保存時だけ `prefers-color-scheme` に追従し、トグル後は `localStorage` の明示値を優先する。FOUC 防止の初期化は `index.html` のインラインスクリプトと `src/react-app/lib/theme.ts` でキーを揃える。
+shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に合わせ、クラス戦略で切り替える。未保存時だけ `prefers-color-scheme` に追従し、トグル後は `localStorage` の明示値を優先する。FOUC 防止の初期化は `index.html` のインラインスクリプトと `src/react-app/lib/theme.ts` でキーを揃える。React 側の現在値は `stores/preferencesStore.ts` が同じ純関数で初期化する。
+
+フロントの依存は `app` / `pages` → `features` → `components` / `lib` / `hooks` / `stores`。feature は他 feature を import しない。画面の合成は `pages` と `app/shell` が行う。

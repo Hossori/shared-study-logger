@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { urlBase64ToUint8Array } from "../../src/react-app/lib/push";
+import { urlBase64ToUint8Array } from "../../src/react-app/features/push/vapid";
 
 describe("urlBase64ToUint8Array", () => {
 	it("decodes base64url without padding", () => {
