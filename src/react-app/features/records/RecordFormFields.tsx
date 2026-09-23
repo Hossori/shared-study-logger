@@ -36,10 +36,15 @@ export default function RecordFormFields({
 
       <StudyDatetimeField
         idPrefix={idPrefix}
-        startedAt={values.startedAt}
+        studyDatetime={values.studyDatetime}
         durationMinutes={values.durationMinutes}
-        onChange={(startedAt, durationMinutes) =>
-          onChange({ ...values, startedAt, durationMinutes })
+        onChange={(studyDatetime, durationMinutes) =>
+          onChange({
+            ...values,
+            studyDatetime,
+            durationMinutes,
+            preservedStudyDatetime: null,
+          })
         }
       />
 

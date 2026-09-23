@@ -6,7 +6,13 @@ import type { StudyRecord } from "../../../../shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {
-  startedAt: string;
+  /** ダイアログ用のローカル日時（YYYY-MM-DDTHH:mm）。空は未指定。 */
+  studyDatetime: string;
+  /**
+   * ダイアログで確定するまで維持する元の ISO。
+   * 設定中は studyDatetime を再変換せず、この値を送る。
+   */
+  preservedStudyDatetime?: string | null;
   title: string;
   memo: string;
   durationMinutes: number | null;
@@ -196,21 +202,12 @@ export function formatStudyDatetimeLabel(
 
 /** 記録カードの日時表示。 */
 export function formatRecordCardDatetime(record: StudyRecord): string {
-  if (record.startedAt) {
-    return formatStudyDatetimeLabel(record.startedAt, record.durationMinutes);
-  }
-  const created = new Date(record.createdAt);
-  if (Number.isNaN(created.getTime())) return record.createdAt;
-  return `${formatJaDateWithWeekday(created)} ${formatClockTime(created.getHours(), created.getMinutes())}`;
+  return formatStudyDatetimeLabel(record.studyDatetime, record.durationMinutes);
 }
 
-/** 学習時間バッジを表示するか（学習日時と duration の両方が正の値）。 */
+/** 学習時間バッジを表示するか（duration が正の値）。 */
 export function shouldShowDurationBadge(record: StudyRecord): boolean {
-  return (
-    record.startedAt != null &&
-    record.durationMinutes != null &&
-    record.durationMinutes > 0
-  );
+  return record.durationMinutes != null && record.durationMinutes > 0;
 }
 
 /** 未保存ガードが拾えるよう、フォームへ input イベントをバブリングする。 */
@@ -220,7 +217,7 @@ export function notifyFormInput(node: EventTarget | null): void {
 
 /** フォーム値から API 用ペイロードを組み立てる。不正なら null。 */
 export function buildRecordRequestPayload(values: RecordFormValues): {
-  startedAt: string | null;
+  studyDatetime: string | null;
   title: string;
   memo: string | undefined;
   durationMinutes: number | null;
@@ -231,26 +228,47 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
   const memo = values.memo.trim();
   const memoField = memo ? memo : undefined;
 
-  if (!values.startedAt) {
+  if (!values.studyDatetime) {
     return {
-      startedAt: null,
+      studyDatetime: null,
       title,
       memo: memoField,
       durationMinutes: null,
     };
   }
 
-  const startedAt = parseDatetimeLocalToIso(values.startedAt);
-  if (!parseRecordDatetime(values.startedAt) || !startedAt) {
+  if (values.preservedStudyDatetime) {
+    if (values.durationMinutes != null && values.durationMinutes <= 0) {
+      return null;
+    }
+    return {
+      studyDatetime: values.preservedStudyDatetime,
+      title,
+      memo: memoField,
+      durationMinutes: values.durationMinutes,
+    };
+  }
+
+  const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
+  if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime) {
     return null;
   }
 
-  if (values.durationMinutes == null || values.durationMinutes <= 0) {
+  if (values.durationMinutes != null && values.durationMinutes <= 0) {
     return null;
+  }
+
+  if (values.durationMinutes == null) {
+    return {
+      studyDatetime,
+      title,
+      memo: memoField,
+      durationMinutes: null,
+    };
   }
 
   return {
-    startedAt,
+    studyDatetime,
     title,
     memo: memoField,
     durationMinutes: values.durationMinutes,

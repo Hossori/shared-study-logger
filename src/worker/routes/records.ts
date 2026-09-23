@@ -94,7 +94,7 @@ recordsRoutes.post("/:groupId/records", async (c) => {
     id: crypto.randomUUID(),
     groupId,
     userId: user.id,
-    startedAt: parsed.data.startedAt,
+    studyDatetime: parsed.data.studyDatetime,
     title: parsed.data.title,
     durationMinutes: parsed.data.durationMinutes ?? null,
     memo: parsed.data.memo,
@@ -246,31 +246,13 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
   }
 
-  const effectiveDuration =
-    parsed.data.durationMinutes === undefined
-      ? existing.durationMinutes
-      : parsed.data.durationMinutes;
-  const effectiveStartedAt = parsed.data.startedAt;
-  if (
-    (effectiveStartedAt == null && effectiveDuration != null) ||
-    (effectiveStartedAt != null && effectiveDuration == null)
-  ) {
-    return c.json(
-      {
-        error: "invalid_request",
-        message: "study_time_pair_required",
-      },
-      400,
-    );
-  }
-
   const record = await updateStudyRecord(
     c.env.DB,
     groupId,
     recordId,
     user.id,
     {
-      startedAt: parsed.data.startedAt,
+      studyDatetime: parsed.data.studyDatetime,
       title: parsed.data.title,
       durationMinutes: parsed.data.durationMinutes,
       memo: parsed.data.memo,
