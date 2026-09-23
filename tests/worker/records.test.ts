@@ -537,7 +537,7 @@ describe("records routes", () => {
 		expect(list.records.some((r) => r.title === "Duration only")).toBe(false);
 	});
 
-	it("sorts by study_datetime DESC, id DESC", async () => {
+	it("sorts by end datetime DESC, id DESC", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -604,6 +604,121 @@ describe("records routes", () => {
 		expect(pastIdx).toBeGreaterThanOrEqual(0);
 		expect(futureIdx).toBeLessThan(defaultIdx);
 		expect(defaultIdx).toBeLessThan(pastIdx);
+	});
+
+	it("sorts by end datetime when start is earlier but end is later", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const post = (body: Record<string, unknown>) =>
+			workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records`,
+					{
+						method: "POST",
+						headers: {
+							cookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify(body),
+					},
+				),
+			);
+
+		const endsLaterRes = await post({
+			studyDatetime: "2020-01-01T10:00:00.000Z",
+			title: "Ends later",
+			durationMinutes: 180,
+		});
+		expect(endsLaterRes.status).toBe(201);
+
+		const pointInTimeRes = await post({
+			studyDatetime: "2020-01-01T12:45:00.000Z",
+			title: "Point in time",
+		});
+		expect(pointInTimeRes.status).toBe(201);
+
+		const endsSoonerRes = await post({
+			studyDatetime: "2020-01-01T12:00:00.000Z",
+			title: "Ends sooner",
+			durationMinutes: 30,
+		});
+		expect(endsSoonerRes.status).toBe(201);
+
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as {
+			records: Array<{ title: string }>;
+		};
+		const titles = list.records.map((r) => r.title);
+		const endsLaterIdx = titles.indexOf("Ends later");
+		const pointInTimeIdx = titles.indexOf("Point in time");
+		const endsSoonerIdx = titles.indexOf("Ends sooner");
+		expect(endsLaterIdx).toBeGreaterThanOrEqual(0);
+		expect(pointInTimeIdx).toBeGreaterThanOrEqual(0);
+		expect(endsSoonerIdx).toBeGreaterThanOrEqual(0);
+		expect(endsLaterIdx).toBeLessThan(pointInTimeIdx);
+		expect(pointInTimeIdx).toBeLessThan(endsSoonerIdx);
+	});
+
+	it("breaks ties on end datetime by id DESC", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const post = (body: Record<string, unknown>) =>
+			workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records`,
+					{
+						method: "POST",
+						headers: {
+							cookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify(body),
+					},
+				),
+			);
+
+		await post({
+			studyDatetime: "2020-01-01T12:00:00.000Z",
+			title: "Same end A",
+			durationMinutes: 30,
+		});
+		await post({
+			studyDatetime: "2020-01-01T12:30:00.000Z",
+			title: "Same end B",
+		});
+
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as {
+			records: Array<{ id: string; title: string }>;
+		};
+		const sameEnd = list.records.filter(
+			(r) => r.title === "Same end A" || r.title === "Same end B",
+		);
+		expect(sameEnd).toHaveLength(2);
+		const idsDesc = [...sameEnd.map((r) => r.id)].sort((a, b) =>
+			b.localeCompare(a),
+		);
+		expect(sameEnd.map((r) => r.id)).toEqual(idsDesc);
 	});
 
 	it("returns 400 for old 3-part cursor", async () => {

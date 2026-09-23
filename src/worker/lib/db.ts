@@ -55,6 +55,14 @@ export interface StudyRecordRow {
   updated_at: string;
 }
 
+/** 一覧ソート・カーソル用。SELECT / WHERE / ORDER BY で同一式を使う。 */
+const STUDY_RECORD_END_DATETIME_SQL =
+  "datetime(sr.study_datetime, '+' || COALESCE(sr.duration_minutes, 0) || ' minutes')";
+
+interface StudyRecordListRow extends StudyRecordRow {
+  _sort_end_datetime: string;
+}
+
 export interface PushSubscriptionRow {
   id: string;
   user_id: string;
@@ -443,8 +451,8 @@ export function parseStudyRecordsCursor(
   return decodeCursor(cursor);
 }
 
-function studyRecordSortKey(row: StudyRecordRow): string {
-  return row.study_datetime;
+function studyRecordSortKey(row: StudyRecordListRow): string {
+  return row._sort_end_datetime;
 }
 
 function toStudyRecord(
@@ -557,9 +565,9 @@ export async function listStudyRecords(
 
   if (cursorParts) {
     where.push(`(
-      sr.study_datetime < ?
+      ${STUDY_RECORD_END_DATETIME_SQL} < ?
       OR (
-        sr.study_datetime = ?
+        ${STUDY_RECORD_END_DATETIME_SQL} = ?
         AND sr.id < ?
       )
     )`);
@@ -570,11 +578,12 @@ export async function listStudyRecords(
     SELECT sr.id, sr.group_id, sr.user_id, u.display_name AS author_display_name,
            u.avatar_key AS author_avatar_key,
            sr.study_datetime, sr.title, sr.duration_minutes, sr.memo,
-           sr.created_at, sr.updated_at
+           sr.created_at, sr.updated_at,
+           ${STUDY_RECORD_END_DATETIME_SQL} AS _sort_end_datetime
     FROM study_records sr
     INNER JOIN users u ON u.id = sr.user_id
     WHERE ${where.join(" AND ")}
-    ORDER BY sr.study_datetime DESC, sr.id DESC
+    ORDER BY ${STUDY_RECORD_END_DATETIME_SQL} DESC, sr.id DESC
     LIMIT ?
   `;
   binds.push(limit + 1);
@@ -582,7 +591,7 @@ export async function listStudyRecords(
   const { results } = await db
     .prepare(sql)
     .bind(...binds)
-    .all<StudyRecordRow>();
+    .all<StudyRecordListRow>();
   const rows = results ?? [];
 
   const hasMore = rows.length > limit;
