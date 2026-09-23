@@ -26,4 +26,4 @@
 - `src/worker/routes/auth.ts`
 - `src/worker/lib/auth.ts` / `session.ts`
 - `src/worker/middleware/requireAuth.ts` / `requireAdmin.ts`
-- `src/react-app/features/auth/api/useAuth.ts`
+- `src/react-app/queries/useAuth.ts`

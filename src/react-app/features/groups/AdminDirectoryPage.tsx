@@ -2,39 +2,41 @@
  * 管理者向けのグループ追加・ユーザー追加・所属の編集画面。
  */
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useOutletContext } from "react-router";
 import { Users } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
+import Layout from "../../components/Layout";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "../../components/ui/card";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
+} from "../../components/ui/empty";
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "../../components/ui/field";
+import { Input } from "../../components/ui/input";
 import {
   NativeSelect,
   NativeSelectOption,
-} from "@/components/ui/native-select";
-import { Spinner } from "@/components/ui/spinner";
-import { useConfirm } from "@/components/useConfirm";
-import { ApiError } from "@/lib/api";
+} from "../../components/ui/native-select";
+import { Spinner } from "../../components/ui/spinner";
+import { useConfirm } from "../../components/useConfirm";
+import { ApiError } from "../../lib/api";
 import {
   useAddGroupMemberMutation,
   useAdminGroupsQuery,
@@ -42,7 +44,7 @@ import {
   useCreateAdminGroupMutation,
   useCreateAdminUserMutation,
   useRemoveGroupMemberMutation,
-} from "./api/useAdminDirectory";
+} from "../../queries/useAdminDirectory";
 import {
   CreateAdminGroupRequestSchema,
   CreateAdminUserRequestSchema,
@@ -71,6 +73,7 @@ function mutationErrorMessage(error: unknown): string {
 }
 
 export default function AdminDirectoryPage() {
+  const { user } = useOutletContext<AuthenticatedOutletContext>();
   const confirm = useConfirm();
   const usersQuery = useAdminUsersQuery(true);
   const groupsQuery = useAdminGroupsQuery(true);
@@ -179,7 +182,7 @@ export default function AdminDirectoryPage() {
     : undefined;
 
   return (
-    <>
+    <Layout user={user}>
       <div className="mb-4">
         <Button variant="default" nativeButton={false} render={<Link to="/" />}>
           ホームに戻る
@@ -473,6 +476,6 @@ export default function AdminDirectoryPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </Layout>
   );
 }

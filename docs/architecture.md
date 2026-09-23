@@ -18,7 +18,7 @@
 
 ```
 src/worker/       # Hono: index.ts, routes/, lib/, middleware/
-src/react-app/    # app/, pages/, features/, stores/, components/, hooks/, lib/
+src/react-app/    # stores/, queries/, features/, routes/, components/, lib/
 shared/           # schemas.ts, avatars.ts
 migrations/
 public/           # sw.ts, manifest, icons/, avatars/

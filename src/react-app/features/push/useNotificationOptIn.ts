@@ -6,9 +6,12 @@ import {
   useSubscribePushMutation,
   useUnsubscribePushMutation,
   useVapidPublicKeyQuery,
-} from "./api/usePushSubscription";
-import { isIosNonStandalone } from "@/lib/iosStandalone";
-import { isPushSupported, urlBase64ToUint8Array } from "./vapid";
+} from "../../queries/usePushSubscription";
+import {
+  isIosNonStandalone,
+  isPushSupported,
+  urlBase64ToUint8Array,
+} from "../../lib/push";
 import type { PushSubscriptionInput } from "../../../../shared/schemas";
 
 export type NotificationOptInStatus =
