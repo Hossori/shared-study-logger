@@ -120,7 +120,38 @@ export async function setStudyDurationFromPicker(
   const dialog = studyTimeDialog(page);
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: options.buttonName }).click();
-  await expect(dialog.getByText(options.expectedLabel, { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByText(options.expectedLabel, { exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(dialog).toBeHidden();
+}
+
+/** 「時刻を設定する」で終了時刻なしの日時を確定する。 */
+export async function fillStudyDatetimeWithoutDuration(
+  page: Page,
+  idPrefix: string,
+  date: string,
+  hour: number,
+  minute: number,
+): Promise<void> {
+  const dialog = studyTimeDialog(page);
+  if (!(await dialog.isVisible())) {
+    await page.getByRole("button", { name: "学習日時を設定" }).click();
+    await expect(dialog).toBeVisible();
+  }
+
+  await dialog.getByText("時刻を設定する", { exact: true }).click();
+  await expect(dialog.getByText("～")).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "終了時刻" })).toHaveCount(0);
+  const durationSection = dialog.locator("fieldset");
+  await expect(durationSection).toContainText("学習時間");
+  await expect(dialog.getByRole("button", { name: "+10分" })).toBeDisabled();
+  await expect(
+    dialog.getByRole("button", { name: "学習時間のヘルプ" }),
+  ).toBeDisabled();
+
+  await fillStudyDatetime(page, idPrefix, date, hour, minute);
   await dialog.getByRole("button", { name: "OK" }).click();
   await expect(dialog).toBeHidden();
 }

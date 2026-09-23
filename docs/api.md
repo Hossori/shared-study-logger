@@ -71,20 +71,21 @@ API互換性を壊すリリースでは、同ファイルの
 ステータスは `426 Upgrade Required`、レスポンスは `Cache-Control: no-store` とする。
 ブリッジリリースでは最小版を `null` にして版検証を無効化し、更新UIを配布してから強制する。
 
-## 学習記録 API（`startedAt` / `durationMinutes`）
+## 学習記録 API（`studyDatetime` / `durationMinutes`）
 
-`GET` / `POST` / `PATCH` の記録レスポンス・リクエストでは `startedAt` は ISO 8601 または `null`（未設定）。
-`durationMinutes` は 5 分刻み（5〜1435、最大 23 時間 55 分）または `null`（未設定）。
+`GET` レスポンスの `studyDatetime` は常に ISO 8601 文字列（NOT NULL）。
+`POST` / `PATCH` リクエストの `studyDatetime` は ISO 8601 または `null`（未指定・クリア）。
+未指定作成時およびクリア更新時はサーバが `created_at` と同じ時刻を `study_datetime` に保存する。
+`durationMinutes` は 5 分刻み（5〜1435、最大 23 時間 55 分）または `null`（終了時間なし）。
 
-**ペア規則（POST / PATCH 共通）**
+**検証（POST / PATCH 共通）**
 
-- 両方 `null` … 学習日時未設定（一覧では `createdAt` を表示）
-- 両方セット … 通常の学習日時 + 学習時間
-- 片方のみセット … 400（`study_time_pair_required`）
+- `studyDatetime` あり・`durationMinutes` `null` または省略 … 許可（時点としての学習日時）
+- 両方 `null` … 許可（サーバが `created_at` を `study_datetime` に入れる）
+- `studyDatetime` `null` かつ `durationMinutes` が明示的に非 `null` … 400（`study_time_pair_required`）
 
 **一覧ソート・カーソル（`GET /api/groups/:groupId/records`）**
 
-- 並び順: `COALESCE(started_at, created_at) DESC, id DESC`（新しい順）
+- 並び順: `study_datetime DESC, id DESC`（新しい順）
 - 任意クエリ `userIds`（繰り返し `userIds=a&userIds=b`、最大 50、空配列 / 空文字は未指定）を指定すると `sr.user_id IN (...)` で絞り込む。カーソル条件は同じ（フィルタ後の集合に対してページネーション）
-- カーソル: base64 エンコードの `sortKey|id`（2 要素）。`sortKey` は各行の
-  `COALESCE(started_at, created_at)` の ISO 文字列
+- カーソル: base64 エンコードの `sortKey|id`（2 要素）。`sortKey` は各行の `study_datetime` の ISO 文字列

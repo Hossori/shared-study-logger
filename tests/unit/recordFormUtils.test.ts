@@ -126,14 +126,15 @@ describe("recordFormUtils", () => {
     expect(formatStudyDatetimeLabel(iso, 0)).toBe("2026年12月28日(月) 23:30");
   });
 
-  it("formatRecordCardDatetime falls back to createdAt without range", () => {
-    const createdAt = new Date(2026, 11, 28, 15, 51).toISOString();
+  it("formatRecordCardDatetime uses studyDatetime", () => {
+    const studyDatetime = new Date(2026, 11, 28, 15, 51).toISOString();
+    const createdAt = new Date(2026, 11, 27, 10, 0).toISOString();
     expect(
       formatRecordCardDatetime({
         id: "r1",
         groupId: "g1",
         userId: "u1",
-        startedAt: null,
+        studyDatetime,
         title: "t",
         durationMinutes: null,
         createdAt,
@@ -144,14 +145,14 @@ describe("recordFormUtils", () => {
   });
 
   it("formatRecordCardDatetime shows overflow range when duration is set", () => {
-    const startedAt = new Date(2026, 11, 28, 23, 30).toISOString();
+    const studyDatetime = new Date(2026, 11, 28, 23, 30).toISOString();
     const createdAt = new Date(2026, 11, 28, 15, 51).toISOString();
     expect(
       formatRecordCardDatetime({
         id: "r1",
         groupId: "g1",
         userId: "u1",
-        startedAt,
+        studyDatetime,
         title: "t",
         durationMinutes: 90,
         createdAt,
@@ -161,12 +162,13 @@ describe("recordFormUtils", () => {
     ).toBe("2026年12月28日(月) 23:30-25:00");
   });
 
-  it("shouldShowDurationBadge requires both datetime and positive duration", () => {
+  it("shouldShowDurationBadge requires positive duration", () => {
     const createdAt = new Date(2026, 11, 28, 15, 51).toISOString();
     const base = {
       id: "r1",
       groupId: "g1",
       userId: "u1",
+      studyDatetime: createdAt,
       title: "t",
       createdAt,
       updatedAt: createdAt,
@@ -175,21 +177,12 @@ describe("recordFormUtils", () => {
     expect(
       shouldShowDurationBadge({
         ...base,
-        startedAt: null,
-        durationMinutes: 10,
-      }),
-    ).toBe(false);
-    expect(
-      shouldShowDurationBadge({
-        ...base,
-        startedAt: createdAt,
         durationMinutes: null,
       }),
     ).toBe(false);
     expect(
       shouldShowDurationBadge({
         ...base,
-        startedAt: createdAt,
         durationMinutes: 10,
       }),
     ).toBe(true);
@@ -221,13 +214,13 @@ describe("recordFormUtils", () => {
   it("buildRecordRequestPayload allows unset datetime when title is set", () => {
     expect(
       buildRecordRequestPayload({
-        startedAt: "",
+        studyDatetime: "",
         title: "x",
         memo: "",
         durationMinutes: 30,
       }),
     ).toEqual({
-      startedAt: null,
+      studyDatetime: null,
       title: "x",
       memo: undefined,
       durationMinutes: null,
@@ -237,7 +230,7 @@ describe("recordFormUtils", () => {
   it("buildRecordRequestPayload rejects empty title", () => {
     expect(
       buildRecordRequestPayload({
-        startedAt: "",
+        studyDatetime: "",
         title: "   ",
         memo: "",
         durationMinutes: null,
@@ -247,7 +240,7 @@ describe("recordFormUtils", () => {
 
   it("buildRecordRequestPayload includes duration when set", () => {
     const payload = buildRecordRequestPayload({
-      startedAt: "2026-08-01T12:00",
+      studyDatetime: "2026-08-01T12:00",
       title: "  数学  ",
       memo: "   ",
       durationMinutes: 30,
@@ -261,7 +254,7 @@ describe("recordFormUtils", () => {
   it("buildRecordRequestPayload rejects invalid datetime", () => {
     expect(
       buildRecordRequestPayload({
-        startedAt: "T15:58",
+        studyDatetime: "T15:58",
         title: "x",
         memo: "",
         durationMinutes: null,
@@ -269,18 +262,38 @@ describe("recordFormUtils", () => {
     ).toBeNull();
   });
 
-  it("buildRecordRequestPayload returns null when start is set without duration", () => {
+  it("buildRecordRequestPayload keeps a preserved ISO until the dialog commits", () => {
+    const iso = new Date(2026, 7, 1, 9, 2, 17).toISOString();
+    const payload = buildRecordRequestPayload({
+      studyDatetime: toDatetimeLocalString(iso),
+      preservedStudyDatetime: iso,
+      title: "x",
+      memo: "",
+      durationMinutes: null,
+    });
+    expect(payload?.studyDatetime).toBe(iso);
+    expect(parseDatetimeLocalToIso(toDatetimeLocalString(iso))).not.toBe(iso);
+  });
+
+  it("buildRecordRequestPayload allows datetime without duration", () => {
+    const payload = buildRecordRequestPayload({
+      studyDatetime: "2026-08-01T12:00",
+      title: "x",
+      memo: "",
+      durationMinutes: null,
+    });
+    expect(payload).toEqual({
+      studyDatetime: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      title: "x",
+      memo: undefined,
+      durationMinutes: null,
+    });
+  });
+
+  it("buildRecordRequestPayload rejects datetime with zero duration", () => {
     expect(
       buildRecordRequestPayload({
-        startedAt: "2026-08-01T12:00",
-        title: "x",
-        memo: "",
-        durationMinutes: null,
-      }),
-    ).toBeNull();
-    expect(
-      buildRecordRequestPayload({
-        startedAt: "2026-08-01T12:00",
+        studyDatetime: "2026-08-01T12:00",
         title: "x",
         memo: "",
         durationMinutes: 0,

@@ -17,6 +17,8 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import { CalendarIcon, CircleHelp, Clock, ClockPlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { ja } from "react-day-picker/locale";
@@ -45,9 +47,9 @@ type OpenPicker = "date" | "start" | "end" | "durationHelp" | null;
 
 interface StudyDatetimeFieldProps {
   idPrefix: string;
-  startedAt: string;
+  studyDatetime: string;
   durationMinutes: number | null;
-  onChange: (startedAt: string, durationMinutes: number | null) => void;
+  onChange: (studyDatetime: string, durationMinutes: number | null) => void;
 }
 
 interface DraftState {
@@ -59,6 +61,7 @@ interface DraftState {
   endDisplayMinute: number;
   endClockHour: number;
   endClockMinute: number;
+  timeInputMode: "range" | "instant";
 }
 
 const DELTA_BUTTONS: { label: string; delta: number }[] = [
@@ -99,11 +102,24 @@ function endFromStartAndDuration(
   };
 }
 
+function isTimeInputMode(value: unknown): value is DraftState["timeInputMode"] {
+  return value === "range" || value === "instant";
+}
+
+function initTimeInputMode(
+  studyDatetime: string,
+  durationMinutes: number | null,
+): DraftState["timeInputMode"] {
+  if (!studyDatetime) return "range";
+  return durationMinutes != null ? "range" : "instant";
+}
+
 function initDraft(
-  startedAt: string,
+  studyDatetime: string,
   durationMinutes: number | null,
 ): DraftState {
-  const parsed = parseRecordDatetime(startedAt);
+  const timeInputMode = initTimeInputMode(studyDatetime, durationMinutes);
+  const parsed = parseRecordDatetime(studyDatetime);
   if (!parsed) {
     const today = nowRecordDatetimeParts();
     return {
@@ -111,6 +127,7 @@ function initDraft(
       startHour: 0,
       startMinute: 0,
       durationMinutes: 0,
+      timeInputMode,
       ...endFromStartAndDuration(0, 0, 0),
     };
   }
@@ -120,6 +137,7 @@ function initDraft(
     startHour: parsed.hour,
     startMinute: parsed.minute,
     durationMinutes: duration,
+    timeInputMode,
     ...endFromStartAndDuration(parsed.hour, parsed.minute, duration),
   };
 }
@@ -140,26 +158,27 @@ function withEndFromDuration(
 }
 
 function parentFieldLabel(
-  startedAt: string,
+  studyDatetime: string,
   durationMinutes: number | null,
 ): string {
-  if (!startedAt) return "学習日時を設定";
-  const iso = parseDatetimeLocalToIso(startedAt);
+  if (!studyDatetime) return "学習日時を設定";
+  const iso = parseDatetimeLocalToIso(studyDatetime);
   if (!iso) return "学習日時を設定";
   return formatStudyDatetimeLabel(iso, durationMinutes);
 }
 
 export default function StudyDatetimeField({
   idPrefix,
-  startedAt,
+  studyDatetime,
   durationMinutes,
   onChange,
 }: StudyDatetimeFieldProps) {
   const fieldRef = useRef<HTMLDivElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [unsetHelpOpen, setUnsetHelpOpen] = useState(false);
   const [openPicker, setOpenPicker] = useState<OpenPicker>(null);
   const [draft, setDraft] = useState<DraftState>(() =>
-    initDraft(startedAt, durationMinutes),
+    initDraft(studyDatetime, durationMinutes),
   );
 
   const dateTriggerId = `${idPrefix}-studyDate`;
@@ -168,20 +187,21 @@ export default function StudyDatetimeField({
   const startPickerId = `${idPrefix}-start-time-picker`;
   const endTriggerId = `${idPrefix}-endTime`;
   const endPickerId = `${idPrefix}-end-time-picker`;
+  const setsTimeRange = draft.timeInputMode === "range";
 
   const togglePicker = (name: Exclude<OpenPicker, null>) => (open: boolean) => {
     setOpenPicker(open ? name : null);
   };
 
   const openDialog = () => {
-    setDraft(initDraft(startedAt, durationMinutes));
+    setDraft(initDraft(studyDatetime, durationMinutes));
     setOpenPicker(null);
     setDialogOpen(true);
   };
 
   const handleDialogOpenChange = (open: boolean) => {
     if (open) {
-      setDraft(initDraft(startedAt, durationMinutes));
+      setDraft(initDraft(studyDatetime, durationMinutes));
       setOpenPicker(null);
       setDialogOpen(true);
       return;
@@ -191,10 +211,10 @@ export default function StudyDatetimeField({
   };
 
   const commitToParent = (
-    nextStartedAt: string,
+    nextStudyDatetime: string,
     nextDuration: number | null,
   ) => {
-    onChange(nextStartedAt, nextDuration);
+    onChange(nextStudyDatetime, nextDuration);
     notifyFormInput(fieldRef.current);
   };
 
@@ -205,7 +225,7 @@ export default function StudyDatetimeField({
       draft.startHour,
       draft.startMinute,
     );
-    commitToParent(formatted, draft.durationMinutes);
+    commitToParent(formatted, setsTimeRange ? draft.durationMinutes : null);
     setDialogOpen(false);
   };
 
@@ -215,7 +235,9 @@ export default function StudyDatetimeField({
   };
 
   const timesReady = Boolean(draft.date);
-  const okEnabled = timesReady && draft.durationMinutes >= 5;
+  const okEnabled =
+    timesReady &&
+    (draft.timeInputMode === "range" ? draft.durationMinutes >= 5 : true);
   const atMinDuration = draft.durationMinutes <= 0;
   const atMaxDuration = draft.durationMinutes >= DURATION_MINUTES_MAX;
   const selectedDate = recordDateStringToLocalDate(draft.date);
@@ -227,7 +249,35 @@ export default function StudyDatetimeField({
   return (
     <Field ref={fieldRef}>
       <div className="flex flex-col items-start gap-2">
-        <FieldLabel>学習日時</FieldLabel>
+        <div className="flex items-center gap-1">
+          <FieldLabel>学習日時</FieldLabel>
+          <Popover open={unsetHelpOpen} onOpenChange={setUnsetHelpOpen}>
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="学習日時のヘルプ"
+                  aria-expanded={unsetHelpOpen}
+                  aria-controls={`${idPrefix}-study-datetime-help`}
+                >
+                  <CircleHelp className="text-muted-foreground" />
+                  <span className="sr-only">学習日時のヘルプ</span>
+                </Button>
+              }
+            />
+            <PopoverContent
+              id={`${idPrefix}-study-datetime-help`}
+              side="bottom"
+              align="start"
+              className="w-auto max-w-xs p-2"
+            >
+              <PopoverTitle className="sr-only">学習日時のヘルプ</PopoverTitle>
+              <p>未設定の場合は投稿時刻が設定されます</p>
+            </PopoverContent>
+          </Popover>
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -235,7 +285,7 @@ export default function StudyDatetimeField({
           onClick={openDialog}
         >
           <ClockPlus />
-          {parentFieldLabel(startedAt, durationMinutes)}
+          {parentFieldLabel(studyDatetime, durationMinutes)}
         </Button>
       </div>
 
@@ -244,6 +294,27 @@ export default function StudyDatetimeField({
           <DialogHeader>
             <DialogTitle>学習日時を設定</DialogTitle>
           </DialogHeader>
+
+          <RadioGroup
+            aria-label="学習日時の入力方法"
+            className="flex w-auto flex-row flex-wrap items-center gap-x-4 gap-y-2"
+            value={draft.timeInputMode}
+            onValueChange={(value) => {
+              if (!isTimeInputMode(value)) return;
+              setDraft((current) => ({
+                ...current,
+                timeInputMode: value,
+              }));
+              setOpenPicker((current) =>
+                current === "end" || current === "durationHelp"
+                  ? null
+                  : current,
+              );
+            }}
+          >
+            <RadioGroupItem value="range">時間帯を設定する</RadioGroupItem>
+            <RadioGroupItem value="instant">時刻を設定する</RadioGroupItem>
+          </RadioGroup>
 
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-[minmax(0,4fr)_minmax(0,2.75fr)_minmax(0,0.5fr)_minmax(0,2.75fr)] gap-2 text-left text-sm">
@@ -352,80 +423,97 @@ export default function StudyDatetimeField({
                 </PopoverContent>
               </Popover>
 
-              <span className="flex items-center justify-center text-sm">
-                ～
-              </span>
+              {setsTimeRange ? (
+                <>
+                  <span className="flex items-center justify-center text-sm">
+                    ～
+                  </span>
 
-              <Popover
-                open={openPicker === "end"}
-                onOpenChange={togglePicker("end")}
-                modal
-              >
-                <PopoverTrigger
-                  render={
-                    <PickerComboboxTrigger
-                      id={endTriggerId}
-                      open={openPicker === "end"}
-                      icon={Clock}
-                      aria-label="終了時刻"
-                      aria-controls={endPickerId}
-                      aria-haspopup="dialog"
-                      className="min-w-0"
-                      disabled={!timesReady}
+                  <Popover
+                    open={openPicker === "end"}
+                    onOpenChange={togglePicker("end")}
+                    modal
+                  >
+                    <PopoverTrigger
+                      render={
+                        <PickerComboboxTrigger
+                          id={endTriggerId}
+                          open={openPicker === "end"}
+                          icon={Clock}
+                          aria-label="終了時刻"
+                          aria-controls={endPickerId}
+                          aria-haspopup="dialog"
+                          className="min-w-0"
+                          disabled={!timesReady}
+                        >
+                          {formatClockTime(
+                            draft.endDisplayHour,
+                            draft.endDisplayMinute,
+                          )}
+                        </PickerComboboxTrigger>
+                      }
+                    />
+                    <PopoverContent
+                      id={endPickerId}
+                      {...overlayPosition}
+                      className="w-auto p-3"
                     >
-                      {formatClockTime(
-                        draft.endDisplayHour,
-                        draft.endDisplayMinute,
-                      )}
-                    </PickerComboboxTrigger>
-                  }
-                />
-                <PopoverContent
-                  id={endPickerId}
-                  {...overlayPosition}
-                  className="w-auto p-3"
-                >
-                  <PopoverTitle className="sr-only">終了時刻</PopoverTitle>
-                  <AnalogClock
-                    idPrefix={`${idPrefix}-end`}
-                    hour={draft.endClockHour}
-                    minute={draft.endClockMinute}
-                    onHourChange={(hour) => {
-                      const duration = durationFromStartAndEndClock(
-                        draft.startHour,
-                        draft.startMinute,
-                        hour,
-                        draft.endClockMinute,
-                      );
-                      setDraft((current) =>
-                        withEndFromDuration(current, {
-                          durationMinutes: duration,
-                        }),
-                      );
-                    }}
-                    onMinuteChange={(minute) => {
-                      const duration = durationFromStartAndEndClock(
-                        draft.startHour,
-                        draft.startMinute,
-                        draft.endClockHour,
-                        minute,
-                      );
-                      setDraft((current) =>
-                        withEndFromDuration(current, {
-                          durationMinutes: duration,
-                        }),
-                      );
-                    }}
-                    onMinuteCommit={() => setOpenPicker(null)}
-                  />
-                </PopoverContent>
-              </Popover>
+                      <PopoverTitle className="sr-only">終了時刻</PopoverTitle>
+                      <AnalogClock
+                        idPrefix={`${idPrefix}-end`}
+                        hour={draft.endClockHour}
+                        minute={draft.endClockMinute}
+                        onHourChange={(hour) => {
+                          const duration = durationFromStartAndEndClock(
+                            draft.startHour,
+                            draft.startMinute,
+                            hour,
+                            draft.endClockMinute,
+                          );
+                          setDraft((current) =>
+                            withEndFromDuration(current, {
+                              durationMinutes: duration,
+                            }),
+                          );
+                        }}
+                        onMinuteChange={(minute) => {
+                          const duration = durationFromStartAndEndClock(
+                            draft.startHour,
+                            draft.startMinute,
+                            draft.endClockHour,
+                            minute,
+                          );
+                          setDraft((current) =>
+                            withEndFromDuration(current, {
+                              durationMinutes: duration,
+                            }),
+                          );
+                        }}
+                        onMinuteCommit={() => setOpenPicker(null)}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              ) : (
+                <>
+                  <span></span>
+                  <span></span>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <fieldset
+            disabled={!setsTimeRange}
+            className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+          >
             <div className="flex flex-row items-center gap-2">
-              <p className="text-sm font-medium">
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  !setsTimeRange && "text-muted-foreground",
+                )}
+              >
                 学習時間
                 <Popover
                   open={openPicker === "durationHelp"}
@@ -437,6 +525,7 @@ export default function StudyDatetimeField({
                         type="button"
                         variant="ghost"
                         size="icon-xs"
+                        disabled={!setsTimeRange}
                         aria-label="学習時間のヘルプ"
                         aria-expanded={openPicker === "durationHelp"}
                         aria-controls={`${idPrefix}-duration-help`}
@@ -459,7 +548,14 @@ export default function StudyDatetimeField({
                   </PopoverContent>
                 </Popover>
               </p>
-              <p className="text-sm tabular-nums">{durationPreview}</p>
+              <p
+                className={cn(
+                  "text-sm tabular-nums",
+                  !setsTimeRange && "text-muted-foreground",
+                )}
+              >
+                {setsTimeRange && durationPreview}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -469,7 +565,9 @@ export default function StudyDatetimeField({
                   type="button"
                   variant="outline"
                   disabled={
-                    !timesReady || (delta > 0 ? atMaxDuration : atMinDuration)
+                    !setsTimeRange ||
+                    !timesReady ||
+                    (delta > 0 ? atMaxDuration : atMinDuration)
                   }
                   onClick={() =>
                     setDraft((current) =>
@@ -486,7 +584,7 @@ export default function StudyDatetimeField({
                 </Button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <DialogButtonArea>
             <Button type="button" variant="outline" onClick={handleClear}>

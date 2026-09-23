@@ -1,13 +1,13 @@
 # 学習記録
 
-学習日時・学習時間（任意）・タイトル・メモを投稿し、グループ内で `COALESCE(started_at, created_at)` の新しい順に一覧する。カーソルページネーション。編集・削除は投稿者本人。
+学習日時・学習時間（任意）・タイトル・メモを投稿し、グループ内で `study_datetime` の新しい順に一覧する。カーソルページネーション。編集・削除は投稿者本人。
 
 API のペア規則・カーソルは [api.md](../api.md)。
 
 ## 不変条件
 
 - 編集・削除は `record.userId === user.id`
-- `startedAt` と `durationMinutes` は両方 `null` または両方セット
+- `studyDatetime` は常に保存される（未指定時は `created_at`）。`durationMinutes` は NULL 可（終了時間なし）
 - スタンプはグループメンバーが付与できる。同一ユーザー×同一スタンプは UNIQUE。付与時に Push は出さない
 - 引っ張って更新は `sm` 未満のみ。縦スクロールは Layout の `data-layout-scroll` 1 本
 
