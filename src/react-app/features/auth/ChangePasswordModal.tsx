@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import ErrorMessage from "../../components/ui/ErrorMessage";
-import { useUnsavedCloseGuard } from "../../components/useUnsavedCloseGuard";
-import { useChangePasswordMutation } from "../../queries/useAuth";
-import { ApiError } from "../../lib/api";
+import ErrorMessage from "@/components/ui/ErrorMessage";
+import { useUnsavedCloseGuard } from "@/hooks/useUnsavedCloseGuard";
+import { useChangePasswordMutation } from "./api/useAuth";
+import { ApiError } from "@/lib/api";
 
 function passwordApiErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {

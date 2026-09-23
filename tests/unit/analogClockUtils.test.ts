@@ -10,7 +10,7 @@ import {
 	minuteFromPointer,
 	minuteHandAngleDegrees,
 	snapToClockMinute,
-} from "../../src/react-app/features/records/analogClockUtils";
+} from "../../src/react-app/features/records/form/analogClockUtils";
 
 describe("analogClockUtils", () => {
 	it("lists outer ring hours as 13-0 without 24", () => {
