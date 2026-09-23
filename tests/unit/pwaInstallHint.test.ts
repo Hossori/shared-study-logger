@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { iosHomeScreenInstallHint } from "../../src/react-app/features/pwa/pwaInstall";
+import { iosHomeScreenInstallHint } from "../../src/react-app/lib/iosHomeScreenInstallHint";
 
 const UA = {
 	safari:

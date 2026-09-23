@@ -4,8 +4,6 @@
  */
 import { isIosNonStandalone } from "@/lib/iosStandalone";
 
-export { iosHomeScreenInstallHint } from "@/lib/iosHomeScreenInstallHint";
-
 /** Chromium 系が発火するインストール前イベント。 */
 export interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
