@@ -173,7 +173,7 @@ function NotificationListItem({
       {item.kind === "pwa-install" && pwa.isIosGuide ? (
         <Alert className="mt-2">
           <AlertDescription>
-            Safari の共有ボタン →「ホーム画面に追加」
+            ブラウザの共有ボタン →「ホーム画面に追加」
           </AlertDescription>
         </Alert>
       ) : null}

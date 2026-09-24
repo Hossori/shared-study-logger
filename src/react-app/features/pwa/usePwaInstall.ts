@@ -1,7 +1,7 @@
 /**
  * PWA インストール案内用フック。
  * - Chromium: beforeinstallprompt を保持し、ユーザー操作で prompt()
- * - iOS Safari（非スタンドアロン）: 手順案内のみ（ネイティブ prompt なし）
+ * - iOS 非スタンドアロン: 手順案内のみ（ネイティブ prompt なし）
  */
 import { useCallback, useEffect, useState } from "react";
 import { isIosNonStandalone } from "@/lib/iosStandalone";

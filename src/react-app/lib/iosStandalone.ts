@@ -1,6 +1,6 @@
 /**
- * iOS Safari（ホーム画面未追加）かどうか。
- * PWA 案内と Push 購読の両方が使う。
+ * iOS 非スタンドアロン（ホーム画面未追加）かどうか。
+ * Safari / Chrome / Firefox / Edge など iOS ブラウザ共通。PWA 案内と Push 購読の両方が使う。
  */
 interface NavigatorStandalone extends Navigator {
   standalone?: boolean;
