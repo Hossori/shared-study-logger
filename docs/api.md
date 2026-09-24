@@ -86,6 +86,6 @@ API互換性を壊すリリースでは、同ファイルの
 
 **一覧ソート・カーソル（`GET /api/groups/:groupId/records`）**
 
-- 並び順: `study_datetime DESC, id DESC`（新しい順）
+- 並び順: 終了時刻の降順、同値なら `id` の降順。終了時刻は `datetime(study_datetime, '+' || COALESCE(duration_minutes, 0) || ' minutes')`（`duration_minutes` が NULL の行は 0 分加算＝開始時刻が終了時刻）
 - 任意クエリ `userIds`（繰り返し `userIds=a&userIds=b`、最大 50、空配列 / 空文字は未指定）を指定すると `sr.user_id IN (...)` で絞り込む。カーソル条件は同じ（フィルタ後の集合に対してページネーション）
-- カーソル: base64 エンコードの `sortKey|id`（2 要素）。`sortKey` は各行の `study_datetime` の ISO 文字列
+- カーソル: base64 エンコードの `sortKey|id`（2 要素）。`sortKey` は一覧 SQL が返した終了時刻文字列（UTC の `YYYY-MM-DD HH:MM:SS`。ミリ秒なし）
