@@ -76,47 +76,47 @@ describe("ChangePasswordRequestSchema", () => {
 });
 
 describe("CreateStudyRecordRequestSchema", () => {
-	it("rejects startedAt without durationMinutes", () => {
+	it("accepts studyDatetime without durationMinutes", () => {
 		const result = CreateStudyRecordRequestSchema.safeParse({
-			startedAt: "2026-08-01T12:00:00.000Z",
+			studyDatetime: "2026-08-01T12:00:00.000Z",
 			title: "数学",
 			memo: "演習",
 		});
-		expect(result.success).toBe(false);
+		expect(result.success).toBe(true);
 	});
 
 	it("accepts optional durationMinutes in 5-minute steps", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 5,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 15,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 30,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 720,
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 1435,
 			}).success,
@@ -126,21 +126,21 @@ describe("CreateStudyRecordRequestSchema", () => {
 	it("rejects durationMinutes that are not 5-minute steps", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 7,
 			}).success,
 		).toBe(false);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 0,
 			}).success,
 		).toBe(false);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 1440,
 			}).success,
@@ -149,66 +149,66 @@ describe("CreateStudyRecordRequestSchema", () => {
 
 	it("rejects empty title", () => {
 		const result = CreateStudyRecordRequestSchema.safeParse({
-			startedAt: "2026-08-01T12:00:00.000Z",
+			studyDatetime: "2026-08-01T12:00:00.000Z",
 			title: "",
 			durationMinutes: 30,
 		});
 		expect(result.success).toBe(false);
 	});
 
-	it("accepts both startedAt and durationMinutes null", () => {
+	it("accepts both studyDatetime and durationMinutes null", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: null,
+				studyDatetime: null,
 				title: "数学",
 			}).success,
 		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: null,
+				studyDatetime: null,
 				title: "数学",
 				durationMinutes: null,
 			}).success,
 		).toBe(true);
 	});
 
-	it("rejects startedAt set with durationMinutes null or omitted", () => {
+	it("accepts studyDatetime set with durationMinutes null or omitted", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 			}).success,
-		).toBe(false);
+		).toBe(true);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: null,
 			}).success,
-		).toBe(false);
+		).toBe(true);
 	});
 
-	it("accepts both startedAt and durationMinutes set", () => {
+	it("accepts both studyDatetime and durationMinutes set", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: 30,
 			}).success,
 		).toBe(true);
 	});
 
-	it("rejects durationMinutes without startedAt", () => {
+	it("rejects durationMinutes without studyDatetime", () => {
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: null,
+				studyDatetime: null,
 				title: "数学",
 				durationMinutes: 30,
 			}).success,
 		).toBe(false);
 		expect(
 			CreateStudyRecordRequestSchema.safeParse({
-				startedAt: null,
+				studyDatetime: null,
 				title: "数学",
 				durationMinutes: 5,
 			}).success,
@@ -217,30 +217,30 @@ describe("CreateStudyRecordRequestSchema", () => {
 });
 
 describe("UpdateStudyRecordRequestSchema", () => {
-	it("rejects durationMinutes without startedAt", () => {
+	it("rejects durationMinutes without studyDatetime", () => {
 		expect(
 			UpdateStudyRecordRequestSchema.safeParse({
-				startedAt: null,
+				studyDatetime: null,
 				title: "数学",
 				durationMinutes: 30,
 			}).success,
 		).toBe(false);
 	});
 
-	it("rejects startedAt set with durationMinutes null", () => {
+	it("accepts studyDatetime set with durationMinutes null", () => {
 		expect(
 			UpdateStudyRecordRequestSchema.safeParse({
-				startedAt: "2026-08-01T12:00:00.000Z",
+				studyDatetime: "2026-08-01T12:00:00.000Z",
 				title: "数学",
 				durationMinutes: null,
 			}).success,
-		).toBe(false);
+		).toBe(true);
 	});
 
 	it("accepts both null", () => {
 		expect(
 			UpdateStudyRecordRequestSchema.safeParse({
-				startedAt: null,
+				studyDatetime: null,
 				title: "数学",
 				durationMinutes: null,
 			}).success,

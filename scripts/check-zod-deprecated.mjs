@@ -3,7 +3,7 @@
  * `src/` および `shared/` に残っていないか検査する。
  *
  * 代替: `z.email()`, `z.url()`, `z.iso.datetime()` 等のトップレベル関数。
- * 詳細は `.cursor/skills/shared-study-logger-overview/reference/code-quality.md` §2。
+ * 詳細は `.agents/skills/zod-schemas/SKILL.md`。
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";

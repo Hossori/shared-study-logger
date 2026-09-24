@@ -24,14 +24,13 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import type { AppNotificationItem } from "./types";
-import type { AppNotificationsController } from "./useAppNotifications";
+import type { AppNotificationItem, PwaInstallActions } from "./types";
 import {
   PWA_INSTALL_NOTIFICATION_ID,
   PUSH_OPT_IN_NOTIFICATION_ID,
-} from "./useAppNotifications";
+} from "./types";
 import { parseNotificationBody } from "./notificationBodyLinks";
-import { useIsMaxSm } from "../../components/useIsMaxSm";
+import { useIsMaxSm } from "@/hooks/useIsMaxSm";
 
 const bodyLinkClassName = "text-primary underline underline-offset-3";
 
@@ -39,7 +38,7 @@ interface NotificationModalProps {
   open: boolean;
   onClose: () => void;
   items: AppNotificationItem[];
-  pwa: AppNotificationsController["pwa"];
+  pwa: PwaInstallActions;
   dismiss: (id: string) => void;
 }
 
@@ -115,7 +114,7 @@ export default function NotificationModal({
 
 interface NotificationListItemProps {
   item: AppNotificationItem;
-  pwa: AppNotificationsController["pwa"];
+  pwa: PwaInstallActions;
   onDismiss: () => void;
   onClose: () => void;
 }
@@ -174,7 +173,7 @@ function NotificationListItem({
       {item.kind === "pwa-install" && pwa.isIosGuide ? (
         <Alert className="mt-2">
           <AlertDescription>
-            Safari の共有ボタン →「ホーム画面に追加」
+            ブラウザの共有ボタン →「ホーム画面に追加」
           </AlertDescription>
         </Alert>
       ) : null}

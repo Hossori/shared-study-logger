@@ -1,11 +1,25 @@
 {
   "autoRun": {
-    "allow_instructions": ["プロジェクト内を対象とした操作は許可する"],
+    "allow_instructions": [
+      "コミット前ゲートの pnpm は確認なしで実行してよい: pnpm test（test:worker / test:e2e / test:watch を含む）, pnpm lint, pnpm run lint, pnpm format:check, pnpm run format:check, pnpm typecheck, pnpm run typecheck, pnpm run typecheck:tests, pnpm check, pnpm run check（check:zod-deprecated / check:d1-migrations / dry-run の check を含む）。pnpm 全体は許可しない",
+      "読み取り専用の git は確認なしで実行してよい: git status, git diff, git log, git show, git rev-parse, git ls-files, git blame, git remote -v",
+      "rg と git grep によるリポジトリ内のコード検索は確認なしで実行してよい",
+      "作業ブランチに対する git add と git commit は確認なしで実行してよい。develop への直接コミットは除く",
+      "作業ブランチへの git push は確認なしで実行してよい。develop への直接 push と git push --force は除く",
+      "GitHub MCP（github と user-github）の読み取りだけ確認なしで実行してよい: search_* / list_* / get_* / issue_read / pull_request_read",
+      "shadcn MCP の検索・閲覧・コンポーネント参照と、cloudflare-docs MCP の参照は確認なしで実行してよい"
+    ],
     "block_instructions": [
-      "プロジェクト外のファイルを変更する操作は許可しない",
-      "gitの履歴を書き換える操作は許可しない",
-      "権限の変更は許可しない",
-      "本番環境へのアクセスは許可しない"
+      "プロジェクト外のファイルを変更する操作は承認を求める",
+      "git管理していないファイルを変更する操作は承認を求める",
+      "gitの履歴を書き換える操作は承認を求める",
+      "権限の変更は承認を求める",
+      "本番環境へのアクセスは承認を求める",
+      "pnpm deploy / wrangler deploy（dry-run 以外）は承認を求める",
+      "git push --force は承認を求める",
+      "GitHub MCP の書き込み操作は承認を求める",
+      "Playwright MCP / IDE Browser 操作は承認を求める",
+      "pnpm format（format:check 以外）、pnpm seed / pnpm seed:reset、pnpm playwright:install は承認を求める"
     ]
   }
 }

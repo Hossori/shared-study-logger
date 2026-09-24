@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cn } from "../../src/react-app/lib/cn";
+import { cn } from "../../src/react-app/lib/utils";
 
 describe("cn", () => {
 	it("joins truthy class names", () => {

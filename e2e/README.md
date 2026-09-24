@@ -1,6 +1,6 @@
 # E2E（Playwright スモーク）
 
-詳細方針は[`.cursor/skills/testing-strategy/SKILL.md`](../.cursor/skills/testing-strategy/SKILL.md)。
+方針は [docs/testing.md](../docs/testing.md)。
 
 ## 前提
 
@@ -16,7 +16,7 @@ pnpm test:e2e
 **chromium-headless-shell**（および ffmpeg / winldd）を `%LOCALAPPDATA%\ms-playwright` へ入れる。
 `install chromium` だけで headless-shell も含まれる。
 
-### Cursor / エージェント環境での注意
+### エージェント環境での注意
 
 エージェントシェルでは `PLAYWRIGHT_BROWSERS_PATH` が `%TEMP%\cursor-sandbox-cache\...\playwright` に向いていることがある。
 この一時キャッシュは IDE の再起動やキャッシュ掃除後に失われる可能性があるため、エージェントシェルでの install を通常端末用の恒久的な準備として扱わない。
@@ -32,4 +32,4 @@ pnpm test:e2e
 エージェント内で E2E を実行する必要がある場合は、同じエージェントセッション内で `pnpm playwright:install` の後に `pnpm test:e2e` を実行する。
 一時キャッシュをセッションをまたいで利用できる前提にはしない。
 
-固定アカウント: `admin@example.com` / `ChangeMe123!`
+開発用アカウントは [README.md](../README.md)。

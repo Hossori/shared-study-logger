@@ -24,7 +24,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T10:00:00.000Z",
+						studyDatetime: "2026-08-10T10:00:00.000Z",
 						title: "Worker CRUD",
 						memo: "memo",
 						durationMinutes: 30,
@@ -61,7 +61,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T11:00:00.000Z",
+						studyDatetime: "2026-08-10T11:00:00.000Z",
 						title: "Worker CRUD edited",
 						memo: "updated",
 						durationMinutes: 40,
@@ -122,7 +122,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: null,
+						studyDatetime: null,
 						title: "Queue enqueue",
 					}),
 				},
@@ -156,7 +156,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T12:00:00.000Z",
+						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "With duration",
 						durationMinutes: 50,
 					}),
@@ -179,7 +179,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T12:00:00.000Z",
+						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "With 15-minute duration",
 						durationMinutes: 15,
 					}),
@@ -198,7 +198,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T12:00:00.000Z",
+						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "Invalid duration",
 						durationMinutes: 7,
 					}),
@@ -208,7 +208,7 @@ describe("records routes", () => {
 		expect(invalidRes.status).toBe(400);
 	});
 
-	it("keeps durationMinutes when omitted on patch and rejects clearing duration alone", async () => {
+	it("keeps durationMinutes when omitted on patch and allows clearing duration alone", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -225,7 +225,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T12:00:00.000Z",
+						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "Keep duration",
 						durationMinutes: 60,
 					}),
@@ -245,7 +245,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T13:00:00.000Z",
+						studyDatetime: "2026-08-10T13:00:00.000Z",
 						title: "Keep duration edited",
 					}),
 				},
@@ -267,27 +267,21 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T13:00:00.000Z",
+						studyDatetime: "2026-08-10T13:00:00.000Z",
 						title: "Keep duration edited",
 						durationMinutes: null,
 					}),
 				},
 			),
 		);
-		expect(clearRes.status).toBe(400);
-		const clearBody = (await clearRes.json()) as {
-			message?: string;
-			issues?: Array<{ message: string }>;
+		expect(clearRes.status).toBe(200);
+		const cleared = (await clearRes.json()) as {
+			record: { durationMinutes: number | null };
 		};
-		expect(
-			clearBody.message === "study_time_pair_required" ||
-				clearBody.issues?.some(
-					(issue) => issue.message === "study_time_pair_required",
-				),
-		).toBe(true);
+		expect(cleared.record.durationMinutes).toBeNull();
 	});
 
-	it("rejects patch clearing startedAt when durationMinutes is omitted", async () => {
+	it("allows patch clearing studyDatetime when durationMinutes is omitted", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -304,7 +298,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T12:00:00.000Z",
+						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "Duration keep guard",
 						durationMinutes: 60,
 					}),
@@ -312,7 +306,9 @@ describe("records routes", () => {
 			),
 		);
 		expect(createdRes.status).toBe(201);
-		const created = (await createdRes.json()) as { record: { id: string } };
+		const created = (await createdRes.json()) as {
+			record: { id: string; createdAt: string };
+		};
 
 		const patchRes = await workerFetch(
 			new Request(
@@ -324,13 +320,13 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: null,
+						studyDatetime: null,
 						title: "Duration keep guard edited",
 					}),
 				},
 			),
 		);
-		expect(patchRes.status).toBe(400);
+		expect(patchRes.status).toBe(200);
 
 		const listRes = await workerFetch(
 			new Request(
@@ -343,18 +339,19 @@ describe("records routes", () => {
 			records: Array<{
 				id: string;
 				title: string;
-				startedAt: string | null;
+				studyDatetime: string;
 				durationMinutes: number | null;
+				createdAt: string;
 			}>;
 		};
 		const stored = list.records.find((r) => r.id === created.record.id);
 		expect(stored).toBeDefined();
-		expect(stored!.title).toBe("Duration keep guard");
-		expect(stored!.startedAt).toBe("2026-08-10T12:00:00.000Z");
+		expect(stored!.title).toBe("Duration keep guard edited");
+		expect(stored!.studyDatetime).toBe(created.record.createdAt);
 		expect(stored!.durationMinutes).toBe(60);
 	});
 
-	it("allows patch clearing startedAt and durationMinutes together", async () => {
+	it("allows patch clearing studyDatetime and durationMinutes together", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -371,7 +368,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T12:00:00.000Z",
+						studyDatetime: "2026-08-10T12:00:00.000Z",
 						title: "Clear both fields",
 						durationMinutes: 60,
 					}),
@@ -379,7 +376,9 @@ describe("records routes", () => {
 			),
 		);
 		expect(createdRes.status).toBe(201);
-		const created = (await createdRes.json()) as { record: { id: string } };
+		const created = (await createdRes.json()) as {
+			record: { id: string; createdAt: string };
+		};
 
 		const patchRes = await workerFetch(
 			new Request(
@@ -391,7 +390,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: null,
+						studyDatetime: null,
 						title: "Clear both fields edited",
 						durationMinutes: null,
 					}),
@@ -401,11 +400,12 @@ describe("records routes", () => {
 		expect(patchRes.status).toBe(200);
 		const patched = (await patchRes.json()) as {
 			record: {
-				startedAt: string | null;
+				studyDatetime: string;
 				durationMinutes: number | null;
+				createdAt: string;
 			};
 		};
-		expect(patched.record.startedAt).toBeNull();
+		expect(patched.record.studyDatetime).toBe(created.record.createdAt);
 		expect(patched.record.durationMinutes).toBeNull();
 
 		const listRes = await workerFetch(
@@ -418,17 +418,18 @@ describe("records routes", () => {
 		const list = (await listRes.json()) as {
 			records: Array<{
 				id: string;
-				startedAt: string | null;
+				studyDatetime: string;
 				durationMinutes: number | null;
+				createdAt: string;
 			}>;
 		};
 		const stored = list.records.find((r) => r.id === created.record.id);
 		expect(stored).toBeDefined();
-		expect(stored!.startedAt).toBeNull();
+		expect(stored!.studyDatetime).toBe(created.record.createdAt);
 		expect(stored!.durationMinutes).toBeNull();
 	});
 
-	it("creates a record with null startedAt", async () => {
+	it("creates a record with null studyDatetime request uses createdAt", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -445,7 +446,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: null,
+						studyDatetime: null,
 						title: "No datetime",
 					}),
 				},
@@ -454,15 +455,16 @@ describe("records routes", () => {
 		expect(createRes.status).toBe(201);
 		const created = (await createRes.json()) as {
 			record: {
-				startedAt: string | null;
+				studyDatetime: string;
 				durationMinutes: number | null;
+				createdAt: string;
 			};
 		};
-		expect(created.record.startedAt).toBeNull();
+		expect(created.record.studyDatetime).toBe(created.record.createdAt);
 		expect(created.record.durationMinutes).toBeNull();
 	});
 
-	it("rejects start-only create", async () => {
+	it("accepts datetime-only create without durationMinutes", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -479,28 +481,24 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-10T10:00:00.000Z",
-						title: "Start only",
+						studyDatetime: "2026-08-10T10:00:00.000Z",
+						title: "Datetime only",
 					}),
 				},
 			),
 		);
-		expect(createRes.status).toBe(400);
-
-		const listRes = await workerFetch(
-			new Request(
-				`http://example.com/api/groups/${SEED.groupMember}/records`,
-				{ headers: { cookie } },
-			),
-		);
-		expect(listRes.status).toBe(200);
-		const list = (await listRes.json()) as {
-			records: Array<{ title: string }>;
+		expect(createRes.status).toBe(201);
+		const created = (await createRes.json()) as {
+			record: {
+				studyDatetime: string;
+				durationMinutes: number | null;
+			};
 		};
-		expect(list.records.some((r) => r.title === "Start only")).toBe(false);
+		expect(created.record.studyDatetime).toBe("2026-08-10T10:00:00.000Z");
+		expect(created.record.durationMinutes).toBeNull();
 	});
 
-	it("rejects duration-only create (startedAt null with durationMinutes)", async () => {
+	it("rejects duration-only create (studyDatetime null with durationMinutes)", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -517,7 +515,7 @@ describe("records routes", () => {
 						"content-type": "application/json",
 					},
 					body: JSON.stringify({
-						startedAt: null,
+						studyDatetime: null,
 						title: "Duration only",
 						durationMinutes: 30,
 					}),
@@ -539,7 +537,7 @@ describe("records routes", () => {
 		expect(list.records.some((r) => r.title === "Duration only")).toBe(false);
 	});
 
-	it("sorts by COALESCE(started_at, created_at) DESC", async () => {
+	it("sorts by end datetime DESC, id DESC", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
 			SEED.admin.email,
@@ -562,20 +560,26 @@ describe("records routes", () => {
 			);
 
 		const pastRes = await post({
-			startedAt: "2000-01-01T00:00:00.000Z",
+			studyDatetime: "2000-01-01T00:00:00.000Z",
 			title: "Past datetime",
 			durationMinutes: 60,
 		});
 		expect(pastRes.status).toBe(201);
 
-		const nullRes = await post({
-			startedAt: null,
-			title: "Null datetime",
+		const defaultRes = await post({
+			studyDatetime: null,
+			title: "Default datetime",
 		});
-		expect(nullRes.status).toBe(201);
+		expect(defaultRes.status).toBe(201);
+		const defaultBody = (await defaultRes.json()) as {
+			record: { studyDatetime: string; createdAt: string };
+		};
+		expect(defaultBody.record.studyDatetime).toBe(
+			defaultBody.record.createdAt,
+		);
 
 		const futureRes = await post({
-			startedAt: "2099-01-01T00:00:00.000Z",
+			studyDatetime: "2099-01-01T00:00:00.000Z",
 			title: "Future datetime",
 			durationMinutes: 60,
 		});
@@ -593,13 +597,128 @@ describe("records routes", () => {
 		};
 		const titles = list.records.map((r) => r.title);
 		const futureIdx = titles.indexOf("Future datetime");
-		const nullIdx = titles.indexOf("Null datetime");
+		const defaultIdx = titles.indexOf("Default datetime");
 		const pastIdx = titles.indexOf("Past datetime");
 		expect(futureIdx).toBeGreaterThanOrEqual(0);
-		expect(nullIdx).toBeGreaterThanOrEqual(0);
+		expect(defaultIdx).toBeGreaterThanOrEqual(0);
 		expect(pastIdx).toBeGreaterThanOrEqual(0);
-		expect(futureIdx).toBeLessThan(nullIdx);
-		expect(nullIdx).toBeLessThan(pastIdx);
+		expect(futureIdx).toBeLessThan(defaultIdx);
+		expect(defaultIdx).toBeLessThan(pastIdx);
+	});
+
+	it("sorts by end datetime when start is earlier but end is later", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const post = (body: Record<string, unknown>) =>
+			workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records`,
+					{
+						method: "POST",
+						headers: {
+							cookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify(body),
+					},
+				),
+			);
+
+		const endsLaterRes = await post({
+			studyDatetime: "2020-01-01T10:00:00.000Z",
+			title: "Ends later",
+			durationMinutes: 180,
+		});
+		expect(endsLaterRes.status).toBe(201);
+
+		const pointInTimeRes = await post({
+			studyDatetime: "2020-01-01T12:45:00.000Z",
+			title: "Point in time",
+		});
+		expect(pointInTimeRes.status).toBe(201);
+
+		const endsSoonerRes = await post({
+			studyDatetime: "2020-01-01T12:00:00.000Z",
+			title: "Ends sooner",
+			durationMinutes: 30,
+		});
+		expect(endsSoonerRes.status).toBe(201);
+
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as {
+			records: Array<{ title: string }>;
+		};
+		const titles = list.records.map((r) => r.title);
+		const endsLaterIdx = titles.indexOf("Ends later");
+		const pointInTimeIdx = titles.indexOf("Point in time");
+		const endsSoonerIdx = titles.indexOf("Ends sooner");
+		expect(endsLaterIdx).toBeGreaterThanOrEqual(0);
+		expect(pointInTimeIdx).toBeGreaterThanOrEqual(0);
+		expect(endsSoonerIdx).toBeGreaterThanOrEqual(0);
+		expect(endsLaterIdx).toBeLessThan(pointInTimeIdx);
+		expect(pointInTimeIdx).toBeLessThan(endsSoonerIdx);
+	});
+
+	it("breaks ties on end datetime by id DESC", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const post = (body: Record<string, unknown>) =>
+			workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records`,
+					{
+						method: "POST",
+						headers: {
+							cookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify(body),
+					},
+				),
+			);
+
+		await post({
+			studyDatetime: "2020-01-01T12:00:00.000Z",
+			title: "Same end A",
+			durationMinutes: 30,
+		});
+		await post({
+			studyDatetime: "2020-01-01T12:30:00.000Z",
+			title: "Same end B",
+		});
+
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as {
+			records: Array<{ id: string; title: string }>;
+		};
+		const sameEnd = list.records.filter(
+			(r) => r.title === "Same end A" || r.title === "Same end B",
+		);
+		expect(sameEnd).toHaveLength(2);
+		const idsDesc = [...sameEnd.map((r) => r.id)].sort((a, b) =>
+			b.localeCompare(a),
+		);
+		expect(sameEnd.map((r) => r.id)).toEqual(idsDesc);
 	});
 
 	it("returns 400 for old 3-part cursor", async () => {
@@ -636,7 +755,7 @@ describe("records routes", () => {
 		const post = (
 			cookie: string,
 			title: string,
-			startedAt: string,
+			studyDatetime: string,
 		) =>
 			workerFetch(
 				new Request(
@@ -648,7 +767,7 @@ describe("records routes", () => {
 							"content-type": "application/json",
 						},
 						body: JSON.stringify({
-							startedAt,
+							studyDatetime,
 							title,
 							durationMinutes: 30,
 						}),
@@ -702,7 +821,7 @@ describe("records routes", () => {
 			SEED.admin.password,
 		);
 
-		const post = (title: string, startedAt: string) =>
+		const post = (title: string, studyDatetime: string) =>
 			workerFetch(
 				new Request(
 					`http://example.com/api/groups/${SEED.groupMember}/records`,
@@ -713,7 +832,7 @@ describe("records routes", () => {
 							"content-type": "application/json",
 						},
 						body: JSON.stringify({
-							startedAt,
+							studyDatetime,
 							title,
 							durationMinutes: 30,
 						}),

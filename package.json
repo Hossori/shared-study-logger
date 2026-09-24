@@ -65,6 +65,7 @@
     "build": "tsc -b && vite build",
     "cf-typegen": "wrangler types",
     "check": "tsc && vite build && wrangler deploy --dry-run",
+    "check:d1-migrations": "node scripts/check-d1-migrations.mjs",
     "check:zod-deprecated": "node scripts/check-zod-deprecated.mjs",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler deploy --env preview",

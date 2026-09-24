@@ -2,37 +2,35 @@
  * 管理者向けアプリ内通知の作成・有効切替・削除画面。
  */
 import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useOutletContext } from "react-router";
+import { Link } from "react-router";
 import { Bell, Link2 } from "lucide-react";
-import type { AuthenticatedOutletContext } from "../../routes/ProtectedRoute";
-import Layout from "../../components/Layout";
-import { Alert, AlertDescription } from "../../components/ui/alert";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
+} from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "../../components/ui/empty";
+} from "@/components/ui/empty";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "../../components/ui/field";
-import { Input } from "../../components/ui/input";
-import { Spinner } from "../../components/ui/spinner";
-import { Switch } from "../../components/ui/switch";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -40,16 +38,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { Textarea } from "../../components/ui/textarea";
-import { useConfirm } from "../../components/useConfirm";
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { useConfirm } from "@/components/useConfirm";
 import {
   useAdminNotificationsQuery,
   useCreateNotificationMutation,
   useDeleteNotificationMutation,
   useToggleNotificationMutation,
-} from "../../queries/useNotifications";
-import { ApiError } from "../../lib/api";
+} from "./api/useNotifications";
+import { ApiError } from "@/lib/api";
 import { CreateInAppNotificationRequestSchema } from "../../../../shared/schemas";
 import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
 
@@ -70,7 +68,6 @@ function createFormErrorMessage(
 }
 
 export default function AdminNotificationsPage() {
-  const { user } = useOutletContext<AuthenticatedOutletContext>();
   const confirm = useConfirm();
   const listQuery = useAdminNotificationsQuery(true);
   const createMutation = useCreateNotificationMutation();
@@ -157,7 +154,7 @@ export default function AdminNotificationsPage() {
     createMutation.error ?? toggleMutation.error ?? deleteMutation.error;
 
   return (
-    <Layout user={user}>
+    <>
       <div className="mb-4">
         <Button variant="default" nativeButton={false} render={<Link to="/" />}>
           ホームに戻る
@@ -346,6 +343,6 @@ export default function AdminNotificationsPage() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </>
   );
 }

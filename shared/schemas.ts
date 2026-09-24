@@ -6,7 +6,7 @@
  * 実装する後続エージェント（backend-auth / backend-records / push-notifications /
  * frontend-store 等）が拡張する。
  *
- * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.cursor/skills/zod-schemas/SKILL.md`）。
+ * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.agents/skills/zod-schemas/SKILL.md`）。
  */
 import { z } from "zod";
 import { AvatarKeySchema } from "./avatars";
@@ -210,44 +210,20 @@ export const DurationMinutesSchema = z
   .max(DURATION_MINUTES_MAX)
   .multipleOf(DURATION_MINUTES_STEP);
 
-/** startedAt と durationMinutes は両方 null または両方セットのみ許可。 */
-function refineStudyTimePair(
-  data: { startedAt: string | null; durationMinutes?: number | null },
+/** studyDatetime 未指定（null）かつ durationMinutes が明示的に非 null なら拒否。 */
+function refineStudyDatetimeDurationRule(
+  data: { studyDatetime: string | null; durationMinutes?: number | null },
   ctx: z.RefinementCtx,
-  mode: "create" | "update",
 ): void {
-  if (mode === "create") {
-    const duration =
-      data.durationMinutes === undefined ? null : data.durationMinutes;
-    const hasStart = data.startedAt != null;
-    const hasDuration = duration != null;
-    if (hasStart !== hasDuration) {
-      ctx.addIssue({
-        code: "custom",
-        message: "study_time_pair_required",
-        path: hasStart ? ["durationMinutes"] : ["startedAt"],
-      });
-    }
-    return;
-  }
-
-  const startSet = data.startedAt != null;
-  const startNull = data.startedAt === null;
-  const durationSet = data.durationMinutes != null;
-  const durationNull = data.durationMinutes === null;
-
-  if (startSet && durationNull) {
+  if (
+    data.studyDatetime == null &&
+    data.durationMinutes != null &&
+    data.durationMinutes !== undefined
+  ) {
     ctx.addIssue({
       code: "custom",
       message: "study_time_pair_required",
-      path: ["durationMinutes"],
-    });
-  }
-  if (startNull && durationSet) {
-    ctx.addIssue({
-      code: "custom",
-      message: "study_time_pair_required",
-      path: ["startedAt"],
+      path: ["studyDatetime"],
     });
   }
 }
@@ -258,7 +234,7 @@ export const StudyRecordSchema = z.object({
   userId: z.string(),
   authorDisplayName: z.string().optional(),
   authorAvatarKey: AvatarKeySchema.nullable().optional(),
-  startedAt: z.iso.datetime().nullable(),
+  studyDatetime: z.iso.datetime(),
   title: z.string().min(1),
   durationMinutes: z.number().int().nullable(),
   memo: z.string().optional().nullable(),
@@ -270,24 +246,24 @@ export type StudyRecord = z.infer<typeof StudyRecordSchema>;
 
 export const CreateStudyRecordRequestSchema = z
   .object({
-    startedAt: z.iso.datetime().nullable(),
+    studyDatetime: z.iso.datetime().nullable(),
     title: z.string().min(1).max(200),
     durationMinutes: DurationMinutesSchema.nullable().optional(),
     memo: z.string().max(2000).optional(),
   })
-  .superRefine((data, ctx) => refineStudyTimePair(data, ctx, "create"));
+  .superRefine((data, ctx) => refineStudyDatetimeDurationRule(data, ctx));
 export type CreateStudyRecordRequest = z.infer<
   typeof CreateStudyRecordRequestSchema
 >;
 
 export const UpdateStudyRecordRequestSchema = z
   .object({
-    startedAt: z.iso.datetime().nullable(),
+    studyDatetime: z.iso.datetime().nullable(),
     title: z.string().min(1).max(200),
     durationMinutes: DurationMinutesSchema.nullable().optional(),
     memo: z.string().max(2000).optional(),
   })
-  .superRefine((data, ctx) => refineStudyTimePair(data, ctx, "update"));
+  .superRefine((data, ctx) => refineStudyDatetimeDurationRule(data, ctx));
 export type UpdateStudyRecordRequest = z.infer<
   typeof UpdateStudyRecordRequestSchema
 >;

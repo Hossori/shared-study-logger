@@ -5,10 +5,11 @@ import {
   loginAsUser,
   openPostModal,
   fillStudyDatetime,
+  fillStudyDatetimeWithoutDuration,
   setStudyDurationFromPicker,
   SEED_ADMIN,
 } from "./helpers";
-import { STUDY_DURATION_HELP_TEXT } from "../src/react-app/features/records/recordFormUtils";
+import { STUDY_DURATION_HELP_TEXT } from "../src/react-app/features/records/form/recordFormUtils";
 
 test.describe.configure({ mode: "serial" });
 
@@ -53,7 +54,7 @@ test("ログイン成功でグループ切替が表示される", async ({ page 
   await expect(
     page.getByRole("heading", { name: "アプリの更新が必要です" }),
   ).toBeVisible();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL((url) => new URL(url).pathname === "/");
 });
 
 test("学習記録を投稿できる", async ({ page }) => {
@@ -99,6 +100,12 @@ test("学習記録を投稿できる", async ({ page }) => {
 
   const title = `e2e-record-${Date.now()}`;
   await openPostModal(page);
+
+  const studyDatetimeHelp = page.getByRole("button", { name: "学習日時のヘルプ" });
+  await studyDatetimeHelp.click();
+  await expect(page.getByText("未設定の場合は投稿時刻が設定されます")).toBeVisible();
+  await studyDatetimeHelp.click();
+  await expect(page.getByText("未設定の場合は投稿時刻が設定されます")).toBeHidden();
 
   await page.getByRole("button", { name: "学習日時を設定" }).click();
   const datetimeDialog = page.getByRole("dialog", { name: "学習日時を設定" });
@@ -192,6 +199,22 @@ test("学習記録を投稿できる", async ({ page }) => {
   await expect(
     card.getByRole("button", { name: "いいねのリアクションを取り消す" }),
   ).toHaveCount(0);
+
+  const datetimeOnlyTitle = `e2e-datetime-only-${Date.now()}`;
+  await openPostModal(page);
+  await fillStudyDatetimeWithoutDuration(page, "post", "2026-12-29", 9, 30);
+  await page.locator("#post-title").fill(datetimeOnlyTitle);
+  const datetimeOnlyResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/records") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "投稿する" }).click();
+  expect((await datetimeOnlyResponse).ok()).toBeTruthy();
+  const datetimeOnlyCard = page.locator("li").filter({ hasText: datetimeOnlyTitle });
+  await expect(datetimeOnlyCard.getByText("9:30")).toBeVisible();
+  await expect(datetimeOnlyCard.getByText("～")).toHaveCount(0);
+  await expect(datetimeOnlyCard.getByText(/^\d+分$/)).toHaveCount(0);
 });
 
 test("自分の学習記録を削除できる", async ({ page }) => {

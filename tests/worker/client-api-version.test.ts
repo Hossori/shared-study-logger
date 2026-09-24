@@ -130,7 +130,7 @@ describe("client API version middleware", () => {
 							: {}),
 					},
 					body: JSON.stringify({
-						startedAt: "2026-08-15T00:00:00.000Z",
+						studyDatetime: "2026-08-15T00:00:00.000Z",
 						title: "拒否される記録",
 					}),
 				},
