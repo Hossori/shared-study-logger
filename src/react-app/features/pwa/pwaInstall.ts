@@ -1,6 +1,6 @@
 /**
  * PWA インストール可否・スタンドアロン起動の判定ヘルパー。
- * `beforeinstallprompt` の型と、iOS 各ブラウザの「ホーム画面に追加」案内条件を集約する。
+ * `beforeinstallprompt` の型と、iOS の「ホーム画面に追加」案内条件を集約する。
  */
 import { isIosNonStandalone } from "@/lib/iosStandalone";
 
