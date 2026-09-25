@@ -28,6 +28,7 @@ export function useMeQuery() {
         return user;
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
+          // 未認証はログインユーザーなしとして返却
           return null;
         }
         throw error;
@@ -37,6 +38,9 @@ export function useMeQuery() {
   });
 }
 
+/**
+ * ログインする。
+ */
 export function useLoginMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -44,22 +48,28 @@ export function useLoginMutation() {
       apiPost<{ user: User }>("/api/auth/login", input),
     onSuccess: async ({ user }) => {
       queryClient.setQueryData(authQueryKeys.me, user);
-      await queryClient.invalidateQueries();
+      await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
     },
   });
 }
 
+/**
+ * ログアウトする。
+ */
 export function useLogoutMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => apiPost<{ ok: true }>("/api/auth/logout"),
     onSuccess: async () => {
       queryClient.setQueryData(authQueryKeys.me, null);
-      await queryClient.invalidateQueries();
+      await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
     },
   });
 }
 
+/**
+ * プロフィールを更新する。
+ */
 export function useUpdateProfileMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -67,14 +77,18 @@ export function useUpdateProfileMutation() {
       apiPatch<{ user: User }>("/api/auth/me", input),
     onSuccess: async ({ user }) => {
       queryClient.setQueryData(authQueryKeys.me, user);
-      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me });
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me }); // ログインユーザーの認証情報をstaleにマーク
       await queryClient.invalidateQueries({
+        // ログインユーザーのプロフィール情報をstaleにマーク
         queryKey: userQueryKeys.detail(user.id),
       });
     },
   });
 }
 
+/**
+ * パスワードを変更する。
+ */
 export function useChangePasswordMutation() {
   return useMutation({
     mutationFn: (input: ChangePasswordRequest) =>
