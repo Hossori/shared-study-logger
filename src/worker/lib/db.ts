@@ -15,12 +15,13 @@ import type {
   RecordReactionEntry,
   StudyRecord,
   User,
+  UserRole,
 } from "../../../shared/schemas";
 import {
   AvatarKeySchema,
-  parseUserRole,
   REACTION_STAMPS,
   ReactionStampSchema,
+  UserRoleSchema,
 } from "../../../shared/schemas";
 
 export interface UserRow {
@@ -100,6 +101,12 @@ export async function getUserById(
 function parseAvatarKey(value: string | null | undefined): AvatarKey | null {
   const parsed = AvatarKeySchema.safeParse(value);
   return parsed.success ? parsed.data : null;
+}
+
+/** DB の role 値を UserRole にする。欠落・未知の値は USER。 */
+function parseUserRole(value: unknown): UserRole {
+  const parsed = UserRoleSchema.safeParse(value);
+  return parsed.success ? parsed.data : "USER";
 }
 
 /** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。未知の role は USER。 */
