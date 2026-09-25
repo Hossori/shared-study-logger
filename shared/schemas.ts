@@ -1,10 +1,6 @@
 /**
- * Worker（API）とフロントエンドの両方から import される Zod スキーマ定義。
- *
- * `migrations/0001_init.sql`のデータモデル（ER図は`docs/data-model.md`参照）
- * に基づく最小限の骨格。詳細なバリデーションルール・レスポンス型は各APIエンドポイントを
- * 実装する後続エージェント（backend-auth / backend-records / push-notifications /
- * frontend-store 等）が拡張する。
+ * Worker（API）とフロントエンドの両方から import する HTTP 契約。
+ * リクエストスキーマ、レスポンス型、共有 enum・定数、isAdmin など。
  *
  * Zod v4: フォーマット検証は `z.email()`, `z.iso.datetime()` 等を使う（`.agents/skills/zod-schemas/SKILL.md`）。
  */
@@ -24,15 +20,6 @@ export {
 export const USER_ROLES = ["ADMIN", "USER"] as const;
 export const UserRoleSchema = z.enum(USER_ROLES);
 export type UserRole = z.infer<typeof UserRoleSchema>;
-
-/**
- * DB の role 値を UserRole にする。欠落・未知の値は USER
- * （マイグレーション前後や不正値の安全側デフォルト）。
- */
-export function parseUserRole(value: unknown): UserRole {
-  const parsed = UserRoleSchema.safeParse(value);
-  return parsed.success ? parsed.data : "USER";
-}
 
 export function isAdmin(user: { role: UserRole }): boolean {
   return user.role === "ADMIN";
@@ -301,19 +288,6 @@ export const PushSubscriptionSchema = z.object({
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
 // ---- アプリ内通知 -----------------------------------------------------------
-
-/** 表示用: http/https のみ許可。それ以外は null。 */
-export function toSafeHttpHttpsUrl(value: string): string | null {
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-      return parsed.href;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 export const InAppNotificationSchema = z.object({
   id: z.string(),

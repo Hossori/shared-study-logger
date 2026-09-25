@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdmin, parseUserRole } from "../../shared/schemas";
+import { isAdmin } from "../../shared/schemas";
 import { toUser, type UserRow } from "../../src/worker/lib/db";
 
 function userRow(overrides: Partial<UserRow> = {}): UserRow {
@@ -17,21 +17,6 @@ function userRow(overrides: Partial<UserRow> = {}): UserRow {
 	};
 }
 
-describe("parseUserRole", () => {
-	it("returns ADMIN and USER as-is", () => {
-		expect(parseUserRole("ADMIN")).toBe("ADMIN");
-		expect(parseUserRole("USER")).toBe("USER");
-	});
-
-	it("defaults missing or unknown values to USER", () => {
-		expect(parseUserRole(null)).toBe("USER");
-		expect(parseUserRole(undefined)).toBe("USER");
-		expect(parseUserRole("")).toBe("USER");
-		expect(parseUserRole("admin")).toBe("USER");
-		expect(parseUserRole("SUPERUSER")).toBe("USER");
-	});
-});
-
 describe("isAdmin", () => {
 	it("is true only for ADMIN", () => {
 		expect(isAdmin({ role: "ADMIN" })).toBe(true);
@@ -47,6 +32,9 @@ describe("toUser role mapping", () => {
 
 	it("defaults null or unknown DB role to USER", () => {
 		expect(toUser(userRow({ role: null })).role).toBe("USER");
+		expect(toUser(userRow({ role: "" })).role).toBe("USER");
+		expect(toUser(userRow({ role: "admin" })).role).toBe("USER");
+		expect(toUser(userRow({ role: "SUPERUSER" })).role).toBe("USER");
 		expect(toUser(userRow({ role: "nope" })).role).toBe("USER");
 	});
 });
