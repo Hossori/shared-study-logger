@@ -2,10 +2,7 @@
  * `GET /api/groups`（自分が所属するグループ一覧）を TanStack Query で扱う。
  */
 import { useQuery } from "@tanstack/react-query";
-import {
-  GroupsResponseSchema,
-  type Group,
-} from "../../../../../shared/schemas";
+import { GroupsResponseSchema, type Group } from "@shared/schemas";
 import { apiGet } from "../../../lib/api";
 
 export const groupsQueryKeys = {

@@ -25,7 +25,7 @@ import {
   type ReactionSummary,
   type StudyRecordsResponse,
   type UpdateStudyRecordRequest,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
 import { applyAddReaction, applyRemoveReaction } from "./reactionSummaries";
 

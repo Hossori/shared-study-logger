@@ -13,7 +13,7 @@ import {
   type ReactionStamp,
   type ReactionSummary,
   type StudyRecord,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

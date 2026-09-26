@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import UserAvatar from "@/components/UserAvatar";
 import { useGroupMembersQuery } from "../api/useGroupMembers";
-import type { GroupMember } from "../../../../../shared/schemas";
+import type { GroupMember } from "@shared/schemas";
 import type { RecordsFilterMode } from "./recordsFilterUtils";
 
 interface RecordsFilterProps {

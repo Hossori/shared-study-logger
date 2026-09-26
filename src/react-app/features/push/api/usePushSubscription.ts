@@ -7,7 +7,7 @@ import {
   OkResponseSchema,
   VapidPublicKeyResponseSchema,
   type PushSubscriptionInput,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { apiDelete, apiGet, apiPost } from "../../../lib/api";
 
 export const pushQueryKeys = {

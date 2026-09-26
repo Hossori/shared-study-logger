@@ -3,7 +3,7 @@ import {
   OkResponseSchema,
   PushSubscriptionSchema,
   VapidPublicKeyResponseSchema,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
 import {
   deletePushSubscriptionByEndpoint,
   upsertPushSubscription,

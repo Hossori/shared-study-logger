@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { getCookie } from "hono/cookie";
-import type { User } from "../../../shared/schemas";
+import type { User } from "@shared/schemas";
 import { getSession } from "../lib/session";
 import { getUserById, toUser } from "../lib/db";
 

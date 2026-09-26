@@ -10,7 +10,7 @@ import {
   type LoginRequest,
   type UpdateProfileRequest,
   type User,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { apiGet, apiPatch, apiPost, ApiError } from "../../../lib/api";
 import { userQueryKeys } from "./useUser";
 

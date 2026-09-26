@@ -12,7 +12,7 @@ import {
   type AdminGroup,
   type Group,
   type User,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
 import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import { generateSaltHex, hashPassword } from "../lib/auth";
 import {

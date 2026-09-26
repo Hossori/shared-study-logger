@@ -7,7 +7,7 @@
  */
 import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import type { User } from "../../../../shared/schemas";
+import type { User } from "@shared/schemas";
 import { useIsMaxSm } from "@/hooks/useIsMaxSm";
 import HeaderNotifications from "./HeaderNotifications";
 import { LayoutScrollContext } from "./LayoutScrollContext";

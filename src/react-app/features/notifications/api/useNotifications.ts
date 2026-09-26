@@ -8,7 +8,7 @@ import {
   OkResponseSchema,
   type CreateInAppNotificationRequest,
   type UpdateInAppNotificationRequest,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
 
 export const notificationQueryKeys = {

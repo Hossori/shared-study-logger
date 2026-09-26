@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useDeleteRecordMutation, useRecordsQuery } from "../api/useRecords";
-import { type StudyRecord } from "../../../../../shared/schemas";
+import { type StudyRecord } from "@shared/schemas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

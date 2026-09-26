@@ -4,7 +4,7 @@
  */
 import type { Context } from "hono";
 import type { z } from "zod";
-import { ResourceIdSchema } from "../../../shared/schemas";
+import { ResourceIdSchema } from "@shared/schemas";
 
 export function parseResourceId(value: string | undefined): string | null {
   const parsed = ResourceIdSchema.safeParse(value);

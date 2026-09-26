@@ -2,7 +2,7 @@
  * 管理者専用ルートのガード。`ProtectedRoute` 配下で使い、USER には 403 画面を出す。
  */
 import { Outlet, useOutletContext } from "react-router";
-import { isAdmin } from "../../../../shared/schemas";
+import { isAdmin } from "@shared/schemas";
 import Layout from "@/app/shell/Layout";
 import type { AuthenticatedOutletContext } from "@/app/guards/ProtectedRoute";
 

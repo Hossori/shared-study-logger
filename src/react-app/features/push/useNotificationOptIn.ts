@@ -12,7 +12,7 @@ import { isPushSupported, urlBase64ToUint8Array } from "./vapid";
 import {
   PushSubscriptionSchema,
   type PushSubscriptionInput,
-} from "../../../../shared/schemas";
+} from "@shared/schemas";
 
 export type NotificationOptInStatus =
   | "checking"

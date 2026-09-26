@@ -17,7 +17,7 @@ import {
 	UserRoleSchema,
 	UserSchema,
 	ListStudyRecordsQuerySchema,
-} from "../../shared/schemas";
+} from "@shared/schemas";
 
 describe("LoginRequestSchema", () => {
 	it("accepts valid email and password", () => {

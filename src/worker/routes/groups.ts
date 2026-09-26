@@ -3,7 +3,7 @@ import {
   GroupMembersResponseSchema,
   GroupsResponseSchema,
   type Group,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
 import { getGroupsForUser, isUserInGroup, listGroupMembers } from "../lib/db";
 import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import type { AuthVariables } from "../middleware/requireAuth";

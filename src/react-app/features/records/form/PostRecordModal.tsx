@@ -3,7 +3,7 @@
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { CreateStudyRecordRequestSchema } from "../../../../../shared/schemas";
+import { CreateStudyRecordRequestSchema } from "@shared/schemas";
 import { useCreateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";

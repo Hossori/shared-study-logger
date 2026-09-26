@@ -6,7 +6,7 @@ import {
   AVATAR_KEYS,
   UpdateProfileRequestSchema,
   type AvatarKey,
-} from "../../../../shared/schemas";
+} from "@shared/schemas";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
