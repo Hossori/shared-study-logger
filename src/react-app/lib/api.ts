@@ -7,7 +7,7 @@ import type { ZodType } from "zod";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
-} from "../../../shared/client-api-version";
+} from "@shared/client-api-version";
 import {
   getClientApiUpdateRequiredEvent,
   notifyClientApiUpdateRequired,

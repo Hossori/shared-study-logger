@@ -5,7 +5,7 @@ import {
   InAppNotificationsResponseSchema,
   OkResponseSchema,
   UpdateInAppNotificationRequestSchema,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
 import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import {
   createAppNotification,

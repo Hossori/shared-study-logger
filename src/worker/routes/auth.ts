@@ -6,7 +6,7 @@ import {
   OkResponseSchema,
   UpdateProfileRequestSchema,
   UserResponseSchema,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
 import { jsonParsed } from "../lib/httpSchema";
 import {
   getUserByEmail,

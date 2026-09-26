@@ -2,7 +2,7 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { ChangePasswordRequestSchema } from "../../../../shared/schemas";
+import { ChangePasswordRequestSchema } from "@shared/schemas";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

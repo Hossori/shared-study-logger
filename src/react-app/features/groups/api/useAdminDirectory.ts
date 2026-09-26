@@ -12,7 +12,7 @@ import {
   type AddGroupMemberRequest,
   type CreateAdminGroupRequest,
   type CreateAdminUserRequest,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { apiDelete, apiGet, apiPost } from "../../../lib/api";
 import { groupsQueryKeys } from "./useGroups";
 

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { InAppNotificationsResponseSchema } from "../../../shared/schemas";
+import { InAppNotificationsResponseSchema } from "@shared/schemas";
 import { listEnabledAppNotifications } from "../lib/db";
 import { jsonParsed } from "../lib/httpSchema";
 import { requireAuth, type AuthVariables } from "../middleware/requireAuth";

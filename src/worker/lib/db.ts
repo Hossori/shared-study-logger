@@ -16,8 +16,8 @@ import type {
   StudyRecord,
   User,
   UserRole,
-} from "../../../shared/schemas";
-import { REACTION_STAMPS } from "../../../shared/schemas";
+} from "@shared/schemas";
+import { REACTION_STAMPS } from "@shared/schemas";
 
 export interface UserRow {
   id: string;

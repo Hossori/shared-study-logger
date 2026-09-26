@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ReactionSummary } from "../../shared/schemas";
+import type { ReactionSummary } from "@shared/schemas";
 import {
 	applyAddReaction,
 	applyRemoveReaction,

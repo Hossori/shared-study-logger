@@ -4,7 +4,7 @@ import {
 	CLIENT_API_VERSION_HEADER,
 	isClientApiVersionSupported,
 	MIN_SUPPORTED_CLIENT_API_VERSION,
-} from "../../../shared/client-api-version";
+} from "@shared/client-api-version";
 
 type ClientApiVersionEnvironment = {
 	Bindings: Env;

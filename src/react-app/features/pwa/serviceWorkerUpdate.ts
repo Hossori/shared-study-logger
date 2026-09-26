@@ -1,4 +1,4 @@
-import { SKIP_WAITING_MESSAGE_TYPE } from "../../../../shared/sw-messages";
+import { SKIP_WAITING_MESSAGE_TYPE } from "@shared/sw-messages";
 
 export interface ServiceWorkerUpdateState {
   registration: ServiceWorkerRegistration | null;

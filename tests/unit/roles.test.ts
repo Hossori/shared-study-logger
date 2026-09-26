@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdmin } from "../../shared/schemas";
+import { isAdmin } from "@shared/schemas";
 import { toUser, type UserRow } from "../../src/worker/lib/db";
 
 function userRow(overrides: Partial<UserRow> = {}): UserRow {

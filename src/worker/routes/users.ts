@@ -3,7 +3,7 @@
  * email は返さない。認証必須。
  */
 import { Hono } from "hono";
-import { PublicUserResponseSchema } from "../../../shared/schemas";
+import { PublicUserResponseSchema } from "@shared/schemas";
 import { getUserById, toPublicUser } from "../lib/db";
 import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import { requireAuth, type AuthVariables } from "../middleware/requireAuth";

@@ -10,7 +10,7 @@ import {
   StudyRecordResponseSchema,
   StudyRecordsResponseSchema,
   UpdateStudyRecordRequestSchema,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
 import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import {
   addRecordReaction,

@@ -1,8 +1,8 @@
 /**
  * 学習記録フォームの日時変換・ペイロード組み立て（コンポーネント非依存）。
  */
-import { DURATION_MINUTES_MAX } from "../../../../../shared/schemas";
-import type { StudyRecord } from "../../../../../shared/schemas";
+import { DURATION_MINUTES_MAX } from "@shared/schemas";
+import type { StudyRecord } from "@shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
 export interface RecordFormValues {

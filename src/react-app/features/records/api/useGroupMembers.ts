@@ -3,7 +3,7 @@
  * `GET /api/groups/:groupId/members`
  */
 import { useQuery } from "@tanstack/react-query";
-import { GroupMembersResponseSchema } from "../../../../../shared/schemas";
+import { GroupMembersResponseSchema } from "@shared/schemas";
 import { apiGet } from "../../../lib/api";
 
 export const groupMembersQueryKeys = {

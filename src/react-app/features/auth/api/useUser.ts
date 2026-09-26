@@ -2,10 +2,7 @@
  * 公開ユーザープロフィール（`GET /api/users/:userId`）を取得するフック。
  */
 import { useQuery } from "@tanstack/react-query";
-import {
-  PublicUserResponseSchema,
-  type PublicUser,
-} from "../../../../../shared/schemas";
+import { PublicUserResponseSchema, type PublicUser } from "@shared/schemas";
 import { apiGet, ApiError } from "../../../lib/api";
 
 export const userQueryKeys = {

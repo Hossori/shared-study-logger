@@ -6,7 +6,7 @@ import { useState, type FormEvent } from "react";
 import {
   UpdateStudyRecordRequestSchema,
   type StudyRecord,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 import { useUpdateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";

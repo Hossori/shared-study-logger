@@ -2,7 +2,7 @@
  * ログインフォーム。画面の枠とテーマ切替は `pages/LoginPage` が持つ。
  */
 import { useState, type FormEvent } from "react";
-import { LoginRequestSchema } from "../../../../shared/schemas";
+import { LoginRequestSchema } from "@shared/schemas";
 import { useLoginMutation } from "./api/useAuth";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";

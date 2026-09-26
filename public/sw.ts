@@ -11,12 +11,12 @@ import type { PrecacheEntry } from "workbox-precaching";
 import {
   isSkipWaitingMessage,
   NOTIFICATION_CLICK_MESSAGE_TYPE,
-} from "../shared/sw-messages";
-import { getStudyRecordNotificationTag } from "../shared/notification-tags";
+} from "@shared/sw-messages";
+import { getStudyRecordNotificationTag } from "@shared/notification-tags";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
-} from "../shared/client-api-version";
+} from "@shared/client-api-version";
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;

@@ -7,7 +7,7 @@
  * `User | null | undefined`型になり、認証済みであることをTypeScript上でも保証できないため）。
  */
 import { Navigate, Outlet } from "react-router";
-import type { User } from "../../../../shared/schemas";
+import type { User } from "@shared/schemas";
 import { useMeQuery } from "@/features/auth";
 import { getClientApiUpdateRequiredEvent } from "@/lib/clientApiUpdateRequired";
 import LoadingScreen from "@/app/shell/LoadingScreen";

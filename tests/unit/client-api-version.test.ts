@@ -10,8 +10,8 @@ import {
   compareClientApiVersions,
   isClientApiVersionSupported,
   parseClientApiVersion,
-} from "../../shared/client-api-version";
-import { OkResponseSchema } from "../../shared/schemas";
+} from "@shared/client-api-version";
+import { OkResponseSchema } from "@shared/schemas";
 import {
   apiClient,
   apiDelete,

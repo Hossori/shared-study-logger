@@ -47,7 +47,7 @@ import {
   AddGroupMemberRequestSchema,
   CreateAdminGroupRequestSchema,
   CreateAdminUserRequestSchema,
-} from "../../../../shared/schemas";
+} from "@shared/schemas";
 
 function mutationErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
