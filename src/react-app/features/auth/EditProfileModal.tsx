@@ -82,10 +82,6 @@ export default function EditProfileModal({
     event.preventDefault();
     setDisplayNameError(null);
     const trimmedName = displayName.trim();
-    if (!trimmedName) {
-      setDisplayNameError("表示名を入力してください。");
-      return;
-    }
 
     const parsed = UpdateProfileRequestSchema.safeParse({
       displayName: trimmedName,
@@ -93,7 +89,14 @@ export default function EditProfileModal({
       avatarKey,
     });
     if (!parsed.success) {
-      setDisplayNameError("入力内容を確認してください。");
+      const displayNameIssue = parsed.error.issues.some(
+        (issue) => issue.path[0] === "displayName",
+      );
+      setDisplayNameError(
+        displayNameIssue
+          ? "表示名を入力してください。"
+          : "入力内容を確認してください。",
+      );
       return;
     }
 

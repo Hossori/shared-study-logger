@@ -227,7 +227,7 @@ describe("recordFormUtils", () => {
     });
   });
 
-  it("buildRecordRequestPayload rejects empty title", () => {
+  it("buildRecordRequestPayload keeps a blank title for the request schema", () => {
     expect(
       buildRecordRequestPayload({
         studyDatetime: "",
@@ -235,7 +235,12 @@ describe("recordFormUtils", () => {
         memo: "",
         durationMinutes: null,
       }),
-    ).toBeNull();
+    ).toEqual({
+      studyDatetime: null,
+      title: "",
+      memo: undefined,
+      durationMinutes: null,
+    });
   });
 
   it("buildRecordRequestPayload includes duration when set", () => {
@@ -290,14 +295,14 @@ describe("recordFormUtils", () => {
     });
   });
 
-  it("buildRecordRequestPayload rejects datetime with zero duration", () => {
-    expect(
-      buildRecordRequestPayload({
-        studyDatetime: "2026-08-01T12:00",
-        title: "x",
-        memo: "",
-        durationMinutes: 0,
-      }),
-    ).toBeNull();
+  it("buildRecordRequestPayload keeps zero duration for the request schema", () => {
+    const payload = buildRecordRequestPayload({
+      studyDatetime: "2026-08-01T12:00",
+      title: "x",
+      memo: "",
+      durationMinutes: 0,
+    });
+    expect(payload?.durationMinutes).toBe(0);
+    expect(payload?.title).toBe("x");
   });
 });

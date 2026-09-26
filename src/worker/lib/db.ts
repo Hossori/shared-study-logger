@@ -17,12 +17,7 @@ import type {
   User,
   UserRole,
 } from "../../../shared/schemas";
-import {
-  AvatarKeySchema,
-  REACTION_STAMPS,
-  ReactionStampSchema,
-  UserRoleSchema,
-} from "../../../shared/schemas";
+import { REACTION_STAMPS } from "../../../shared/schemas";
 
 export interface UserRow {
   id: string;
@@ -98,26 +93,15 @@ export async function getUserById(
   return row ?? null;
 }
 
-function parseAvatarKey(value: string | null | undefined): AvatarKey | null {
-  const parsed = AvatarKeySchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
-}
-
-/** DB の role 値を UserRole にする。欠落・未知の値は USER。 */
-function parseUserRole(value: unknown): UserRole {
-  const parsed = UserRoleSchema.safeParse(value);
-  return parsed.success ? parsed.data : "USER";
-}
-
-/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。未知の role は USER。 */
+/** UserRow を API レスポンスの形に移す。値の合否は応答の jsonParsed が判定する。 */
 export function toUser(row: UserRow): User {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
-    role: parseUserRole(row.role),
+    role: row.role as UserRole,
     bio: row.bio ?? null,
-    avatarKey: parseAvatarKey(row.avatar_key),
+    avatarKey: row.avatar_key as AvatarKey | null,
     createdAt: row.created_at,
   };
 }
@@ -128,7 +112,7 @@ export function toPublicUser(row: UserRow): PublicUser {
     id: row.id,
     displayName: row.display_name,
     bio: row.bio ?? null,
-    avatarKey: parseAvatarKey(row.avatar_key),
+    avatarKey: row.avatar_key as AvatarKey | null,
     createdAt: row.created_at,
   };
 }
@@ -285,7 +269,7 @@ export async function listGroupMembers(
   return (results ?? []).map((row) => ({
     id: row.id,
     displayName: row.display_name,
-    avatarKey: parseAvatarKey(row.avatar_key),
+    avatarKey: row.avatar_key as AvatarKey | null,
   }));
 }
 
@@ -471,7 +455,7 @@ function toStudyRecord(
     groupId: row.group_id,
     userId: row.user_id,
     authorDisplayName: row.author_display_name,
-    authorAvatarKey: parseAvatarKey(row.author_avatar_key),
+    authorAvatarKey: row.author_avatar_key as AvatarKey | null,
     studyDatetime: row.study_datetime,
     title: row.title,
     durationMinutes: row.duration_minutes ?? null,
@@ -530,12 +514,10 @@ async function listReactionSummariesByRecordIds(
     .all<ReactionAggregateRow>();
 
   for (const row of results ?? []) {
-    const stampParsed = ReactionStampSchema.safeParse(row.stamp);
-    if (!stampParsed.success) continue;
     const list = byRecord.get(row.record_id);
     if (!list) continue;
     list.push({
-      stamp: stampParsed.data,
+      stamp: row.stamp as ReactionStamp,
       count: Number(row.count),
       reactedByMe: Number(row.reacted_by_me) > 0,
     });
@@ -665,7 +647,7 @@ export async function createStudyRecord(
     groupId: input.groupId,
     userId: input.userId,
     authorDisplayName: author?.display_name,
-    authorAvatarKey: parseAvatarKey(author?.avatar_key),
+    authorAvatarKey: (author?.avatar_key ?? null) as AvatarKey | null,
     studyDatetime,
     title: input.title,
     durationMinutes: input.durationMinutes ?? null,
@@ -844,17 +826,11 @@ export async function listRecordReactions(
     .bind(recordId)
     .all<{ stamp: string; user_id: string; display_name: string }>();
 
-  const entries: RecordReactionEntry[] = [];
-  for (const row of results ?? []) {
-    const stampParsed = ReactionStampSchema.safeParse(row.stamp);
-    if (!stampParsed.success) continue;
-    entries.push({
-      stamp: stampParsed.data,
-      userId: row.user_id,
-      displayName: row.display_name,
-    });
-  }
-  return entries;
+  return (results ?? []).map((row) => ({
+    stamp: row.stamp as ReactionStamp,
+    userId: row.user_id,
+    displayName: row.display_name,
+  }));
 }
 
 // ---- push_subscriptions -----------------------------------------------

@@ -46,13 +46,18 @@ describe("LoginRequestSchema", () => {
 });
 
 describe("UpdateProfileRequestSchema", () => {
-	it("requires at least one field", () => {
+	it("requires displayName, bio, and avatarKey", () => {
 		expect(UpdateProfileRequestSchema.safeParse({}).success).toBe(false);
+		expect(
+			UpdateProfileRequestSchema.safeParse({ displayName: "管理者" }).success,
+		).toBe(false);
 	});
 
-	it("accepts displayName only", () => {
+	it("accepts all profile fields", () => {
 		const result = UpdateProfileRequestSchema.safeParse({
 			displayName: "管理者",
+			bio: null,
+			avatarKey: null,
 		});
 		expect(result.success).toBe(true);
 	});

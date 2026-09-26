@@ -78,10 +78,6 @@ export default function ChangePasswordModal({
     event.preventDefault();
     const nextErrors: PasswordFieldErrors = {};
 
-    if (newPassword.length < 8) {
-      nextErrors.newPassword =
-        "新しいパスワードは8文字以上で入力してください。";
-    }
     if (newPassword !== confirmPassword) {
       nextErrors.confirmPassword = "新しいパスワード（確認）が一致しません。";
     }
