@@ -3,16 +3,14 @@
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useState, type FormEvent } from "react";
-import {
-  UpdateStudyRecordRequestSchema,
-  type StudyRecord,
-} from "@shared/schemas";
+import { type StudyRecord } from "@shared/schemas";
 import { useUpdateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
-  buildRecordRequestPayload,
+  buildRecordFormSource,
   toDatetimeLocalString,
+  UpdateRecordFormSchema,
   type RecordFormValues,
 } from "./recordFormUtils";
 
@@ -47,9 +45,9 @@ export default function EditRecordModal({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!record) return;
-    const payload = buildRecordRequestPayload(values);
-    if (!payload) return;
-    const parsed = UpdateStudyRecordRequestSchema.safeParse(payload);
+    const parsed = UpdateRecordFormSchema.safeParse(
+      buildRecordFormSource(values),
+    );
     if (!parsed.success) {
       setClientError(
         "更新に失敗しました。入力内容を確認してもう一度お試しください。",

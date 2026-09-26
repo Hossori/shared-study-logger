@@ -1,7 +1,12 @@
 /**
  * 学習記録フォームの日時変換・ペイロード組み立て（コンポーネント非依存）。
  */
-import { DURATION_MINUTES_MAX } from "@shared/schemas";
+import { z } from "zod";
+import {
+  CreateStudyRecordRequestSchema,
+  DURATION_MINUTES_MAX,
+  UpdateStudyRecordRequestSchema,
+} from "@shared/schemas";
 import type { StudyRecord } from "@shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 
@@ -215,15 +220,14 @@ export function notifyFormInput(node: EventTarget | null): void {
   node?.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-/** フォーム値から API 用ペイロードを組み立てる。日時を ISO にできないときだけ null。 */
-export function buildRecordRequestPayload(values: RecordFormValues): {
+/** フォーム値を画面スキーマの入力にする。preserved ISO の選択と、空日時の学習時間クリアだけを行う。 */
+export function buildRecordFormSource(values: RecordFormValues): {
   studyDatetime: string | null;
   title: string;
   memo: string | undefined;
   durationMinutes: number | null;
-} | null {
+} {
   const title = values.title.trim();
-
   const memo = values.memo.trim();
   const memoField = memo ? memo : undefined;
 
@@ -245,24 +249,46 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
     };
   }
 
-  const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
-  if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime) {
-    return null;
-  }
-
-  if (values.durationMinutes == null) {
-    return {
-      studyDatetime,
-      title,
-      memo: memoField,
-      durationMinutes: null,
-    };
-  }
-
   return {
-    studyDatetime,
+    studyDatetime: values.studyDatetime,
     title,
     memo: memoField,
     durationMinutes: values.durationMinutes,
   };
 }
+
+const RecordFormSourceSchema = z
+  .object({
+    studyDatetime: z.string().nullable(),
+    title: z.string(),
+    memo: z.string().optional(),
+    durationMinutes: z.number().nullable().optional(),
+  })
+  .transform((data, ctx) => {
+    if (data.studyDatetime == null || data.studyDatetime === "") {
+      return { ...data, studyDatetime: null };
+    }
+    if (z.iso.datetime().safeParse(data.studyDatetime).success) {
+      return data;
+    }
+    const studyDatetime = parseDatetimeLocalToIso(data.studyDatetime);
+    if (!parseRecordDatetime(data.studyDatetime) || !studyDatetime) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["studyDatetime"],
+        message: "invalid_study_datetime",
+      });
+      return z.NEVER;
+    }
+    return { ...data, studyDatetime };
+  });
+
+/** 投稿フォーム。datetime-local を ISO にしてから作成リクエスト契約を通す。 */
+export const CreateRecordFormSchema = RecordFormSourceSchema.pipe(
+  CreateStudyRecordRequestSchema,
+);
+
+/** 編集フォーム。datetime-local を ISO にしてから更新リクエスト契約を通す。 */
+export const UpdateRecordFormSchema = RecordFormSourceSchema.pipe(
+  UpdateStudyRecordRequestSchema,
+);

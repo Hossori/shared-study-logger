@@ -3,12 +3,12 @@
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { CreateStudyRecordRequestSchema } from "@shared/schemas";
 import { useCreateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
-  buildRecordRequestPayload,
+  buildRecordFormSource,
+  CreateRecordFormSchema,
   type RecordFormValues,
 } from "./recordFormUtils";
 
@@ -48,9 +48,9 @@ export default function PostRecordModal({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const payload = buildRecordRequestPayload(values);
-    if (!payload) return;
-    const parsed = CreateStudyRecordRequestSchema.safeParse(payload);
+    const parsed = CreateRecordFormSchema.safeParse(
+      buildRecordFormSource(values),
+    );
     if (!parsed.success) {
       setClientError(
         "投稿に失敗しました。入力内容を確認してもう一度お試しください。",

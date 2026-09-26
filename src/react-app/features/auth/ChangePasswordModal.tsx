@@ -2,7 +2,11 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { ChangePasswordRequestSchema } from "@shared/schemas";
+import {
+  changePasswordFieldErrors,
+  ChangePasswordFormSchema,
+  type ChangePasswordFieldErrors,
+} from "./changePasswordForm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,12 +37,6 @@ function passwordApiErrorMessage(error: unknown): string {
   return "パスワードの変更に失敗しました。しばらくしてから再度お試しください。";
 }
 
-type PasswordFieldErrors = {
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-};
-
 interface ChangePasswordModalProps {
   open: boolean;
   onClose: () => void;
@@ -53,7 +51,7 @@ export default function ChangePasswordModal({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<PasswordFieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<ChangePasswordFieldErrors>({});
   const { requestClose, handleOpenChange, formGuardProps, confirmNode } =
     useUnsavedCloseGuard(open, onClose);
 
@@ -62,7 +60,7 @@ export default function ChangePasswordModal({
     resetChangePassword();
   }, [resetChangePassword]);
 
-  const clearFieldError = (key: keyof PasswordFieldErrors) => {
+  const clearFieldError = (key: keyof ChangePasswordFieldErrors) => {
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -76,28 +74,13 @@ export default function ChangePasswordModal({
 
   const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextErrors: PasswordFieldErrors = {};
-
-    if (newPassword !== confirmPassword) {
-      nextErrors.confirmPassword = "新しいパスワード（確認）が一致しません。";
-    }
-
-    const parsed = ChangePasswordRequestSchema.safeParse({
+    const parsed = ChangePasswordFormSchema.safeParse({
       currentPassword,
       newPassword,
+      confirmPassword,
     });
     if (!parsed.success) {
-      if (!currentPassword) {
-        nextErrors.currentPassword = "現在のパスワードを入力してください。";
-      }
-      if (!nextErrors.newPassword) {
-        nextErrors.newPassword =
-          "新しいパスワードは8文字以上で入力してください。";
-      }
-    }
-
-    if (!parsed.success || Object.keys(nextErrors).length > 0) {
-      setFieldErrors(nextErrors);
+      setFieldErrors(changePasswordFieldErrors(parsed.error));
       return;
     }
 
