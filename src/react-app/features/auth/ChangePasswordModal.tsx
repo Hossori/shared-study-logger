@@ -2,7 +2,7 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { ChangePasswordRequestSchema } from "@shared/schemas";
+import { ChangePasswordFormSchema } from "./changePasswordForm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -76,27 +76,27 @@ export default function ChangePasswordModal({
 
   const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextErrors: PasswordFieldErrors = {};
-
-    if (newPassword !== confirmPassword) {
-      nextErrors.confirmPassword = "新しいパスワード（確認）が一致しません。";
-    }
-
-    const parsed = ChangePasswordRequestSchema.safeParse({
+    const parsed = ChangePasswordFormSchema.safeParse({
       currentPassword,
       newPassword,
+      confirmPassword,
     });
     if (!parsed.success) {
-      if (!currentPassword) {
-        nextErrors.currentPassword = "現在のパスワードを入力してください。";
+      const nextErrors: PasswordFieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (field === "confirmPassword" && !nextErrors.confirmPassword) {
+          nextErrors.confirmPassword =
+            "新しいパスワード（確認）が一致しません。";
+        }
+        if (field === "currentPassword" && !nextErrors.currentPassword) {
+          nextErrors.currentPassword = "現在のパスワードを入力してください。";
+        }
+        if (field === "newPassword" && !nextErrors.newPassword) {
+          nextErrors.newPassword =
+            "新しいパスワードは8文字以上で入力してください。";
+        }
       }
-      if (!nextErrors.newPassword) {
-        nextErrors.newPassword =
-          "新しいパスワードは8文字以上で入力してください。";
-      }
-    }
-
-    if (!parsed.success || Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
       return;
     }
