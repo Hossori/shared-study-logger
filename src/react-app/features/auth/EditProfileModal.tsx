@@ -2,7 +2,11 @@
  * プロフィール編集モーダル（アバター・表示名・自己紹介）。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { AVATAR_KEYS, type AvatarKey } from "../../../../shared/schemas";
+import {
+  AVATAR_KEYS,
+  UpdateProfileRequestSchema,
+  type AvatarKey,
+} from "../../../../shared/schemas";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,12 +87,18 @@ export default function EditProfileModal({
       return;
     }
 
+    const parsed = UpdateProfileRequestSchema.safeParse({
+      displayName: trimmedName,
+      bio: bio.trim() ? bio.trim() : null,
+      avatarKey,
+    });
+    if (!parsed.success) {
+      setDisplayNameError("入力内容を確認してください。");
+      return;
+    }
+
     try {
-      await updateProfileMutation.mutateAsync({
-        displayName: trimmedName,
-        bio: bio.trim() ? bio.trim() : null,
-        avatarKey,
-      });
+      await updateProfileMutation.mutateAsync(parsed.data);
       onSaved?.();
       onClose();
     } catch {

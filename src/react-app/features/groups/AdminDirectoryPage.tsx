@@ -44,6 +44,7 @@ import {
   useRemoveGroupMemberMutation,
 } from "./api/useAdminDirectory";
 import {
+  AddGroupMemberRequestSchema,
   CreateAdminGroupRequestSchema,
   CreateAdminUserRequestSchema,
 } from "../../../../shared/schemas";
@@ -142,8 +143,12 @@ export default function AdminDirectoryPage() {
   const handleAddMember = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!effectiveGroupId || !selectedUserId) return;
+    const parsed = AddGroupMemberRequestSchema.safeParse({
+      userId: selectedUserId,
+    });
+    if (!parsed.success) return;
     addMemberMutation.mutate(
-      { groupId: effectiveGroupId, userId: selectedUserId },
+      { groupId: effectiveGroupId, userId: parsed.data.userId },
       {
         onSuccess: () => {
           setSelectedUserId("");

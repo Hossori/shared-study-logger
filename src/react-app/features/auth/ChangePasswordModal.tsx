@@ -2,6 +2,7 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
+import { ChangePasswordRequestSchema } from "../../../../shared/schemas";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -85,37 +86,48 @@ export default function ChangePasswordModal({
       nextErrors.confirmPassword = "新しいパスワード（確認）が一致しません。";
     }
 
-    if (Object.keys(nextErrors).length > 0) {
+    const parsed = ChangePasswordRequestSchema.safeParse({
+      currentPassword,
+      newPassword,
+    });
+    if (!parsed.success) {
+      if (!currentPassword) {
+        nextErrors.currentPassword = "現在のパスワードを入力してください。";
+      }
+      if (!nextErrors.newPassword) {
+        nextErrors.newPassword =
+          "新しいパスワードは8文字以上で入力してください。";
+      }
+    }
+
+    if (!parsed.success || Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
       return;
     }
 
     setFieldErrors({});
-    changePasswordMutation.mutate(
-      { currentPassword, newPassword },
-      {
-        onSuccess: () => {
-          setCurrentPassword("");
-          setNewPassword("");
-          setConfirmPassword("");
-          setFieldErrors({});
-          onClose();
-        },
-        onError: (error) => {
-          if (error instanceof ApiError && error.status === 401) {
-            setFieldErrors({
-              currentPassword: "現在のパスワードが正しくありません。",
-            });
-            return;
-          }
-          if (error instanceof ApiError && error.status === 400) {
-            setFieldErrors({
-              newPassword: "新しいパスワードは8文字以上で入力してください。",
-            });
-          }
-        },
+    changePasswordMutation.mutate(parsed.data, {
+      onSuccess: () => {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setFieldErrors({});
+        onClose();
       },
-    );
+      onError: (error) => {
+        if (error instanceof ApiError && error.status === 401) {
+          setFieldErrors({
+            currentPassword: "現在のパスワードが正しくありません。",
+          });
+          return;
+        }
+        if (error instanceof ApiError && error.status === 400) {
+          setFieldErrors({
+            newPassword: "新しいパスワードは8文字以上で入力してください。",
+          });
+        }
+      },
+    });
   };
 
   const showFormLevelApiError =

@@ -25,6 +25,17 @@ export function isAdmin(user: { role: UserRole }): boolean {
   return user.role === "ADMIN";
 }
 
+/** リソース ID。 */
+export const ResourceIdSchema = z.uuid();
+
+/** API に載る日時。 */
+export const TimestampSchema = z.iso.datetime();
+
+export const OkResponseSchema = z.object({
+  ok: z.literal(true),
+});
+export type OkResponse = z.infer<typeof OkResponseSchema>;
+
 // ---- 認証 -----------------------------------------------------------------
 
 export const LoginRequestSchema = z.object({
@@ -34,40 +45,47 @@ export const LoginRequestSchema = z.object({
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 export const UserSchema = z.object({
-  id: z.string(),
+  id: ResourceIdSchema,
   email: z.email(),
   displayName: z.string(),
   role: UserRoleSchema,
   bio: z.string().nullable(),
   avatarKey: AvatarKeySchema.nullable(),
-  createdAt: z.string(),
+  createdAt: TimestampSchema,
 });
 export type User = z.infer<typeof UserSchema>;
 
+export const UserResponseSchema = z.object({
+  user: UserSchema,
+});
+export type UserResponse = z.infer<typeof UserResponseSchema>;
+
+export const UsersResponseSchema = z.object({
+  users: z.array(UserSchema),
+});
+export type UsersResponse = z.infer<typeof UsersResponseSchema>;
+
 /** GET /api/users/:userId — 他ユーザー向け公開プロフィール（email なし） */
 export const PublicUserSchema = z.object({
-  id: z.string(),
+  id: ResourceIdSchema,
   displayName: z.string(),
   bio: z.string().nullable(),
   avatarKey: AvatarKeySchema.nullable(),
-  createdAt: z.string(),
+  createdAt: TimestampSchema,
 });
 export type PublicUser = z.infer<typeof PublicUserSchema>;
 
-/** PATCH /api/auth/me — プロフィール更新（少なくとも1フィールド必須） */
-export const UpdateProfileRequestSchema = z
-  .object({
-    displayName: z.string().trim().min(1).max(50).optional(),
-    bio: z.string().max(500).nullable().optional(),
-    avatarKey: AvatarKeySchema.nullable().optional(),
-  })
-  .refine(
-    (data) =>
-      data.displayName !== undefined ||
-      data.bio !== undefined ||
-      data.avatarKey !== undefined,
-    { message: "at_least_one_field_required" },
-  );
+export const PublicUserResponseSchema = z.object({
+  user: PublicUserSchema,
+});
+export type PublicUserResponse = z.infer<typeof PublicUserResponseSchema>;
+
+/** PATCH /api/auth/me — プロフィール更新 */
+export const UpdateProfileRequestSchema = z.object({
+  displayName: z.string().trim().min(1).max(50),
+  bio: z.string().max(500).nullable(),
+  avatarKey: AvatarKeySchema.nullable(),
+});
 export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequestSchema>;
 
 /** POST /api/auth/password — パスワード変更 */
@@ -80,13 +98,23 @@ export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 // ---- グループ ---------------------------------------------------------------
 
 export const GroupSchema = z.object({
-  id: z.string(),
+  id: ResourceIdSchema,
   name: z.string(),
-  createdAt: z.string(),
+  createdAt: TimestampSchema,
 });
 export type Group = z.infer<typeof GroupSchema>;
 
-/** POST /api/admin/users — 管理者によるユーザー作成（role は USER 固定） */
+export const GroupsResponseSchema = z.object({
+  groups: z.array(GroupSchema),
+});
+export type GroupsResponse = z.infer<typeof GroupsResponseSchema>;
+
+export const GroupResponseSchema = z.object({
+  group: GroupSchema,
+});
+export type GroupResponse = z.infer<typeof GroupResponseSchema>;
+
+/** POST /api/admin/users — 管理者によるユーザー作成 */
 export const CreateAdminUserRequestSchema = z.object({
   email: z.email(),
   password: z.string().min(8).max(128),
@@ -106,13 +134,13 @@ export type CreateAdminGroupRequest = z.infer<
 
 /** POST /api/admin/groups/:groupId/members — 所属追加 */
 export const AddGroupMemberRequestSchema = z.object({
-  userId: z.string().min(1),
+  userId: ResourceIdSchema,
 });
 export type AddGroupMemberRequest = z.infer<typeof AddGroupMemberRequestSchema>;
 
 /** GET /api/groups/:groupId/members — 所属メンバーの公開情報 */
 export const GroupMemberSchema = z.object({
-  id: z.string(),
+  id: ResourceIdSchema,
   displayName: z.string(),
   avatarKey: AvatarKeySchema.nullable(),
 });
@@ -121,12 +149,24 @@ export type GroupMember = z.infer<typeof GroupMemberSchema>;
 export const GroupMembersResponseSchema = z.object({
   members: z.array(GroupMemberSchema),
 });
+export type GroupMembersResponse = z.infer<typeof GroupMembersResponseSchema>;
+
+/** POST /api/admin/groups/:groupId/members — 追加したユーザー */
+export const AdminMemberResponseSchema = z.object({
+  member: UserSchema,
+});
+export type AdminMemberResponse = z.infer<typeof AdminMemberResponseSchema>;
 
 /** GET /api/admin/groups — 全グループ + メンバー（管理用） */
 export const AdminGroupSchema = GroupSchema.extend({
   members: z.array(UserSchema),
 });
 export type AdminGroup = z.infer<typeof AdminGroupSchema>;
+
+export const AdminGroupsResponseSchema = z.object({
+  groups: z.array(AdminGroupSchema),
+});
+export type AdminGroupsResponse = z.infer<typeof AdminGroupsResponseSchema>;
 
 // ---- リアクションスタンプ -------------------------------------------------
 
@@ -178,10 +218,24 @@ export type AddRecordReactionRequest = z.infer<
 
 export const RecordReactionEntrySchema = z.object({
   stamp: ReactionStampSchema,
-  userId: z.string(),
+  userId: ResourceIdSchema,
   displayName: z.string(),
 });
 export type RecordReactionEntry = z.infer<typeof RecordReactionEntrySchema>;
+
+export const RecordReactionResponseSchema = z.object({
+  reaction: RecordReactionEntrySchema,
+});
+export type RecordReactionResponse = z.infer<
+  typeof RecordReactionResponseSchema
+>;
+
+export const RecordReactionsResponseSchema = z.object({
+  reactions: z.array(RecordReactionEntrySchema),
+});
+export type RecordReactionsResponse = z.infer<
+  typeof RecordReactionsResponseSchema
+>;
 
 // ---- 学習記録 ---------------------------------------------------------------
 
@@ -216,20 +270,31 @@ function refineStudyDatetimeDurationRule(
 }
 
 export const StudyRecordSchema = z.object({
-  id: z.string(),
-  groupId: z.string(),
-  userId: z.string(),
+  id: ResourceIdSchema,
+  groupId: ResourceIdSchema,
+  userId: ResourceIdSchema,
   authorDisplayName: z.string().optional(),
   authorAvatarKey: AvatarKeySchema.nullable().optional(),
-  studyDatetime: z.iso.datetime(),
+  studyDatetime: TimestampSchema,
   title: z.string().min(1),
-  durationMinutes: z.number().int().nullable(),
+  durationMinutes: DurationMinutesSchema.nullable(),
   memo: z.string().optional().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: TimestampSchema,
+  updatedAt: TimestampSchema,
   reactions: z.array(ReactionSummarySchema),
 });
 export type StudyRecord = z.infer<typeof StudyRecordSchema>;
+
+export const StudyRecordResponseSchema = z.object({
+  record: StudyRecordSchema,
+});
+export type StudyRecordResponse = z.infer<typeof StudyRecordResponseSchema>;
+
+export const StudyRecordsResponseSchema = z.object({
+  records: z.array(StudyRecordSchema),
+  nextCursor: z.string().nullable(),
+});
+export type StudyRecordsResponse = z.infer<typeof StudyRecordsResponseSchema>;
 
 export const CreateStudyRecordRequestSchema = z
   .object({
@@ -270,7 +335,7 @@ export const ListStudyRecordsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   userIds: z.preprocess(
     normalizeUserIdsQuery,
-    z.array(z.string().min(1)).max(50).optional(),
+    z.array(ResourceIdSchema).max(50).optional(),
   ),
 });
 export type ListStudyRecordsQuery = z.infer<typeof ListStudyRecordsQuerySchema>;
@@ -287,18 +352,39 @@ export const PushSubscriptionSchema = z.object({
 });
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
+export const VapidPublicKeyResponseSchema = z.object({
+  publicKey: z.string().min(1),
+});
+export type VapidPublicKeyResponse = z.infer<
+  typeof VapidPublicKeyResponseSchema
+>;
+
 // ---- アプリ内通知 -----------------------------------------------------------
 
 export const InAppNotificationSchema = z.object({
-  id: z.string(),
+  id: ResourceIdSchema,
   title: z.string(),
   body: z.string(),
   enabled: z.boolean(),
-  createdBy: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdBy: ResourceIdSchema.nullable(),
+  createdAt: TimestampSchema,
+  updatedAt: TimestampSchema,
 });
 export type InAppNotification = z.infer<typeof InAppNotificationSchema>;
+
+export const InAppNotificationResponseSchema = z.object({
+  notification: InAppNotificationSchema,
+});
+export type InAppNotificationResponse = z.infer<
+  typeof InAppNotificationResponseSchema
+>;
+
+export const InAppNotificationsResponseSchema = z.object({
+  notifications: z.array(InAppNotificationSchema),
+});
+export type InAppNotificationsResponse = z.infer<
+  typeof InAppNotificationsResponseSchema
+>;
 
 export const CreateInAppNotificationRequestSchema = z.object({
   title: z.string().trim().min(1).max(200),

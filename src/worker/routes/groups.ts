@@ -1,6 +1,11 @@
 import { Hono } from "hono";
-import type { Group } from "../../../shared/schemas";
+import {
+  GroupMembersResponseSchema,
+  GroupsResponseSchema,
+  type Group,
+} from "../../../shared/schemas";
 import { getGroupsForUser, isUserInGroup, listGroupMembers } from "../lib/db";
+import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import type { AuthVariables } from "../middleware/requireAuth";
 
 /**
@@ -22,16 +27,19 @@ groupsRoutes.get("/", async (c) => {
     name: row.name,
     createdAt: row.created_at,
   }));
-  return c.json({ groups });
+  return jsonParsed(c, GroupsResponseSchema, { groups });
 });
 
 groupsRoutes.get("/:groupId/members", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  if (!groupId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
     return c.json({ error: "forbidden" }, 403);
   }
   const members = await listGroupMembers(c.env.DB, groupId);
-  return c.json({ members });
+  return jsonParsed(c, GroupMembersResponseSchema, { members });
 });

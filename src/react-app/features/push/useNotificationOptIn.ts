@@ -9,7 +9,10 @@ import {
 } from "./api/usePushSubscription";
 import { isIosNonStandalone } from "@/lib/iosStandalone";
 import { isPushSupported, urlBase64ToUint8Array } from "./vapid";
-import type { PushSubscriptionInput } from "../../../../shared/schemas";
+import {
+  PushSubscriptionSchema,
+  type PushSubscriptionInput,
+} from "../../../../shared/schemas";
 
 export type NotificationOptInStatus =
   | "checking"
@@ -86,14 +89,18 @@ export function useNotificationOptIn(): NotificationOptInController {
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
       const subscriptionJson = subscription.toJSON();
-      const payload: PushSubscriptionInput = {
+      const parsed = PushSubscriptionSchema.safeParse({
         endpoint: subscription.endpoint,
         keys: {
           p256dh: subscriptionJson.keys?.p256dh ?? "",
           auth: subscriptionJson.keys?.auth ?? "",
         },
-      };
-      await subscribeMutation.mutateAsync(payload);
+      } satisfies PushSubscriptionInput);
+      if (!parsed.success) {
+        setError("通知の有効化に失敗しました。");
+        return;
+      }
+      await subscribeMutation.mutateAsync(parsed.data);
       setStatus("subscribed");
     } catch (err) {
       console.error(err);
@@ -107,9 +114,14 @@ export function useNotificationOptIn(): NotificationOptInController {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
-        await unsubscribeMutation.mutateAsync({
-          endpoint: subscription.endpoint,
-        });
+        const parsed = PushSubscriptionSchema.pick({
+          endpoint: true,
+        }).safeParse({ endpoint: subscription.endpoint });
+        if (!parsed.success) {
+          setError("通知の無効化に失敗しました。");
+          return;
+        }
+        await unsubscribeMutation.mutateAsync(parsed.data);
         await subscription.unsubscribe();
       }
       setStatus("unsubscribed");

@@ -3,9 +3,15 @@ import {
   AddRecordReactionRequestSchema,
   CreateStudyRecordRequestSchema,
   ListStudyRecordsQuerySchema,
+  OkResponseSchema,
   ReactionStampSchema,
+  RecordReactionResponseSchema,
+  RecordReactionsResponseSchema,
+  StudyRecordResponseSchema,
+  StudyRecordsResponseSchema,
   UpdateStudyRecordRequestSchema,
 } from "../../../shared/schemas";
+import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import {
   addRecordReaction,
   createStudyRecord,
@@ -40,7 +46,10 @@ export const recordsRoutes = new Hono<{
 
 recordsRoutes.get("/:groupId/records", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  if (!groupId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
@@ -72,12 +81,18 @@ recordsRoutes.get("/:groupId/records", async (c) => {
     user.id,
     parsedQuery.data,
   );
-  return c.json({ records: page.items, nextCursor: page.nextCursor });
+  return jsonParsed(c, StudyRecordsResponseSchema, {
+    records: page.items,
+    nextCursor: page.nextCursor,
+  });
 });
 
 recordsRoutes.post("/:groupId/records", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  if (!groupId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
@@ -126,13 +141,16 @@ recordsRoutes.post("/:groupId/records", async (c) => {
     console.error("Failed to enqueue push notifications", error);
   }
 
-  return c.json({ record }, 201);
+  return jsonParsed(c, StudyRecordResponseSchema, { record }, 201);
 });
 
 recordsRoutes.post("/:groupId/records/:recordId/reactions", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
-  const recordId = c.req.param("recordId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  const recordId = parseResourceId(c.req.param("recordId"));
+  if (!groupId || !recordId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
@@ -163,16 +181,19 @@ recordsRoutes.post("/:groupId/records/:recordId/reactions", async (c) => {
     return c.json({ error: "already_reacted" }, 409);
   }
 
-  return c.json({ reaction }, 201);
+  return jsonParsed(c, RecordReactionResponseSchema, { reaction }, 201);
 });
 
 recordsRoutes.delete(
   "/:groupId/records/:recordId/reactions/:stamp",
   async (c) => {
     const user = c.get("user");
-    const groupId = c.req.param("groupId");
-    const recordId = c.req.param("recordId");
+    const groupId = parseResourceId(c.req.param("groupId"));
+    const recordId = parseResourceId(c.req.param("recordId"));
     const stampParam = c.req.param("stamp");
+    if (!groupId || !recordId) {
+      return c.json({ error: "invalid_request" }, 400);
+    }
 
     const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
     if (!isMember) {
@@ -199,14 +220,17 @@ recordsRoutes.delete(
       return c.json({ error: "not_found" }, 404);
     }
 
-    return c.json({ ok: true });
+    return jsonParsed(c, OkResponseSchema, { ok: true });
   },
 );
 
 recordsRoutes.get("/:groupId/records/:recordId/reactions", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
-  const recordId = c.req.param("recordId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  const recordId = parseResourceId(c.req.param("recordId"));
+  if (!groupId || !recordId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
@@ -219,13 +243,16 @@ recordsRoutes.get("/:groupId/records/:recordId/reactions", async (c) => {
   }
 
   const reactions = await listRecordReactions(c.env.DB, recordId);
-  return c.json({ reactions });
+  return jsonParsed(c, RecordReactionsResponseSchema, { reactions });
 });
 
 recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
-  const recordId = c.req.param("recordId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  const recordId = parseResourceId(c.req.param("recordId"));
+  if (!groupId || !recordId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
@@ -262,13 +289,16 @@ recordsRoutes.patch("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "not_found" }, 404);
   }
 
-  return c.json({ record });
+  return jsonParsed(c, StudyRecordResponseSchema, { record });
 });
 
 recordsRoutes.delete("/:groupId/records/:recordId", async (c) => {
   const user = c.get("user");
-  const groupId = c.req.param("groupId");
-  const recordId = c.req.param("recordId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  const recordId = parseResourceId(c.req.param("recordId"));
+  if (!groupId || !recordId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const isMember = await isUserInGroup(c.env.DB, user.id, groupId);
   if (!isMember) {
@@ -288,5 +318,5 @@ recordsRoutes.delete("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "not_found" }, 404);
   }
 
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });

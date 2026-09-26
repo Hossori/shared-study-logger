@@ -3,9 +3,11 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import {
   ChangePasswordRequestSchema,
   LoginRequestSchema,
+  OkResponseSchema,
   UpdateProfileRequestSchema,
-  type User,
+  UserResponseSchema,
 } from "../../../shared/schemas";
+import { jsonParsed } from "../lib/httpSchema";
 import {
   getUserByEmail,
   getUserById,
@@ -75,8 +77,7 @@ authRoutes.post("/login", async (c) => {
     maxAge: SESSION_TTL_SECONDS,
   });
 
-  const user: User = toUser(userRow);
-  return c.json({ user });
+  return jsonParsed(c, UserResponseSchema, { user: toUser(userRow) });
 });
 
 authRoutes.post("/logout", requireAuth, async (c) => {
@@ -85,7 +86,7 @@ authRoutes.post("/logout", requireAuth, async (c) => {
     await destroySession(c.env.SESSIONS, token);
   }
   deleteCookie(c, SESSION_COOKIE_NAME, { path: "/" });
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });
 
 authRoutes.get("/me", requireAuth, async (c) => {
@@ -95,7 +96,7 @@ authRoutes.get("/me", requireAuth, async (c) => {
   if (!userRow) {
     return c.json({ error: "unauthorized" }, 401);
   }
-  return c.json({ user: toUser(userRow) });
+  return jsonParsed(c, UserResponseSchema, { user: toUser(userRow) });
 });
 
 authRoutes.patch("/me", requireAuth, async (c) => {
@@ -115,7 +116,7 @@ authRoutes.patch("/me", requireAuth, async (c) => {
     return c.json({ error: "unauthorized" }, 401);
   }
 
-  return c.json({ user: toUser(updated) });
+  return jsonParsed(c, UserResponseSchema, { user: toUser(updated) });
 });
 
 authRoutes.post("/password", requireAuth, async (c) => {
@@ -145,5 +146,5 @@ authRoutes.post("/password", requireAuth, async (c) => {
   const hash = await hashPassword(newPassword, salt);
   await updateUserPassword(c.env.DB, authUser.id, hash, salt);
 
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });
