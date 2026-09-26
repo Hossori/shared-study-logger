@@ -3,6 +3,7 @@
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useEffect, useState, type FormEvent } from "react";
+import { CreateStudyRecordRequestSchema } from "@shared/schemas";
 import { useCreateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
@@ -23,6 +24,7 @@ export default function PostRecordModal({
   onClose,
 }: PostRecordModalProps) {
   const createRecordMutation = useCreateRecordMutation(groupId);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   const [values, setValues] = useState<RecordFormValues>({
     studyDatetime: "",
@@ -48,9 +50,17 @@ export default function PostRecordModal({
     event.preventDefault();
     const payload = buildRecordRequestPayload(values);
     if (!payload) return;
+    const parsed = CreateStudyRecordRequestSchema.safeParse(payload);
+    if (!parsed.success) {
+      setClientError(
+        "投稿に失敗しました。入力内容を確認してもう一度お試しください。",
+      );
+      return;
+    }
+    setClientError(null);
 
     try {
-      await createRecordMutation.mutateAsync(payload);
+      await createRecordMutation.mutateAsync(parsed.data);
       onClose();
     } catch {
       // エラーメッセージはmutation.isErrorから表示するため、ここでは握りつぶす
@@ -64,9 +74,10 @@ export default function PostRecordModal({
       onClose={onClose}
       onSubmit={handleSubmit}
       errorMessage={
-        createRecordMutation.isError
+        clientError ??
+        (createRecordMutation.isError
           ? "投稿に失敗しました。入力内容を確認してもう一度お試しください。"
-          : null
+          : null)
       }
       isPending={createRecordMutation.isPending}
       submitLabel="投稿する"

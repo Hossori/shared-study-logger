@@ -5,7 +5,7 @@
  */
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { NOTIFICATION_CLICK_MESSAGE_TYPE } from "../../../../shared/sw-messages";
+import { NOTIFICATION_CLICK_MESSAGE_TYPE } from "@shared/sw-messages";
 import { recordsQueryKeys } from "@/features/records";
 
 export default function NotificationClickRefresh() {

@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, CircleHelp, Clock, ClockPlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { ja } from "react-day-picker/locale";
-import { DURATION_MINUTES_MAX } from "../../../../../shared/schemas";
+import { DURATION_MINUTES_MAX } from "@shared/schemas";
 import AnalogClock from "./AnalogClock";
 import PickerComboboxTrigger from "./PickerComboboxTrigger";
 import {

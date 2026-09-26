@@ -3,10 +3,11 @@
  * Cookie認証を常に送信する。非2xxレスポンスはレスポンスインターセプターで`ApiError`に変換する。
  */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import type { ZodType } from "zod";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
-} from "../../../shared/client-api-version";
+} from "@shared/client-api-version";
 import {
   getClientApiUpdateRequiredEvent,
   notifyClientApiUpdateRequired,
@@ -95,18 +96,46 @@ apiClient.interceptors.response.use(
   },
 );
 
-export function apiGet<T>(path: string): Promise<T> {
-  return apiClient.get<T>(path).then((response) => response.data);
+function parseApiData<T>(schema: ZodType<T>, data: unknown): T {
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new ApiError(0, { error: "invalid_response" });
+  }
+  return parsed.data;
 }
 
-export function apiPost<T>(path: string, data?: unknown): Promise<T> {
-  return apiClient.post<T>(path, data).then((response) => response.data);
+export function apiGet<T>(path: string, schema: ZodType<T>): Promise<T> {
+  return apiClient
+    .get(path)
+    .then((response) => parseApiData(schema, response.data));
 }
 
-export function apiPatch<T>(path: string, data?: unknown): Promise<T> {
-  return apiClient.patch<T>(path, data).then((response) => response.data);
+export function apiPost<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .post(path, data)
+    .then((response) => parseApiData(schema, response.data));
 }
 
-export function apiDelete<T>(path: string, data?: unknown): Promise<T> {
-  return apiClient.delete<T>(path, { data }).then((response) => response.data);
+export function apiPatch<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .patch(path, data)
+    .then((response) => parseApiData(schema, response.data));
+}
+
+export function apiDelete<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .delete(path, { data })
+    .then((response) => parseApiData(schema, response.data));
 }

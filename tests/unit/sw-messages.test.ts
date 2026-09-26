@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isSkipWaitingMessage,
   SKIP_WAITING_MESSAGE_TYPE,
-} from "../../shared/sw-messages";
+} from "@shared/sw-messages";
 
 describe("isSkipWaitingMessage", () => {
   it("accepts only the explicit service worker activation request", () => {

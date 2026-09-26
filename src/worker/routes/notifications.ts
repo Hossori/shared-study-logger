@@ -1,5 +1,7 @@
 import { Hono } from "hono";
+import { InAppNotificationsResponseSchema } from "@shared/schemas";
 import { listEnabledAppNotifications } from "../lib/db";
+import { jsonParsed } from "../lib/httpSchema";
 import { requireAuth, type AuthVariables } from "../middleware/requireAuth";
 
 /**
@@ -13,5 +15,5 @@ export const notificationsRoutes = new Hono<{
 
 notificationsRoutes.get("/", requireAuth, async (c) => {
   const notifications = await listEnabledAppNotifications(c.env.DB);
-  return c.json({ notifications });
+  return jsonParsed(c, InAppNotificationsResponseSchema, { notifications });
 });

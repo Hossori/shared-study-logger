@@ -14,21 +14,20 @@ import {
   type InfiniteData,
   type QueryClient,
 } from "@tanstack/react-query";
-import type {
-  CreateStudyRecordRequest,
-  ReactionStamp,
-  ReactionSummary,
-  RecordReactionEntry,
-  StudyRecord,
-  UpdateStudyRecordRequest,
-} from "../../../../../shared/schemas";
+import {
+  OkResponseSchema,
+  RecordReactionResponseSchema,
+  RecordReactionsResponseSchema,
+  StudyRecordResponseSchema,
+  StudyRecordsResponseSchema,
+  type CreateStudyRecordRequest,
+  type ReactionStamp,
+  type ReactionSummary,
+  type StudyRecordsResponse,
+  type UpdateStudyRecordRequest,
+} from "@shared/schemas";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
 import { applyAddReaction, applyRemoveReaction } from "./reactionSummaries";
-
-interface RecordsPage {
-  records: StudyRecord[];
-  nextCursor: string | null;
-}
 
 const RECORDS_PAGE_LIMIT = 20;
 
@@ -41,7 +40,10 @@ export const recordsQueryKeys = {
     ["records", groupId, recordId, "reactions"] as const,
 };
 
-type RecordsInfiniteData = InfiniteData<RecordsPage, string | undefined>;
+type RecordsInfiniteData = InfiniteData<
+  StudyRecordsResponse,
+  string | undefined
+>;
 
 function patchRecordReactionsInCache(
   queryClient: QueryClient,
@@ -78,7 +80,7 @@ export function useRecordsQuery(
 
   return useInfiniteQuery({
     queryKey: recordsQueryKeys.listPage(groupId, sortedUserIds),
-    queryFn: async ({ pageParam }): Promise<RecordsPage> => {
+    queryFn: async ({ pageParam }): Promise<StudyRecordsResponse> => {
       const params = new URLSearchParams({
         limit: String(RECORDS_PAGE_LIMIT),
       });
@@ -86,8 +88,9 @@ export function useRecordsQuery(
       for (const id of sortedUserIds) {
         params.append("userIds", id);
       }
-      return apiGet<RecordsPage>(
+      return apiGet(
         `/api/groups/${groupId}/records?${params.toString()}`,
+        StudyRecordsResponseSchema,
       );
     },
     initialPageParam: undefined as string | undefined,
@@ -101,8 +104,9 @@ export function useCreateRecordMutation(groupId: string | null) {
   return useMutation({
     mutationFn: (input: CreateStudyRecordRequest) => {
       if (!groupId) throw new Error("groupId is required");
-      return apiPost<{ record: StudyRecord }>(
+      return apiPost(
         `/api/groups/${groupId}/records`,
+        StudyRecordResponseSchema,
         input,
       );
     },
@@ -125,8 +129,9 @@ export function useUpdateRecordMutation(groupId: string | null) {
       input: UpdateStudyRecordRequest;
     }) => {
       if (!groupId) throw new Error("groupId is required");
-      return apiPatch<{ record: StudyRecord }>(
+      return apiPatch(
         `/api/groups/${groupId}/records/${recordId}`,
+        StudyRecordResponseSchema,
         input,
       );
     },
@@ -143,8 +148,9 @@ export function useDeleteRecordMutation(groupId: string | null) {
   return useMutation({
     mutationFn: (recordId: string) => {
       if (!groupId) throw new Error("groupId is required");
-      return apiDelete<{ ok: boolean }>(
+      return apiDelete(
         `/api/groups/${groupId}/records/${recordId}`,
+        OkResponseSchema,
       );
     },
     onSuccess: async () => {
@@ -163,8 +169,9 @@ export function useRecordReactionsQuery(
   return useQuery({
     queryKey: recordsQueryKeys.reactions(groupId, recordId),
     queryFn: () =>
-      apiGet<{ reactions: RecordReactionEntry[] }>(
+      apiGet(
         `/api/groups/${groupId}/records/${recordId}/reactions`,
+        RecordReactionsResponseSchema,
       ),
     enabled: enabled && groupId !== null,
   });
@@ -181,8 +188,9 @@ export function useAddRecordReactionMutation(groupId: string | null) {
       stamp: ReactionStamp;
     }) => {
       if (!groupId) throw new Error("groupId is required");
-      return apiPost<{ reaction: RecordReactionEntry }>(
+      return apiPost(
         `/api/groups/${groupId}/records/${recordId}/reactions`,
+        RecordReactionResponseSchema,
         { stamp },
       );
     },
@@ -226,8 +234,9 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
       stamp: ReactionStamp;
     }) => {
       if (!groupId) throw new Error("groupId is required");
-      return apiDelete<{ ok: boolean }>(
+      return apiDelete(
         `/api/groups/${groupId}/records/${recordId}/reactions/${stamp}`,
+        OkResponseSchema,
       );
     },
     onMutate: async ({ recordId, stamp }) => {

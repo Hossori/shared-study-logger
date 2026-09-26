@@ -48,7 +48,7 @@ import {
   useToggleNotificationMutation,
 } from "./api/useNotifications";
 import { ApiError } from "@/lib/api";
-import { CreateInAppNotificationRequestSchema } from "../../../../shared/schemas";
+import { CreateInAppNotificationRequestSchema } from "@shared/schemas";
 import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
 
 function mutationErrorMessage(error: unknown): string {

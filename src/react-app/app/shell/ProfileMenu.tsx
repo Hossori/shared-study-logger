@@ -4,7 +4,7 @@
  * ログアウトは確認ダイアログ付き。
  */
 import { Link } from "react-router";
-import { isAdmin, type User } from "../../../../shared/schemas";
+import { isAdmin, type User } from "@shared/schemas";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

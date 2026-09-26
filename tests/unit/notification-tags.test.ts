@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getStudyRecordNotificationTag } from "../../shared/notification-tags";
+import { getStudyRecordNotificationTag } from "@shared/notification-tags";
 
 describe("getStudyRecordNotificationTag", () => {
   it("returns a stable tag for a record notification", () => {

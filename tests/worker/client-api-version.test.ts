@@ -5,7 +5,7 @@ import {
 	CLIENT_API_VERSION,
 	CLIENT_API_VERSION_HEADER,
 	MIN_SUPPORTED_CLIENT_API_VERSION,
-} from "../../shared/client-api-version";
+} from "@shared/client-api-version";
 import { createRequireClientApiVersion } from "../../src/worker/middleware/requireClientApiVersion";
 import { loginAs, SEED, seedMinimalDb, workerFetch } from "./helpers";
 

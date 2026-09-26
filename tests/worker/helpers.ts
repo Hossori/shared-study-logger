@@ -6,7 +6,7 @@ import { env, exports } from "cloudflare:workers";
 import {
 	CLIENT_API_VERSION,
 	CLIENT_API_VERSION_HEADER,
-} from "../../shared/client-api-version";
+} from "@shared/client-api-version";
 import { hashPassword } from "../../src/worker/lib/auth";
 
 export const SEED = {
