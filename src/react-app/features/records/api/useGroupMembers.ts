@@ -3,7 +3,7 @@
  * `GET /api/groups/:groupId/members`
  */
 import { useQuery } from "@tanstack/react-query";
-import type { GroupMember } from "../../../../../shared/schemas";
+import { GroupMembersResponseSchema } from "../../../../../shared/schemas";
 import { apiGet } from "../../../lib/api";
 
 export const groupMembersQueryKeys = {
@@ -17,8 +17,9 @@ export function useGroupMembersQuery(
   return useQuery({
     queryKey: groupMembersQueryKeys.members(groupId),
     queryFn: async () => {
-      const { members } = await apiGet<{ members: GroupMember[] }>(
+      const { members } = await apiGet(
         `/api/groups/${groupId}/members`,
+        GroupMembersResponseSchema,
       );
       return members;
     },

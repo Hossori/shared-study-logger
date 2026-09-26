@@ -1,9 +1,14 @@
 import { Hono } from "hono";
-import { PushSubscriptionSchema } from "../../../shared/schemas";
+import {
+  OkResponseSchema,
+  PushSubscriptionSchema,
+  VapidPublicKeyResponseSchema,
+} from "../../../shared/schemas";
 import {
   deletePushSubscriptionByEndpoint,
   upsertPushSubscription,
 } from "../lib/db";
+import { jsonParsed } from "../lib/httpSchema";
 import { requireAuth, type AuthVariables } from "../middleware/requireAuth";
 
 /**
@@ -18,7 +23,9 @@ export const pushRoutes = new Hono<{
 }>();
 
 pushRoutes.get("/vapid-public-key", (c) => {
-  return c.json({ publicKey: c.env.VAPID_PUBLIC_KEY });
+  return jsonParsed(c, VapidPublicKeyResponseSchema, {
+    publicKey: c.env.VAPID_PUBLIC_KEY,
+  });
 });
 
 pushRoutes.post("/subscribe", requireAuth, async (c) => {
@@ -38,7 +45,7 @@ pushRoutes.post("/subscribe", requireAuth, async (c) => {
     userAgent: c.req.header("user-agent") ?? null,
   });
 
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });
 
 pushRoutes.delete("/subscribe", requireAuth, async (c) => {
@@ -57,5 +64,5 @@ pushRoutes.delete("/subscribe", requireAuth, async (c) => {
     parsed.data.endpoint,
   );
 
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });

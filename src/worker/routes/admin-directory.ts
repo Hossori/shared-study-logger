@@ -1,12 +1,19 @@
 import { Hono } from "hono";
 import {
   AddGroupMemberRequestSchema,
+  AdminGroupsResponseSchema,
+  AdminMemberResponseSchema,
   CreateAdminGroupRequestSchema,
   CreateAdminUserRequestSchema,
+  GroupResponseSchema,
+  OkResponseSchema,
+  UserResponseSchema,
+  UsersResponseSchema,
   type AdminGroup,
   type Group,
   type User,
 } from "../../../shared/schemas";
+import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import { generateSaltHex, hashPassword } from "../lib/auth";
 import {
   addGroupMember,
@@ -45,7 +52,7 @@ adminUsersRoutes.use(requireAdmin);
 adminUsersRoutes.get("/", async (c) => {
   const rows = await listUsers(c.env.DB);
   const users: User[] = rows.map(toUser);
-  return c.json({ users });
+  return jsonParsed(c, UsersResponseSchema, { users });
 });
 
 adminUsersRoutes.post("/", async (c) => {
@@ -73,7 +80,7 @@ adminUsersRoutes.post("/", async (c) => {
     displayName: parsed.data.displayName,
   });
 
-  return c.json({ user: toUser(row) }, 201);
+  return jsonParsed(c, UserResponseSchema, { user: toUser(row) }, 201);
 });
 
 export const adminGroupsRoutes = new Hono<AdminEnv>();
@@ -86,7 +93,7 @@ adminGroupsRoutes.get("/", async (c) => {
     ...toGroup(group),
     members: members.map(toUser),
   }));
-  return c.json({ groups });
+  return jsonParsed(c, AdminGroupsResponseSchema, { groups });
 });
 
 adminGroupsRoutes.post("/", async (c) => {
@@ -104,11 +111,14 @@ adminGroupsRoutes.post("/", async (c) => {
     name: parsed.data.name,
   });
   const group: Group = toGroup(row);
-  return c.json({ group }, 201);
+  return jsonParsed(c, GroupResponseSchema, { group }, 201);
 });
 
 adminGroupsRoutes.post("/:groupId/members", async (c) => {
-  const groupId = c.req.param("groupId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  if (!groupId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
   const group = await getGroupById(c.env.DB, groupId);
   if (!group) {
     return c.json({ error: "not_found" }, 404);
@@ -133,12 +143,20 @@ adminGroupsRoutes.post("/:groupId/members", async (c) => {
   }
 
   await addGroupMember(c.env.DB, groupId, parsed.data.userId);
-  return c.json({ member: toUser(userRow) }, 201);
+  return jsonParsed(
+    c,
+    AdminMemberResponseSchema,
+    { member: toUser(userRow) },
+    201,
+  );
 });
 
 adminGroupsRoutes.delete("/:groupId/members/:userId", async (c) => {
-  const groupId = c.req.param("groupId");
-  const userId = c.req.param("userId");
+  const groupId = parseResourceId(c.req.param("groupId"));
+  const userId = parseResourceId(c.req.param("userId"));
+  if (!groupId || !userId) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
 
   const group = await getGroupById(c.env.DB, groupId);
   if (!group) {
@@ -155,5 +173,5 @@ adminGroupsRoutes.delete("/:groupId/members/:userId", async (c) => {
     return c.json({ error: "not_member" }, 404);
   }
 
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });

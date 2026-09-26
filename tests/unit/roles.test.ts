@@ -30,11 +30,11 @@ describe("toUser role mapping", () => {
 		expect(toUser(userRow({ role: "USER" })).role).toBe("USER");
 	});
 
-	it("defaults null or unknown DB role to USER", () => {
-		expect(toUser(userRow({ role: null })).role).toBe("USER");
-		expect(toUser(userRow({ role: "" })).role).toBe("USER");
-		expect(toUser(userRow({ role: "admin" })).role).toBe("USER");
-		expect(toUser(userRow({ role: "SUPERUSER" })).role).toBe("USER");
-		expect(toUser(userRow({ role: "nope" })).role).toBe("USER");
+	it("passes the DB role through without coercing it", () => {
+		expect(toUser(userRow({ role: null })).role).toBeNull();
+		expect(toUser(userRow({ role: "" })).role).toBe("");
+		expect(toUser(userRow({ role: "admin" })).role).toBe("admin");
+		expect(toUser(userRow({ role: "SUPERUSER" })).role).toBe("SUPERUSER");
+		expect(toUser(userRow({ role: "nope" })).role).toBe("nope");
 	});
 });

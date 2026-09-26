@@ -2,6 +2,7 @@
  * ログインフォーム。画面の枠とテーマ切替は `pages/LoginPage` が持つ。
  */
 import { useState, type FormEvent } from "react";
+import { LoginRequestSchema } from "../../../../shared/schemas";
 import { useLoginMutation } from "./api/useAuth";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,18 @@ function loginErrorMessage(error: unknown): string {
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [clientError, setClientError] = useState<string | null>(null);
   const loginMutation = useLoginMutation();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    loginMutation.mutate({ email, password });
+    const parsed = LoginRequestSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setClientError("入力内容を確認してください。");
+      return;
+    }
+    setClientError(null);
+    loginMutation.mutate(parsed.data);
   };
 
   return (
@@ -74,9 +82,9 @@ export default function LoginForm() {
               />
             </Field>
 
-            {loginMutation.isError && (
+            {(clientError || loginMutation.isError) && (
               <ErrorMessage>
-                {loginErrorMessage(loginMutation.error)}
+                {clientError ?? loginErrorMessage(loginMutation.error)}
               </ErrorMessage>
             )}
 

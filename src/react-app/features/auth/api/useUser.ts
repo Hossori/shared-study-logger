@@ -2,7 +2,10 @@
  * 公開ユーザープロフィール（`GET /api/users/:userId`）を取得するフック。
  */
 import { useQuery } from "@tanstack/react-query";
-import type { PublicUser } from "../../../../../shared/schemas";
+import {
+  PublicUserResponseSchema,
+  type PublicUser,
+} from "../../../../../shared/schemas";
 import { apiGet, ApiError } from "../../../lib/api";
 
 export const userQueryKeys = {
@@ -17,8 +20,9 @@ export function useUserQuery(userId: string | undefined) {
       if (!userId) {
         throw new ApiError(400, { error: "missing_user_id" });
       }
-      const { user } = await apiGet<{ user: PublicUser }>(
+      const { user } = await apiGet(
         `/api/users/${userId}`,
+        PublicUserResponseSchema,
       );
       return user;
     },

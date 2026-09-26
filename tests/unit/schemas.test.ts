@@ -6,6 +6,7 @@ import {
 	AddGroupMemberRequestSchema,
 	CreateInAppNotificationRequestSchema,
 	CreateStudyRecordRequestSchema,
+	DurationMinutesSchema,
 	LoginRequestSchema,
 	AddRecordReactionRequestSchema,
 	ReactionStampSchema,
@@ -45,13 +46,18 @@ describe("LoginRequestSchema", () => {
 });
 
 describe("UpdateProfileRequestSchema", () => {
-	it("requires at least one field", () => {
+	it("requires displayName, bio, and avatarKey", () => {
 		expect(UpdateProfileRequestSchema.safeParse({}).success).toBe(false);
+		expect(
+			UpdateProfileRequestSchema.safeParse({ displayName: "管理者" }).success,
+		).toBe(false);
 	});
 
-	it("accepts displayName only", () => {
+	it("accepts all profile fields", () => {
 		const result = UpdateProfileRequestSchema.safeParse({
 			displayName: "管理者",
+			bio: null,
+			avatarKey: null,
 		});
 		expect(result.success).toBe(true);
 	});
@@ -275,6 +281,18 @@ describe("UserSchema", () => {
 		expect(UserSchema.safeParse(validUser).success).toBe(true);
 	});
 
+	it("rejects a non-UUID id and a non-ISO createdAt", () => {
+		expect(UserSchema.safeParse({ ...validUser, id: "user-1" }).success).toBe(
+			false,
+		);
+		expect(
+			UserSchema.safeParse({
+				...validUser,
+				createdAt: "2026-08-01 00:00:00",
+			}).success,
+		).toBe(false);
+	});
+
 	it("rejects missing role", () => {
 		expect(
 			UserSchema.safeParse({
@@ -447,22 +465,45 @@ describe("ReactionStampSchema", () => {
 	});
 });
 
+const USER_A = "00000000-0000-4000-a000-00000000000a";
+const USER_B = "00000000-0000-4000-a000-00000000000b";
+
+describe("DurationMinutesSchema", () => {
+	it("accepts 5-minute steps from 5 through 1435", () => {
+		expect(DurationMinutesSchema.safeParse(5).success).toBe(true);
+		expect(DurationMinutesSchema.safeParse(60).success).toBe(true);
+		expect(DurationMinutesSchema.safeParse(1435).success).toBe(true);
+	});
+
+	it("rejects values outside the step and range", () => {
+		expect(DurationMinutesSchema.safeParse(0).success).toBe(false);
+		expect(DurationMinutesSchema.safeParse(6).success).toBe(false);
+		expect(DurationMinutesSchema.safeParse(1440).success).toBe(false);
+	});
+});
+
 describe("ListStudyRecordsQuerySchema", () => {
 	it("normalizes a single userIds string to an array", () => {
-		const result = ListStudyRecordsQuerySchema.safeParse({ userIds: "a" });
+		const result = ListStudyRecordsQuerySchema.safeParse({ userIds: USER_A });
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.userIds).toEqual(["a"]);
+			expect(result.data.userIds).toEqual([USER_A]);
 		}
+	});
+
+	it("rejects a non-UUID userId", () => {
+		expect(ListStudyRecordsQuerySchema.safeParse({ userIds: "a" }).success).toBe(
+			false,
+		);
 	});
 
 	it("accepts userIds array", () => {
 		const result = ListStudyRecordsQuerySchema.safeParse({
-			userIds: ["a", "b"],
+			userIds: [USER_A, USER_B],
 		});
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.userIds).toEqual(["a", "b"]);
+			expect(result.data.userIds).toEqual([USER_A, USER_B]);
 		}
 	});
 
@@ -479,7 +520,10 @@ describe("ListStudyRecordsQuerySchema", () => {
 	});
 
 	it("rejects more than 50 userIds", () => {
-		const userIds = Array.from({ length: 51 }, (_, i) => `id-${i}`);
+		const userIds = Array.from(
+			{ length: 51 },
+			(_, i) => `00000000-0000-4000-a000-${i.toString(16).padStart(12, "0")}`,
+		);
 		expect(
 			ListStudyRecordsQuerySchema.safeParse({ userIds }).success,
 		).toBe(false);

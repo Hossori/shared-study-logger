@@ -215,7 +215,7 @@ export function notifyFormInput(node: EventTarget | null): void {
   node?.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-/** フォーム値から API 用ペイロードを組み立てる。不正なら null。 */
+/** フォーム値から API 用ペイロードを組み立てる。日時を ISO にできないときだけ null。 */
 export function buildRecordRequestPayload(values: RecordFormValues): {
   studyDatetime: string | null;
   title: string;
@@ -223,7 +223,6 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
   durationMinutes: number | null;
 } | null {
   const title = values.title.trim();
-  if (!title) return null;
 
   const memo = values.memo.trim();
   const memoField = memo ? memo : undefined;
@@ -238,9 +237,6 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
   }
 
   if (values.preservedStudyDatetime) {
-    if (values.durationMinutes != null && values.durationMinutes <= 0) {
-      return null;
-    }
     return {
       studyDatetime: values.preservedStudyDatetime,
       title,
@@ -251,10 +247,6 @@ export function buildRecordRequestPayload(values: RecordFormValues): {
 
   const studyDatetime = parseDatetimeLocalToIso(values.studyDatetime);
   if (!parseRecordDatetime(values.studyDatetime) || !studyDatetime) {
-    return null;
-  }
-
-  if (values.durationMinutes != null && values.durationMinutes <= 0) {
     return null;
   }
 
