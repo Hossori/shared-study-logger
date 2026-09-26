@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ChangePasswordFormSchema } from "../../src/react-app/features/auth/changePasswordForm";
+import {
+	changePasswordFieldErrors,
+	ChangePasswordFormSchema,
+} from "../../src/react-app/features/auth/changePasswordForm";
 
 describe("ChangePasswordFormSchema", () => {
 	it("drops confirmPassword after a match", () => {
@@ -25,9 +28,9 @@ describe("ChangePasswordFormSchema", () => {
 		});
 		expect(parsed.success).toBe(false);
 		if (parsed.success) return;
-		expect(parsed.error.issues.some((issue) => issue.path[0] === "confirmPassword")).toBe(
-			true,
-		);
+		expect(changePasswordFieldErrors(parsed.error)).toEqual({
+			confirmPassword: "新しいパスワード（確認）が一致しません。",
+		});
 	});
 
 	it("rejects a short new password on the request field", () => {
@@ -38,8 +41,21 @@ describe("ChangePasswordFormSchema", () => {
 		});
 		expect(parsed.success).toBe(false);
 		if (parsed.success) return;
-		expect(parsed.error.issues.some((issue) => issue.path[0] === "newPassword")).toBe(
-			true,
+		expect(changePasswordFieldErrors(parsed.error)).toEqual({
+			newPassword: "新しいパスワードは8文字以上で入力してください。",
+		});
+	});
+
+	it("uses the schema message for an empty current password", () => {
+		const parsed = ChangePasswordFormSchema.safeParse({
+			currentPassword: "",
+			newPassword: "NewPassword1!",
+			confirmPassword: "NewPassword1!",
+		});
+		expect(parsed.success).toBe(false);
+		if (parsed.success) return;
+		expect(changePasswordFieldErrors(parsed.error).currentPassword).toBe(
+			"現在のパスワードを入力してください。",
 		);
 	});
 });

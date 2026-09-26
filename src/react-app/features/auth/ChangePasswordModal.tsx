@@ -2,7 +2,11 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { ChangePasswordFormSchema } from "./changePasswordForm";
+import {
+  changePasswordFieldErrors,
+  ChangePasswordFormSchema,
+  type ChangePasswordFieldErrors,
+} from "./changePasswordForm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,12 +37,6 @@ function passwordApiErrorMessage(error: unknown): string {
   return "パスワードの変更に失敗しました。しばらくしてから再度お試しください。";
 }
 
-type PasswordFieldErrors = {
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-};
-
 interface ChangePasswordModalProps {
   open: boolean;
   onClose: () => void;
@@ -53,7 +51,7 @@ export default function ChangePasswordModal({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<PasswordFieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<ChangePasswordFieldErrors>({});
   const { requestClose, handleOpenChange, formGuardProps, confirmNode } =
     useUnsavedCloseGuard(open, onClose);
 
@@ -62,7 +60,7 @@ export default function ChangePasswordModal({
     resetChangePassword();
   }, [resetChangePassword]);
 
-  const clearFieldError = (key: keyof PasswordFieldErrors) => {
+  const clearFieldError = (key: keyof ChangePasswordFieldErrors) => {
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -82,22 +80,7 @@ export default function ChangePasswordModal({
       confirmPassword,
     });
     if (!parsed.success) {
-      const nextErrors: PasswordFieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const field = issue.path[0];
-        if (field === "confirmPassword" && !nextErrors.confirmPassword) {
-          nextErrors.confirmPassword =
-            "新しいパスワード（確認）が一致しません。";
-        }
-        if (field === "currentPassword" && !nextErrors.currentPassword) {
-          nextErrors.currentPassword = "現在のパスワードを入力してください。";
-        }
-        if (field === "newPassword" && !nextErrors.newPassword) {
-          nextErrors.newPassword =
-            "新しいパスワードは8文字以上で入力してください。";
-        }
-      }
-      setFieldErrors(nextErrors);
+      setFieldErrors(changePasswordFieldErrors(parsed.error));
       return;
     }
 
