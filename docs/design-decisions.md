@@ -39,3 +39,13 @@ Atomic Design の 5 階層はコンポーネント数が少なく過剰で、`fe
 shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に合わせ、クラス戦略で切り替える。未保存時だけ `prefers-color-scheme` に追従し、トグル後は `localStorage` の明示値を優先する。FOUC 防止の初期化は `index.html` のインラインスクリプトと `src/react-app/lib/theme.ts` でキーを揃える。React 側の現在値は `stores/preferencesStore.ts` が同じ純関数で初期化する。
 
 フロントの依存は `app` / `pages` → `features` → `components` / `lib` / `hooks` / `stores`。feature は他 feature を import しない。画面の合成は `pages` と `app/shell` が行う。
+
+### OpenAPI 正本 + Orval Zod 生成
+
+学習目的で HTTP の形の正本を [openapi/api.yaml](../openapi/api.yaml) に置き、[orval](https://orval.dev/)（Zod v4、`client: 'zod'`）で [shared/generated/api.zod.ts](../shared/generated/api.zod.ts) を生成する。Hono ルートと axios 呼び出しは維持し、生成ファイルは手編集しない。
+
+OAS に載せきれないものは [shared/schemas.ts](../shared/schemas.ts) の overlay に残す。横断制約（例: `studyDatetime` と `durationMinutes` の組）、リクエストの `trim`、Hono のクエリ正規化（`userIds` の preprocess、`limit` の coerce）、カーソル中身（`sortKey|id`）は OAS / 生成 Zod だけでは表現しない。
+
+Hono ルートは生成されないためパスのドリフトは worker テストと OAS の両方を見る。axios / TanStack Query クライアントは生成しない。Zod Mini は既存 `ZodType` との互換とバンドル都合で不採用。`strictObject` は現行の未知キー strip と非互換なので不採用（`z.object` の strip を維持）。
+
+代替として `@hono/zod-openapi`（Zod 正本から OAS を出す）はあるが、今回の学習目的は OAS 正本なので Orval を採る。エラーコードごとの網羅 OAS 分岐は書かず、ハンドラ側に残す。

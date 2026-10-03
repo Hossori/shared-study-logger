@@ -8,7 +8,9 @@ paths: shared/schemas.ts,shared/avatars.ts
 
 # Zod スキーマ規約
 
-`shared/schemas.ts` を変更するときだけ読む。
+HTTP の形の正本は [openapi/api.yaml](/openapi/api.yaml)。Orval が [shared/generated/api.zod.ts](/shared/generated/api.zod.ts) を生成し、[shared/schemas.ts](/shared/schemas.ts) が既存 export 名のファサードになる。trim・横断制約・クエリ正規化など OAS に載せない overlay だけ `shared/schemas.ts` に書く。
+
+`shared/schemas.ts` または OAS を変更するときだけ読む。
 
 ## 使う API
 
@@ -25,6 +27,8 @@ paths: shared/schemas.ts,shared/avatars.ts
 ## 変更後
 
 ```bash
+pnpm openapi:generate
+pnpm openapi:check
 pnpm run check:zod-deprecated
 pnpm exec tsc -b
 ```

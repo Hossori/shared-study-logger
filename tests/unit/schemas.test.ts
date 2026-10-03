@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+	AVATAR_KEYS,
+	AvatarKeySchema,
+	REACTION_STAMPS,
 	ChangePasswordRequestSchema,
 	CreateAdminGroupRequestSchema,
 	CreateAdminUserRequestSchema,
@@ -18,6 +21,25 @@ import {
 	UserSchema,
 	ListStudyRecordsQuerySchema,
 } from "@shared/schemas";
+
+describe("AvatarKeySchema", () => {
+	it("matches AVATAR_KEYS order", () => {
+		expect(AvatarKeySchema.options).toEqual([...AVATAR_KEYS]);
+	});
+});
+
+describe("REACTION_STAMPS", () => {
+	it("matches expected stamp order", () => {
+		expect(REACTION_STAMPS).toEqual([
+			"thumbs_up",
+			"smile",
+			"laugh",
+			"astonished",
+			"cry",
+			"muscle",
+		]);
+	});
+});
 
 describe("LoginRequestSchema", () => {
 	it("accepts valid email and password", () => {

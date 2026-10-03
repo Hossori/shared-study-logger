@@ -1,0 +1,1269 @@
+openapi: 3.0.3
+info:
+  title: Shared Study Logger API
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /api/auth/login:
+    post:
+      operationId: postAuthLogin
+      summary: ログイン
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/auth/logout:
+    post:
+      operationId: postAuthLogout
+      summary: ログアウト
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/auth/me:
+    get:
+      operationId: getAuthMe
+      summary: ログイン中ユーザー情報取得
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      operationId: patchAuthMe
+      summary: プロフィール更新
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: 更新後ユーザー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/auth/password:
+    post:
+      operationId: postAuthPassword
+      summary: パスワード変更
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: 変更成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/users/{userId}:
+    get:
+      operationId: getUserById
+      summary: 公開プロフィール取得
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/userId"
+      responses:
+        "200":
+          description: 公開プロフィール
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUserResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/groups:
+    get:
+      operationId: getGroups
+      summary: 所属グループ一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: グループ一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupsResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/groups/{groupId}/members:
+    get:
+      operationId: getGroupMembers
+      summary: 所属メンバー一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+      responses:
+        "200":
+          description: メンバー一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupMembersResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/groups/{groupId}/records:
+    get:
+      operationId: getGroupRecords
+      summary: 学習記録一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: userIds
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            maxItems: 50
+            items:
+              $ref: "#/components/schemas/ResourceId"
+      responses:
+        "200":
+          description: 記録一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyRecordsResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: postGroupRecord
+      summary: 学習記録投稿
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudyRecordRequest"
+      responses:
+        "201":
+          description: 作成した記録
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyRecordResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/groups/{groupId}/records/{recordId}:
+    patch:
+      operationId: patchGroupRecord
+      summary: 学習記録編集
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/recordId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStudyRecordRequest"
+      responses:
+        "200":
+          description: 更新した記録
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyRecordResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteGroupRecord
+      summary: 学習記録削除
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/recordId"
+      responses:
+        "200":
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/groups/{groupId}/records/{recordId}/reactions:
+    get:
+      operationId: getRecordReactions
+      summary: スタンプ一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/recordId"
+      responses:
+        "200":
+          description: スタンプ一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordReactionsResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: postRecordReaction
+      summary: スタンプ付与
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/recordId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddRecordReactionRequest"
+      responses:
+        "201":
+          description: 付与したスタンプ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordReactionResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/groups/{groupId}/records/{recordId}/reactions/{stamp}:
+    delete:
+      operationId: deleteRecordReaction
+      summary: スタンプ取消
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/recordId"
+        - $ref: "#/components/parameters/stamp"
+      responses:
+        "200":
+          description: 取消成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/push/vapid-public-key:
+    get:
+      operationId: getPushVapidPublicKey
+      summary: VAPID 公開鍵取得
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: VAPID 公開鍵
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VapidPublicKeyResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/push/subscribe:
+    post:
+      operationId: postPushSubscribe
+      summary: Push 購読登録
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscription"
+      responses:
+        "200":
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deletePushSubscribe
+      summary: Push 購読解除
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushUnsubscribeRequest"
+      responses:
+        "200":
+          description: 解除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/notifications:
+    get:
+      operationId: getNotifications
+      summary: 有効なアプリ内通知一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: 通知一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InAppNotificationsResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/admin/users:
+    get:
+      operationId: getAdminUsers
+      summary: 全ユーザー一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: ユーザー一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: postAdminUser
+      summary: ユーザー作成
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdminUserRequest"
+      responses:
+        "201":
+          description: 作成したユーザー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/admin/groups:
+    get:
+      operationId: getAdminGroups
+      summary: 全グループ一覧（メンバー付き）
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: グループ一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGroupsResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: postAdminGroup
+      summary: グループ作成
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdminGroupRequest"
+      responses:
+        "201":
+          description: 作成したグループ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/admin/groups/{groupId}/members:
+    post:
+      operationId: postAdminGroupMember
+      summary: グループへユーザーを所属追加
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddGroupMemberRequest"
+      responses:
+        "200":
+          description: 追加したメンバー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMemberResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/admin/groups/{groupId}/members/{userId}:
+    delete:
+      operationId: deleteAdminGroupMember
+      summary: グループからユーザーの所属を削除
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/userId"
+      responses:
+        "200":
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/admin/notifications:
+    get:
+      operationId: getAdminNotifications
+      summary: アプリ内通知の全件一覧
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      responses:
+        "200":
+          description: 通知一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InAppNotificationsResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: postAdminNotification
+      summary: アプリ内通知の作成
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInAppNotificationRequest"
+      responses:
+        "200":
+          description: 作成した通知
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InAppNotificationResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/admin/notifications/{id}:
+    patch:
+      operationId: patchAdminNotification
+      summary: アプリ内通知の有効/無効切替
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/notificationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInAppNotificationRequest"
+      responses:
+        "200":
+          description: 更新した通知
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InAppNotificationResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteAdminNotification
+      summary: アプリ内通知の削除
+      security:
+        - session: []
+      parameters:
+        - $ref: "#/components/parameters/XClientApiVersion"
+        - $ref: "#/components/parameters/notificationId"
+      responses:
+        "200":
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: session
+
+  parameters:
+    XClientApiVersion:
+      name: X-Client-Api-Version
+      in: header
+      required: true
+      schema:
+        type: string
+    groupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ResourceId"
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ResourceId"
+    recordId:
+      name: recordId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ResourceId"
+    stamp:
+      name: stamp
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ReactionStamp"
+    notificationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ResourceId"
+
+  responses:
+    Error:
+      description: エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+
+    ResourceId:
+      type: string
+      format: uuid
+
+    Timestamp:
+      type: string
+      format: date-time
+
+    DurationMinutes:
+      type: integer
+      minimum: 5
+      maximum: 1435
+      multipleOf: 5
+
+    AvatarKey:
+      type: string
+      enum:
+        - avoidy
+        - lavender
+        - fever
+        - born
+        - innocence
+        - stolen
+
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - USER
+
+    ReactionStamp:
+      type: string
+      enum:
+        - thumbs_up
+        - smile
+        - laugh
+        - astonished
+        - cry
+        - muscle
+
+    OkResponse:
+      type: object
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - true
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - displayName
+        - role
+        - bio
+        - avatarKey
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/ResourceId"
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        bio:
+          type: string
+          nullable: true
+        avatarKey:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AvatarKey"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    UserResponse:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+
+    UsersResponse:
+      type: object
+      required:
+        - users
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+
+    PublicUser:
+      type: object
+      required:
+        - id
+        - displayName
+        - bio
+        - avatarKey
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/ResourceId"
+        displayName:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        avatarKey:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AvatarKey"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    PublicUserResponse:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/PublicUser"
+
+    UpdateProfileRequest:
+      type: object
+      required:
+        - displayName
+        - bio
+        - avatarKey
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        bio:
+          type: string
+          maxLength: 500
+          nullable: true
+        avatarKey:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AvatarKey"
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/ResourceId"
+        name:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    GroupResponse:
+      type: object
+      required:
+        - group
+      properties:
+        group:
+          $ref: "#/components/schemas/Group"
+
+    GroupsResponse:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/Group"
+
+    CreateAdminUserRequest:
+      type: object
+      required:
+        - email
+        - password
+        - displayName
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 50
+
+    CreateAdminGroupRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    AddGroupMemberRequest:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          $ref: "#/components/schemas/ResourceId"
+
+    GroupMember:
+      type: object
+      required:
+        - id
+        - displayName
+        - avatarKey
+      properties:
+        id:
+          $ref: "#/components/schemas/ResourceId"
+        displayName:
+          type: string
+        avatarKey:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AvatarKey"
+
+    GroupMembersResponse:
+      type: object
+      required:
+        - members
+      properties:
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupMember"
+
+    AdminMemberResponse:
+      type: object
+      required:
+        - member
+      properties:
+        member:
+          $ref: "#/components/schemas/User"
+
+    AdminGroup:
+      allOf:
+        - $ref: "#/components/schemas/Group"
+        - type: object
+          required:
+            - members
+          properties:
+            members:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
+
+    AdminGroupsResponse:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminGroup"
+
+    ReactionSummary:
+      type: object
+      required:
+        - stamp
+        - count
+        - reactedByMe
+      properties:
+        stamp:
+          $ref: "#/components/schemas/ReactionStamp"
+        count:
+          type: integer
+          minimum: 1
+        reactedByMe:
+          type: boolean
+
+    AddRecordReactionRequest:
+      type: object
+      required:
+        - stamp
+      properties:
+        stamp:
+          $ref: "#/components/schemas/ReactionStamp"
+
+    RecordReactionEntry:
+      type: object
+      required:
+        - stamp
+        - userId
+        - displayName
+      properties:
+        stamp:
+          $ref: "#/components/schemas/ReactionStamp"
+        userId:
+          $ref: "#/components/schemas/ResourceId"
+        displayName:
+          type: string
+
+    RecordReactionResponse:
+      type: object
+      required:
+        - reaction
+      properties:
+        reaction:
+          $ref: "#/components/schemas/RecordReactionEntry"
+
+    RecordReactionsResponse:
+      type: object
+      required:
+        - reactions
+      properties:
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecordReactionEntry"
+
+    StudyRecord:
+      type: object
+      required:
+        - id
+        - groupId
+        - userId
+        - studyDatetime
+        - title
+        - durationMinutes
+        - createdAt
+        - updatedAt
+        - reactions
+      properties:
+        id:
+          $ref: "#/components/schemas/ResourceId"
+        groupId:
+          $ref: "#/components/schemas/ResourceId"
+        userId:
+          $ref: "#/components/schemas/ResourceId"
+        authorDisplayName:
+          type: string
+        authorAvatarKey:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AvatarKey"
+        studyDatetime:
+          $ref: "#/components/schemas/Timestamp"
+        title:
+          type: string
+          minLength: 1
+        durationMinutes:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/DurationMinutes"
+        memo:
+          type: string
+          nullable: true
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReactionSummary"
+
+    StudyRecordResponse:
+      type: object
+      required:
+        - record
+      properties:
+        record:
+          $ref: "#/components/schemas/StudyRecord"
+
+    StudyRecordsResponse:
+      type: object
+      required:
+        - records
+        - nextCursor
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyRecord"
+        nextCursor:
+          type: string
+          nullable: true
+
+    CreateStudyRecordRequest:
+      type: object
+      required:
+        - studyDatetime
+        - title
+      properties:
+        studyDatetime:
+          type: string
+          format: date-time
+          nullable: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/DurationMinutes"
+        memo:
+          type: string
+          maxLength: 2000
+
+    UpdateStudyRecordRequest:
+      type: object
+      required:
+        - studyDatetime
+        - title
+      properties:
+        studyDatetime:
+          type: string
+          format: date-time
+          nullable: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/DurationMinutes"
+        memo:
+          type: string
+          maxLength: 2000
+
+    PushSubscriptionKeys:
+      type: object
+      required:
+        - p256dh
+        - auth
+      properties:
+        p256dh:
+          type: string
+        auth:
+          type: string
+
+    PushSubscription:
+      type: object
+      required:
+        - endpoint
+        - keys
+      properties:
+        endpoint:
+          type: string
+          format: uri
+        keys:
+          $ref: "#/components/schemas/PushSubscriptionKeys"
+
+    PushUnsubscribeRequest:
+      type: object
+      required:
+        - endpoint
+      properties:
+        endpoint:
+          type: string
+          format: uri
+
+    VapidPublicKeyResponse:
+      type: object
+      required:
+        - publicKey
+      properties:
+        publicKey:
+          type: string
+          minLength: 1
+
+    InAppNotification:
+      type: object
+      required:
+        - id
+        - title
+        - body
+        - enabled
+        - createdBy
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/ResourceId"
+        title:
+          type: string
+        body:
+          type: string
+        enabled:
+          type: boolean
+        createdBy:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ResourceId"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    InAppNotificationResponse:
+      type: object
+      required:
+        - notification
+      properties:
+        notification:
+          $ref: "#/components/schemas/InAppNotification"
+
+    InAppNotificationsResponse:
+      type: object
+      required:
+        - notifications
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/InAppNotification"
+
+    CreateInAppNotificationRequest:
+      type: object
+      required:
+        - title
+        - body
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        enabled:
+          type: boolean
+
+    UpdateInAppNotificationRequest:
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean

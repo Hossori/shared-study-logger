@@ -1,8 +1,6 @@
 # API エンドポイント一覧
 
-本ドキュメントが API 一覧の正本です。概要・機能索引は
-[architecture.md](architecture.md)
-を参照。
+エンドポイント一覧の説明は本ファイル、HTTP の形の正本は [openapi/api.yaml](../openapi/api.yaml)、実行時スキーマは Orval 生成 Zod（[shared/generated/api.zod.ts](../shared/generated/api.zod.ts)）。trim・横断制約・クエリ正規化など OAS に載せない差分は [shared/schemas.ts](../shared/schemas.ts)。概要・機能索引は [architecture.md](architecture.md) を参照。
 
 | メソッド | パス | 認証 | 概要 |
 | --- | --- | --- | --- |
