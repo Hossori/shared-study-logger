@@ -3,6 +3,7 @@
  * Cookie認証を常に送信する。非2xxレスポンスはレスポンスインターセプターで`ApiError`に変換する。
  */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import type { ZodType } from "zod";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
@@ -94,3 +95,47 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+function parseApiData<T>(schema: ZodType<T>, data: unknown): T {
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new ApiError(0, { error: "invalid_response" });
+  }
+  return parsed.data;
+}
+
+export function apiGet<T>(path: string, schema: ZodType<T>): Promise<T> {
+  return apiClient
+    .get(path)
+    .then((response) => parseApiData(schema, response.data));
+}
+
+export function apiPost<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .post(path, data)
+    .then((response) => parseApiData(schema, response.data));
+}
+
+export function apiPatch<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .patch(path, data)
+    .then((response) => parseApiData(schema, response.data));
+}
+
+export function apiDelete<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .delete(path, { data })
+    .then((response) => parseApiData(schema, response.data));
+}

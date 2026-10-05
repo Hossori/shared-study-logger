@@ -15,19 +15,18 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import {
-  deleteGroupRecord,
-  deleteRecordReaction,
-  getGroupRecords,
-  getRecordReactions,
-  patchGroupRecord,
-  postGroupRecord,
-  postRecordReaction,
+  OkResponseSchema,
+  RecordReactionResponseSchema,
+  RecordReactionsResponseSchema,
+  StudyRecordResponseSchema,
+  StudyRecordsResponseSchema,
   type CreateStudyRecordRequest,
   type ReactionStamp,
   type ReactionSummary,
   type StudyRecordsResponse,
   type UpdateStudyRecordRequest,
-} from "@/api";
+} from "@shared/schemas";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
 import { applyAddReaction, applyRemoveReaction } from "./reactionSummaries";
 
 const RECORDS_PAGE_LIMIT = 20;
@@ -82,11 +81,17 @@ export function useRecordsQuery(
   return useInfiniteQuery({
     queryKey: recordsQueryKeys.listPage(groupId, sortedUserIds),
     queryFn: async ({ pageParam }): Promise<StudyRecordsResponse> => {
-      return getGroupRecords(groupId!, {
-        limit: RECORDS_PAGE_LIMIT,
-        ...(pageParam ? { cursor: pageParam } : {}),
-        ...(sortedUserIds.length ? { userIds: sortedUserIds } : {}),
+      const params = new URLSearchParams({
+        limit: String(RECORDS_PAGE_LIMIT),
       });
+      if (pageParam) params.set("cursor", pageParam);
+      for (const id of sortedUserIds) {
+        params.append("userIds", id);
+      }
+      return apiGet(
+        `/api/groups/${groupId}/records?${params.toString()}`,
+        StudyRecordsResponseSchema,
+      );
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -99,7 +104,11 @@ export function useCreateRecordMutation(groupId: string | null) {
   return useMutation({
     mutationFn: (input: CreateStudyRecordRequest) => {
       if (!groupId) throw new Error("groupId is required");
-      return postGroupRecord(groupId, input);
+      return apiPost(
+        `/api/groups/${groupId}/records`,
+        StudyRecordResponseSchema,
+        input,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -120,7 +129,11 @@ export function useUpdateRecordMutation(groupId: string | null) {
       input: UpdateStudyRecordRequest;
     }) => {
       if (!groupId) throw new Error("groupId is required");
-      return patchGroupRecord(groupId, recordId, input);
+      return apiPatch(
+        `/api/groups/${groupId}/records/${recordId}`,
+        StudyRecordResponseSchema,
+        input,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -135,7 +148,10 @@ export function useDeleteRecordMutation(groupId: string | null) {
   return useMutation({
     mutationFn: (recordId: string) => {
       if (!groupId) throw new Error("groupId is required");
-      return deleteGroupRecord(groupId, recordId);
+      return apiDelete(
+        `/api/groups/${groupId}/records/${recordId}`,
+        OkResponseSchema,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -152,7 +168,11 @@ export function useRecordReactionsQuery(
 ) {
   return useQuery({
     queryKey: recordsQueryKeys.reactions(groupId, recordId),
-    queryFn: () => getRecordReactions(groupId!, recordId),
+    queryFn: () =>
+      apiGet(
+        `/api/groups/${groupId}/records/${recordId}/reactions`,
+        RecordReactionsResponseSchema,
+      ),
     enabled: enabled && groupId !== null,
   });
 }
@@ -168,7 +188,11 @@ export function useAddRecordReactionMutation(groupId: string | null) {
       stamp: ReactionStamp;
     }) => {
       if (!groupId) throw new Error("groupId is required");
-      return postRecordReaction(groupId, recordId, { stamp });
+      return apiPost(
+        `/api/groups/${groupId}/records/${recordId}/reactions`,
+        RecordReactionResponseSchema,
+        { stamp },
+      );
     },
     onMutate: async ({ recordId, stamp }) => {
       const listKey = recordsQueryKeys.list(groupId);
@@ -210,7 +234,10 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
       stamp: ReactionStamp;
     }) => {
       if (!groupId) throw new Error("groupId is required");
-      return deleteRecordReaction(groupId, recordId, stamp);
+      return apiDelete(
+        `/api/groups/${groupId}/records/${recordId}/reactions/${stamp}`,
+        OkResponseSchema,
+      );
     },
     onMutate: async ({ recordId, stamp }) => {
       const listKey = recordsQueryKeys.list(groupId);

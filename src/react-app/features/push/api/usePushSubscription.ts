@@ -4,12 +4,11 @@
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  deletePushSubscribe,
-  getPushVapidPublicKey,
-  postPushSubscribe,
-  type PushSubscription,
-  type PushUnsubscribeRequest,
-} from "@/api";
+  OkResponseSchema,
+  VapidPublicKeyResponseSchema,
+  type PushSubscriptionInput,
+} from "@shared/schemas";
+import { apiDelete, apiGet, apiPost } from "../../../lib/api";
 
 export const pushQueryKeys = {
   vapidPublicKey: ["push", "vapidPublicKey"] as const,
@@ -19,7 +18,10 @@ export function useVapidPublicKeyQuery() {
   return useQuery({
     queryKey: pushQueryKeys.vapidPublicKey,
     queryFn: async (): Promise<string> => {
-      const { publicKey } = await getPushVapidPublicKey();
+      const { publicKey } = await apiGet(
+        "/api/push/vapid-public-key",
+        VapidPublicKeyResponseSchema,
+      );
       return publicKey;
     },
     staleTime: Infinity,
@@ -28,12 +30,14 @@ export function useVapidPublicKeyQuery() {
 
 export function useSubscribePushMutation() {
   return useMutation({
-    mutationFn: (input: PushSubscription) => postPushSubscribe(input),
+    mutationFn: (input: PushSubscriptionInput) =>
+      apiPost("/api/push/subscribe", OkResponseSchema, input),
   });
 }
 
 export function useUnsubscribePushMutation() {
   return useMutation({
-    mutationFn: (input: PushUnsubscribeRequest) => deletePushSubscribe(input),
+    mutationFn: (input: { endpoint: string }) =>
+      apiDelete("/api/push/subscribe", OkResponseSchema, input),
   });
 }

@@ -1,10 +1,14 @@
 /**
  * 記録カード上のリアクション集計を更新する純関数（楽観更新用）。
  */
-import { ReactionStamp, type ReactionSummary } from "@/api";
+import {
+  REACTION_STAMPS,
+  type ReactionStamp,
+  type ReactionSummary,
+} from "@shared/schemas";
 
 const STAMP_ORDER = new Map(
-  Object.values(ReactionStamp).map((stamp, index) => [stamp, index]),
+  REACTION_STAMPS.map((stamp, index) => [stamp, index]),
 );
 
 export function sortReactionSummaries(

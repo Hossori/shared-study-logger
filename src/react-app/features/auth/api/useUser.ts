@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ApiError, getUserById, type PublicUser } from "@/api";
+import { PublicUserResponseSchema, type PublicUser } from "@shared/schemas";
+import { apiGet, ApiError } from "../../../lib/api";
 
 export const userQueryKeys = {
   detail: (userId: string) => ["users", userId] as const,
@@ -19,7 +20,10 @@ export function useUserQuery(userId: string, isSelf = false) {
       if (!userId) {
         throw new ApiError(400, { error: "user_id_is_required" });
       }
-      const { user } = await getUserById(userId);
+      const { user } = await apiGet(
+        `/api/users/${userId}`,
+        PublicUserResponseSchema,
+      );
       return user;
     },
   });

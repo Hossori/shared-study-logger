@@ -3,14 +3,13 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  deleteAdminNotification,
-  getAdminNotifications,
-  getNotifications,
-  patchAdminNotification,
-  postAdminNotification,
+  InAppNotificationResponseSchema,
+  InAppNotificationsResponseSchema,
+  OkResponseSchema,
   type CreateInAppNotificationRequest,
   type UpdateInAppNotificationRequest,
-} from "@/api";
+} from "@shared/schemas";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
 
 export const notificationQueryKeys = {
   all: ["notifications"] as const,
@@ -21,14 +20,16 @@ export const notificationQueryKeys = {
 export function useEnabledNotificationsQuery() {
   return useQuery({
     queryKey: notificationQueryKeys.enabled,
-    queryFn: () => getNotifications(),
+    queryFn: () =>
+      apiGet("/api/notifications", InAppNotificationsResponseSchema),
   });
 }
 
 export function useAdminNotificationsQuery(enabled: boolean) {
   return useQuery({
     queryKey: notificationQueryKeys.admin,
-    queryFn: () => getAdminNotifications(),
+    queryFn: () =>
+      apiGet("/api/admin/notifications", InAppNotificationsResponseSchema),
     enabled,
   });
 }
@@ -37,7 +38,11 @@ export function useCreateNotificationMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateInAppNotificationRequest) =>
-      postAdminNotification(input),
+      apiPost(
+        "/api/admin/notifications",
+        InAppNotificationResponseSchema,
+        input,
+      ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: notificationQueryKeys.all,
@@ -55,7 +60,12 @@ export function useToggleNotificationMutation() {
     }: {
       id: string;
       enabled: UpdateInAppNotificationRequest["enabled"];
-    }) => patchAdminNotification(id, { enabled }),
+    }) =>
+      apiPatch(
+        `/api/admin/notifications/${id}`,
+        InAppNotificationResponseSchema,
+        { enabled },
+      ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: notificationQueryKeys.all,
@@ -67,7 +77,8 @@ export function useToggleNotificationMutation() {
 export function useDeleteNotificationMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteAdminNotification(id),
+    mutationFn: (id: string) =>
+      apiDelete(`/api/admin/notifications/${id}`, OkResponseSchema),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: notificationQueryKeys.all,

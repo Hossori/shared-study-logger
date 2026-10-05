@@ -20,7 +20,7 @@ Python Workers（FastAPI）は無料プランの CPU 制限・コールドスタ
 
 ### フロント API は axios（`api.ts`）
 
-学習目的で採用。`apiClient` のインターセプターで `ApiError` 変換・`X-Client-Api-Version` 付与を集約する。Orval（`client: 'axios-functions'`）で [src/react-app/api/client.ts](../src/react-app/api/client.ts) を薄いクライアントとして生成し、実体は `apiMutator` 経由の `apiClient`。TanStack Query フックは手書きのまま。成功 JSON の実行時検証は Worker の `jsonParsed`。薄いクライアントは型とパスを生成し、受け取った body を再 parse しない。リクエストの trim と学習日時の組はフォームと Worker の overlay。Worker 側は `fetch` / Web 標準のまま。
+学習目的で採用。インターセプターで `ApiError` 変換・JSON ヘッダ付与を集約する。呼び出し側は `apiGet` / `apiPost` / `apiPatch` / `apiDelete`。Worker 側は `fetch` / Web 標準のまま。
 
 ### `react-router` data router
 
@@ -42,10 +42,10 @@ shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に�
 
 ### OpenAPI 正本 + Orval Zod 生成
 
-学習目的で HTTP の形の正本を [openapi/api.yaml](../openapi/api.yaml) に置き、[orval](https://orval.dev/)（Zod v4、`client: 'zod'`）で [shared/generated/api.zod.ts](../shared/generated/api.zod.ts) を生成する。Hono ルートは手書きのまま。ブラウザの呼び出しは前節の axios-functions。生成ファイルは手編集しない。
+学習目的で HTTP の形の正本を [openapi/api.yaml](../openapi/api.yaml) に置き、[orval](https://orval.dev/)（Zod v4、`client: 'zod'`）で [shared/generated/api.zod.ts](../shared/generated/api.zod.ts) を生成する。Hono ルートと axios 呼び出しは維持し、生成ファイルは手編集しない。
 
 OAS に載せきれないものは [shared/schemas.ts](../shared/schemas.ts) の overlay に残す。横断制約（例: `studyDatetime` と `durationMinutes` の組）、リクエストの `trim`、Hono のクエリ正規化（`userIds` の preprocess、`limit` の coerce）、カーソル中身（`sortKey|id`）は OAS / 生成 Zod だけでは表現しない。
 
-Hono ルートは生成されないためパスのドリフトは worker テストと OAS の両方を見る。axios-functions は生成するが TanStack Query フックは生成しない。Zod Mini は既存 `ZodType` との互換とバンドル都合で不採用。`strictObject` は現行の未知キー strip と非互換なので不採用（`z.object` の strip を維持）。
+Hono ルートは生成されないためパスのドリフトは worker テストと OAS の両方を見る。axios / TanStack Query クライアントは生成しない。Zod Mini は既存 `ZodType` との互換とバンドル都合で不採用。`strictObject` は現行の未知キー strip と非互換なので不採用（`z.object` の strip を維持）。
 
 代替として `@hono/zod-openapi`（Zod 正本から OAS を出す）はあるが、今回の学習目的は OAS 正本なので Orval を採る。エラーコードごとの網羅 OAS 分岐は書かず、ハンドラ側に残す。
