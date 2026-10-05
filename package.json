@@ -68,7 +68,7 @@
     "check": "tsc && vite build && wrangler deploy --dry-run",
     "check:d1-migrations": "node scripts/check-d1-migrations.mjs",
     "check:zod-deprecated": "node scripts/check-zod-deprecated.mjs",
-    "openapi:generate": "orval --config orval.config.ts && prettier --write shared/generated/api.zod.ts",
+    "openapi:generate": "orval --config orval.config.ts && prettier --write shared/generated/api.zod.ts src/react-app/api/client.ts",
     "openapi:check": "node scripts/openapi-check.mjs",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler deploy --env preview",

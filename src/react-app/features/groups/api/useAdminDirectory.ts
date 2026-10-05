@@ -3,17 +3,16 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AdminGroupsResponseSchema,
-  AdminMemberResponseSchema,
-  GroupResponseSchema,
-  OkResponseSchema,
-  UserResponseSchema,
-  UsersResponseSchema,
+  deleteAdminGroupMember,
+  getAdminGroups,
+  getAdminUsers,
+  postAdminGroup,
+  postAdminGroupMember,
+  postAdminUser,
   type AddGroupMemberRequest,
   type CreateAdminGroupRequest,
   type CreateAdminUserRequest,
-} from "@shared/schemas";
-import { apiDelete, apiGet, apiPost } from "../../../lib/api";
+} from "@/api";
 import { groupsQueryKeys } from "./useGroups";
 
 export const adminDirectoryQueryKeys = {
@@ -34,7 +33,7 @@ async function invalidateDirectoryQueries(
 export function useAdminUsersQuery(enabled: boolean) {
   return useQuery({
     queryKey: adminDirectoryQueryKeys.users,
-    queryFn: () => apiGet("/api/admin/users", UsersResponseSchema),
+    queryFn: () => getAdminUsers(),
     enabled,
   });
 }
@@ -42,7 +41,7 @@ export function useAdminUsersQuery(enabled: boolean) {
 export function useAdminGroupsQuery(enabled: boolean) {
   return useQuery({
     queryKey: adminDirectoryQueryKeys.groups,
-    queryFn: () => apiGet("/api/admin/groups", AdminGroupsResponseSchema),
+    queryFn: () => getAdminGroups(),
     enabled,
   });
 }
@@ -50,8 +49,7 @@ export function useAdminGroupsQuery(enabled: boolean) {
 export function useCreateAdminUserMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateAdminUserRequest) =>
-      apiPost("/api/admin/users", UserResponseSchema, input),
+    mutationFn: (input: CreateAdminUserRequest) => postAdminUser(input),
     onSuccess: async () => {
       await invalidateDirectoryQueries(queryClient);
     },
@@ -61,8 +59,7 @@ export function useCreateAdminUserMutation() {
 export function useCreateAdminGroupMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateAdminGroupRequest) =>
-      apiPost("/api/admin/groups", GroupResponseSchema, input),
+    mutationFn: (input: CreateAdminGroupRequest) => postAdminGroup(input),
     onSuccess: async () => {
       await invalidateDirectoryQueries(queryClient);
     },
@@ -78,12 +75,7 @@ export function useAddGroupMemberMutation() {
     }: {
       groupId: string;
       userId: AddGroupMemberRequest["userId"];
-    }) =>
-      apiPost(
-        `/api/admin/groups/${groupId}/members`,
-        AdminMemberResponseSchema,
-        { userId },
-      ),
+    }) => postAdminGroupMember(groupId, { userId }),
     onSuccess: async () => {
       await invalidateDirectoryQueries(queryClient);
     },
@@ -94,10 +86,7 @@ export function useRemoveGroupMemberMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ groupId, userId }: { groupId: string; userId: string }) =>
-      apiDelete(
-        `/api/admin/groups/${groupId}/members/${userId}`,
-        OkResponseSchema,
-      ),
+      deleteAdminGroupMember(groupId, userId),
     onSuccess: async () => {
       await invalidateDirectoryQueries(queryClient);
     },

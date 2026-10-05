@@ -6,9 +6,16 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
 	resolve: {
-		alias: {
-			"@shared": path.resolve(root, "./shared"),
-		},
+		alias: [
+			{
+				find: "@shared",
+				replacement: path.resolve(root, "./shared"),
+			},
+			{
+				find: /^@\//,
+				replacement: `${path.resolve(root, "./src/react-app")}/`,
+			},
+		],
 	},
 	test: {
 		name: "unit",

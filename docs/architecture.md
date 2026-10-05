@@ -10,7 +10,7 @@
                 └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
 
-同一オリジンの Cookie 認証。Push は Queue 経由で非同期。HTTP の形は `openapi/api.yaml`、実行時バリデーションは Orval 生成 Zod を `shared/schemas.ts` 経由で各ルートが `schema.safeParse` する。
+同一オリジンの Cookie 認証。Push は Queue 経由で非同期。HTTP の形は `openapi/api.yaml`、Worker の実行時バリデーションは Orval 生成 Zod を `shared/schemas.ts` 経由で各ルートが `schema.safeParse` する。フロントの Orval axios-functions クライアントは型とパスのみ生成し、成功 body は再 parse しない。
 
 作業対象の機能ドキュメントだけ読む。
 

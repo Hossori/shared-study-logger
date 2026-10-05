@@ -11,13 +11,8 @@ import {
   isClientApiVersionSupported,
   parseClientApiVersion,
 } from "@shared/client-api-version";
-import { OkResponseSchema } from "@shared/schemas";
 import {
   apiClient,
-  apiDelete,
-  apiGet,
-  apiPatch,
-  apiPost,
   ClientUpdateRequiredError,
 } from "../../src/react-app/lib/api";
 import {
@@ -74,10 +69,10 @@ describe("API client version contract", () => {
     };
 
     await Promise.all([
-      apiGet("/api/get", OkResponseSchema),
-      apiPost("/api/post", OkResponseSchema, { value: "post" }),
-      apiPatch("/api/patch", OkResponseSchema, { value: "patch" }),
-      apiDelete("/api/delete", OkResponseSchema, { value: "delete" }),
+      apiClient.get("/api/get"),
+      apiClient.post("/api/post", { value: "post" }),
+      apiClient.patch("/api/patch", { value: "patch" }),
+      apiClient.delete("/api/delete", { data: { value: "delete" } }),
     ]);
 
     expect(receivedConfigs).toHaveLength(4);
@@ -116,12 +111,12 @@ describe("API client version contract", () => {
     };
 
     try {
-      await expect(apiGet("/api/protected", OkResponseSchema)).rejects.toMatchObject({
+      await expect(apiClient.get("/api/protected")).rejects.toMatchObject({
         name: "ClientUpdateRequiredError",
         status: 426,
         body,
       });
-      await expect(apiGet("/api/protected", OkResponseSchema)).rejects.toBeInstanceOf(
+      await expect(apiClient.get("/api/protected")).rejects.toBeInstanceOf(
         ClientUpdateRequiredError,
       );
       expect(event).toEqual({ status: 426, body });

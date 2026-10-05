@@ -25,4 +25,23 @@ export default defineConfig({
       },
     },
   },
+  client: {
+    input: {
+      target: "./openapi/api.yaml",
+    },
+    output: {
+      client: "axios-functions",
+      mode: "single",
+      target: "./src/react-app/api/client.ts",
+      override: {
+        mutator: {
+          path: "./src/react-app/lib/api-mutator.ts",
+          name: "apiMutator",
+        },
+        axios: {
+          includeHttpResponseReturnType: false,
+        },
+      },
+    },
+  },
 });

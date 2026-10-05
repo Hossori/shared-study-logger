@@ -4,14 +4,17 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  OkResponseSchema,
-  UserResponseSchema,
+  ApiError,
+  getAuthMe,
+  patchAuthMe,
+  postAuthLogin,
+  postAuthLogout,
+  postAuthPassword,
   type ChangePasswordRequest,
   type LoginRequest,
   type UpdateProfileRequest,
   type User,
-} from "@shared/schemas";
-import { apiGet, apiPatch, apiPost, ApiError } from "../../../lib/api";
+} from "@/api";
 import { userQueryKeys } from "./useUser";
 
 export const authQueryKeys = {
@@ -26,7 +29,7 @@ export function useMeQuery() {
     queryKey: authQueryKeys.me,
     queryFn: async (): Promise<User | null> => {
       try {
-        const { user } = await apiGet("/api/auth/me", UserResponseSchema);
+        const { user } = await getAuthMe();
         return user;
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
@@ -46,8 +49,7 @@ export function useMeQuery() {
 export function useLoginMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: LoginRequest) =>
-      apiPost("/api/auth/login", UserResponseSchema, input),
+    mutationFn: (input: LoginRequest) => postAuthLogin(input),
     onSuccess: async ({ user }) => {
       queryClient.setQueryData(authQueryKeys.me, user);
       await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
@@ -61,7 +63,7 @@ export function useLoginMutation() {
 export function useLogoutMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
+    mutationFn: () => postAuthLogout(),
     onSuccess: async () => {
       queryClient.setQueryData(authQueryKeys.me, null);
       await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
@@ -75,8 +77,7 @@ export function useLogoutMutation() {
 export function useUpdateProfileMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: UpdateProfileRequest) =>
-      apiPatch("/api/auth/me", UserResponseSchema, input),
+    mutationFn: (input: UpdateProfileRequest) => patchAuthMe(input),
     onSuccess: async ({ user }) => {
       queryClient.setQueryData(authQueryKeys.me, user);
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me }); // ログインユーザーの認証情報をstaleにマーク
@@ -93,7 +94,6 @@ export function useUpdateProfileMutation() {
  */
 export function useChangePasswordMutation() {
   return useMutation({
-    mutationFn: (input: ChangePasswordRequest) =>
-      apiPost("/api/auth/password", OkResponseSchema, input),
+    mutationFn: (input: ChangePasswordRequest) => postAuthPassword(input),
   });
 }
