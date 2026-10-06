@@ -55,6 +55,8 @@
 ブラウザアプリとService Workerは、全APIリクエストに
 `X-Client-Api-Version` を付与する。値の正本は
 `shared/client-api-version.ts` の `CLIENT_API_VERSION` である。
+OAS の `info.version` とヘッダの `pattern` は、この定数と
+`CLIENT_API_VERSION_PATTERN_SOURCE` に揃える。`pnpm openapi:check` がずれを失敗にする。
 
 API互換性を壊すリリースでは、同ファイルの
 `MIN_SUPPORTED_CLIENT_API_VERSION` を現行クライアント版まで引き上げる。値が最小版未満、

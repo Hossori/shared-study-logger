@@ -4,6 +4,7 @@ import {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { afterEach, describe, expect, it } from "vitest";
+import { clientApiVersionMismatch } from "../../scripts/check-openapi-version.mjs";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
@@ -44,6 +45,10 @@ function successfulResponse(
 }
 
 describe("client API version contract", () => {
+	it("matches the OpenAPI info.version and header pattern", () => {
+		expect(clientApiVersionMismatch()).toEqual([]);
+	});
+
   it("parses and compares strict semantic versions", () => {
     expect(parseClientApiVersion("1.2.3")).toEqual([1, 2, 3]);
     expect(parseClientApiVersion("1.02.3")).toBeNull();

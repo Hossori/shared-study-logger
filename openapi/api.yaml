@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Shared Study Logger API
-  version: 1.0.0
+  version: 3.0.0
 servers:
   - url: /
 paths:
@@ -638,8 +638,9 @@ components:
       name: X-Client-Api-Version
       in: header
       required: true
+      description: クライアント API 版。info.version および CLIENT_API_VERSION と同じ major.minor.patch。
       schema:
-        type: string
+        $ref: "#/components/schemas/ClientApiVersion"
     groupId:
       name: groupId
       in: path
@@ -687,6 +688,11 @@ components:
       properties:
         error:
           type: string
+
+    ClientApiVersion:
+      type: string
+      description: major.minor.patch。CLIENT_API_VERSION_PATTERN_SOURCE と同じ。
+      pattern: '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
 
     ResourceId:
       type: string

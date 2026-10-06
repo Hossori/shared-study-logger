@@ -2,6 +2,15 @@ import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { clientApiVersionMismatch } from "./check-openapi-version.mjs";
+
+const versionProblems = clientApiVersionMismatch();
+if (versionProblems.length > 0) {
+  for (const problem of versionProblems) {
+    console.error(`openapi:check failed: ${problem}`);
+  }
+  process.exit(1);
+}
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const generatedPath = join(root, "shared/generated/api.zod.ts");

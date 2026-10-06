@@ -77,7 +77,7 @@ Push 実送信・購読 UI・PWA / Service Worker / iOS 実機は [manual-checkl
 | `pnpm run format:check` | Prettier と Tailwind クラス順序 |
 | `pnpm run check:zod-deprecated` | Zod の文字列フォーマット API |
 | `pnpm run check:d1-migrations` | D1: CASCADE 親 DROP の子退避漏れ |
-| `pnpm openapi:check` | Orval 再生成で `shared/generated/api.zod.ts` が変わらないこと |
+| `pnpm openapi:check` | Orval 再生成で `shared/generated/api.zod.ts` が変わらないこと。`info.version` とヘッダ pattern がクライアント API 版と一致すること |
 | `pnpm run typecheck` | `tsc -b` |
 
 - 画面契約（UI・アクセシブルネーム・ルーティング・記録 CRUD）に触れる変更では `pnpm test:e2e` を含める
