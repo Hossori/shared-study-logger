@@ -6,6 +6,7 @@
 
 - 購読はマイページの `PushSettingsCard` からのユーザー操作（iOS は standalone 必須）
 - 1 人 1 メッセージ。410/404 なら購読行を削除
+- 購読 `endpoint` は `https:` のみ（最大 2048 文字）。`POST /api/push/subscribe` で検証
 - VAPID 実装は `@pushforge/builder`（Web Crypto）
 
 ## 流れ

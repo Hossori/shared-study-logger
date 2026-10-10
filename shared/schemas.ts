@@ -298,8 +298,12 @@ export type ListStudyRecordsQuery = z.infer<typeof ListStudyRecordsQuerySchema>;
 
 // ---- Push通知 ---------------------------------------------------------------
 
-// ブラウザの `PushSubscription.toJSON()` の形に合わせたスキーマ
-export const PushSubscriptionSchema = PushSubscriptionSchemaGen;
+// ブラウザの `PushSubscription.toJSON()` の形に合わせたスキーマ（endpoint は https のみ）
+const pushSubscriptionEndpointSchema = z.url({ protocol: /^https$/ }).max(2048);
+
+export const PushSubscriptionSchema = PushSubscriptionSchemaGen.extend({
+  endpoint: pushSubscriptionEndpointSchema,
+});
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
 export const VapidPublicKeyResponseSchema = VapidPublicKeyResponseSchemaGen;

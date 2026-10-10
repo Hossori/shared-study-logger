@@ -64,6 +64,8 @@ export async function sendPushNotification(
     method: "POST",
     headers,
     body,
+    redirect: "manual",
+    signal: AbortSignal.timeout(10_000),
   });
 
   const isGone = response.status === 410 || response.status === 404;
