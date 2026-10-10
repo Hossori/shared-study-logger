@@ -1,11 +1,10 @@
 # API エンドポイント一覧
 
-本ドキュメントが API 一覧の正本です。概要・機能索引は
-[architecture.md](architecture.md)
-を参照。
+エンドポイント一覧の説明は本ファイル、HTTP の形の正本は [openapi/api.yaml](../openapi/api.yaml)、実行時スキーマは Orval 生成 Zod（[shared/generated/api.zod.ts](../shared/generated/api.zod.ts)）。trim・横断制約・クエリ正規化など OAS に載せない差分は [shared/schemas.ts](../shared/schemas.ts)。概要・機能索引は [architecture.md](architecture.md) を参照。
 
 | メソッド | パス | 認証 | 概要 |
 | --- | --- | --- | --- |
+| GET | `/api/` | 不要 | ヘルス（`{ name: "Cloudflare" }`。セッションは不要。`X-Client-Api-Version` は必要） |
 | POST | `/api/auth/login` | 不要 | ログイン（email/password検証、セッションCookie発行） |
 | POST | `/api/auth/logout` | 必要 | ログアウト（KVセッション削除、Cookieクリア） |
 | GET | `/api/auth/me` | 必要 | ログイン中ユーザー情報取得（`bio` / `avatarKey` / `role` 含む） |
@@ -57,6 +56,8 @@
 ブラウザアプリとService Workerは、全APIリクエストに
 `X-Client-Api-Version` を付与する。値の正本は
 `shared/client-api-version.ts` の `CLIENT_API_VERSION` である。
+OAS の `info.version` とヘッダの `pattern` は、この定数と
+`CLIENT_API_VERSION_PATTERN_SOURCE` に揃える。`pnpm openapi:check` がずれを失敗にする。
 
 API互換性を壊すリリースでは、同ファイルの
 `MIN_SUPPORTED_CLIENT_API_VERSION` を現行クライアント版まで引き上げる。値が最小版未満、

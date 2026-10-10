@@ -10,9 +10,11 @@ import {
   adminGroupsRoutes,
   adminUsersRoutes,
 } from "./routes/admin-directory";
+import { HealthResponseSchema } from "@shared/schemas";
 import { requireAuth, type AuthVariables } from "./middleware/requireAuth";
 import { requireClientApiVersion } from "./middleware/requireClientApiVersion";
 import { getPushSubscriptionsForUser } from "./lib/db";
+import { jsonParsed } from "./lib/httpSchema";
 import { sendPushNotification, type PushQueueMessage } from "./lib/push";
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
@@ -21,9 +23,11 @@ const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 // 認証・Pushを含め、古いクライアントは他のミドルウェアやルートへ到達させない。
 app.use("/api/*", requireClientApiVersion);
 
-app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
+app.get("/api/", (c) =>
+  jsonParsed(c, HealthResponseSchema, { name: "Cloudflare" }),
+);
 
-// 認証必須: POST /api/auth/login と GET /api/push/vapid-public-key のみ公開。
+// 認証不要: GET /api/、POST /api/auth/login、GET /api/push/vapid-public-key。
 // それ以外の /api/auth/*（logout, me, PATCH /me, POST /password）と /api/push/subscribe、
 // /api/users/*、/api/notifications、/api/admin/* は各ルートファイル内で
 // requireAuth を個別に適用し、/api/groups 以下は丸ごと requireAuth 必須にする。

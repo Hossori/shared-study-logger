@@ -4,6 +4,7 @@ import {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { afterEach, describe, expect, it } from "vitest";
+import { clientApiVersionMismatch } from "../../scripts/check-openapi-version.mjs";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
@@ -44,6 +45,10 @@ function successfulResponse(
 }
 
 describe("client API version contract", () => {
+	it("matches the OpenAPI info.version and header pattern", () => {
+		expect(clientApiVersionMismatch()).toEqual([]);
+	});
+
   it("parses and compares strict semantic versions", () => {
     expect(parseClientApiVersion("1.2.3")).toEqual([1, 2, 3]);
     expect(parseClientApiVersion("1.02.3")).toBeNull();
@@ -86,6 +91,25 @@ describe("API client version contract", () => {
         CLIENT_API_VERSION,
       );
     }
+  });
+
+  it("rejects a 2xx body that does not match the response schema", async () => {
+    apiClient.defaults.adapter = async (config) => {
+      const response: AxiosResponse = {
+        data: { ok: false },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config,
+      };
+      return response;
+    };
+
+    await expect(apiGet("/api/get", OkResponseSchema)).rejects.toMatchObject({
+      name: "ApiError",
+      status: 0,
+      body: { error: "invalid_response" },
+    });
   });
 
   it("notifies subscribers and rejects a dedicated error for client_update_required", async () => {
