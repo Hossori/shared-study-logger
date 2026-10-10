@@ -2,7 +2,7 @@
  * 学習記録の投稿モーダル（学習日時・学習時間(任意)・タイトル・メモ(任意)）。
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
-import { useCallback, useLayoutEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useCreateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
@@ -18,22 +18,12 @@ interface PostRecordModalProps {
   onClose: () => void;
 }
 
-type PostRecordFormBinding = {
-  handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  errorMessage: string | null;
-  isPending: boolean;
-};
-
-function PostRecordFormBody({
+function PostRecordModalContent({
   groupId,
+  open,
   onClose,
-  onBindingChange,
-}: {
-  groupId: string | null;
-  onClose: () => void;
-  onBindingChange: (binding: PostRecordFormBinding | null) => void;
-}) {
-  const { mutateAsync, isPending, isError } = useCreateRecordMutation(groupId);
+}: PostRecordModalProps) {
+  const createRecordMutation = useCreateRecordMutation(groupId);
   const [clientError, setClientError] = useState<string | null>(null);
 
   const [values, setValues] = useState<RecordFormValues>({
@@ -43,47 +33,45 @@ function PostRecordFormBody({
     durationMinutes: null,
   });
 
-  const handleSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      const parsed = CreateRecordFormSchema.safeParse(
-        buildRecordFormSource(values),
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const parsed = CreateRecordFormSchema.safeParse(
+      buildRecordFormSource(values),
+    );
+    if (!parsed.success) {
+      setClientError(
+        "投稿に失敗しました。入力内容を確認してもう一度お試しください。",
       );
-      if (!parsed.success) {
-        setClientError(
-          "投稿に失敗しました。入力内容を確認してもう一度お試しください。",
-        );
-        return;
-      }
-      setClientError(null);
+      return;
+    }
+    setClientError(null);
 
-      try {
-        await mutateAsync(parsed.data);
-        onClose();
-      } catch {
-        // エラーメッセージはmutation.isErrorから表示するため、ここでは握りつぶす
-      }
-    },
-    [mutateAsync, onClose, values],
-  );
-
-  const errorMessage =
-    clientError ??
-    (isError
-      ? "投稿に失敗しました。入力内容を確認してもう一度お試しください。"
-      : null);
-
-  useLayoutEffect(() => {
-    onBindingChange({
-      handleSubmit,
-      errorMessage,
-      isPending,
-    });
-    return () => onBindingChange(null);
-  }, [errorMessage, handleSubmit, isPending, isError, onBindingChange]);
+    try {
+      await createRecordMutation.mutateAsync(parsed.data);
+      onClose();
+    } catch {
+      // エラーメッセージはmutation.isErrorから表示するため、ここでは握りつぶす
+    }
+  };
 
   return (
-    <RecordFormFields idPrefix="post" values={values} onChange={setValues} />
+    <RecordModalShell
+      open={open}
+      title="学習記録を投稿"
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      errorMessage={
+        clientError ??
+        (createRecordMutation.isError
+          ? "投稿に失敗しました。入力内容を確認してもう一度お試しください。"
+          : null)
+      }
+      isPending={createRecordMutation.isPending}
+      submitLabel="投稿する"
+      pendingLabel="投稿中..."
+    >
+      <RecordFormFields idPrefix="post" values={values} onChange={setValues} />
+    </RecordModalShell>
   );
 }
 
@@ -94,13 +82,6 @@ export default function PostRecordModal({
 }: PostRecordModalProps) {
   const [session, setSession] = useState(0);
   const [prevOpen, setPrevOpen] = useState(open);
-  const [formBinding, setFormBinding] = useState<PostRecordFormBinding | null>(
-    null,
-  );
-  const onBindingChange = useCallback(
-    (binding: PostRecordFormBinding | null) => setFormBinding(binding),
-    [],
-  );
 
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -110,24 +91,11 @@ export default function PostRecordModal({
   }
 
   return (
-    <RecordModalShell
+    <PostRecordModalContent
+      key={session}
+      groupId={groupId}
       open={open}
-      title="学習記録を投稿"
       onClose={onClose}
-      onSubmit={(event) => {
-        formBinding?.handleSubmit(event);
-      }}
-      errorMessage={formBinding?.errorMessage ?? null}
-      isPending={formBinding?.isPending ?? false}
-      submitLabel="投稿する"
-      pendingLabel="投稿中..."
-    >
-      <PostRecordFormBody
-        key={session}
-        groupId={groupId}
-        onClose={onClose}
-        onBindingChange={onBindingChange}
-      />
-    </RecordModalShell>
+    />
   );
 }
