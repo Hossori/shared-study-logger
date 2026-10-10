@@ -49,3 +49,5 @@ OAS に載せきれないものは [shared/schemas.ts](../shared/schemas.ts) の
 Hono ルートは生成されないためパスのドリフトは worker テストと OAS の両方を見る。axios / TanStack Query クライアントは生成しない。Zod Mini は既存 `ZodType` との互換とバンドル都合で不採用。`strictObject` は現行の未知キー strip と非互換なので不採用（`z.object` の strip を維持）。
 
 代替として `@hono/zod-openapi`（Zod 正本から OAS を出す）はあるが、今回の学習目的は OAS 正本なので Orval を採る。エラーコードごとの網羅 OAS 分岐は書かず、ハンドラ側に残す。
+
+画面の送信前は機能横の手書き UX スキーマを `safeParse` し、成功値を `@shared/schemas` のリクエストスキーマ（overlay 含む）へ `pipe` してから送る。レスポンスは Orval 生成 Zod を `parse` する（フロントは `src/react-app/lib/api.ts`、Worker 成功 JSON は `jsonParsed`）。不一致は成功ボディにしない。Worker の受信ボディは HTTP 契約スキーマの `safeParse` で 400 とし、UX スキーマではない。

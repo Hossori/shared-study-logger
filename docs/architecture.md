@@ -10,7 +10,7 @@
                 └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
 
-同一オリジンの Cookie 認証。Push は Queue 経由で非同期。HTTP の形は `openapi/api.yaml`、実行時バリデーションは Orval 生成 Zod を `shared/schemas.ts` 経由で各ルートが `schema.safeParse` する。
+同一オリジンの Cookie 認証。Push は Queue 経由で非同期。HTTP の形は `openapi/api.yaml`、Zod の使い分け（UX / リクエスト / レスポンス）は [design-decisions.md](design-decisions.md) の Orval 節を参照。
 
 作業対象の機能ドキュメントだけ読む。
 

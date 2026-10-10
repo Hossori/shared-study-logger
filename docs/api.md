@@ -49,7 +49,7 @@
 所属削除でメンバーでない場合は 404 `{ error: "not_member" }`。グループ/ユーザー不存在は 404 `{ error: "not_found" }`。
 新しいエンドポイントを追加する際はどちらの方式にするか `index.ts` を確認すること。
 
-成功ボディは `shared/schemas.ts` のレスポンススキーマと一致する。`createdAt` / `updatedAt` / `studyDatetime` は ISO 8601（`toISOString()`）。Worker は返す直前に、フロントは受け取った直後にそのスキーマで検証する。
+成功ボディは `shared/schemas.ts` のレスポンススキーマと一致する。`createdAt` / `updatedAt` / `studyDatetime` は ISO 8601（`toISOString()`）。成功 JSON の検証方針は [design-decisions.md](design-decisions.md) の Orval 節を参照。
 
 ## クライアントAPI版
 

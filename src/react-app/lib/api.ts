@@ -3,7 +3,7 @@
  * Cookie認証を常に送信する。非2xxレスポンスはレスポンスインターセプターで`ApiError`に変換する。
  */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import type { ZodType } from "zod";
+import { ZodError, type ZodType } from "zod";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
@@ -97,11 +97,14 @@ apiClient.interceptors.response.use(
 );
 
 function parseApiData<T>(schema: ZodType<T>, data: unknown): T {
-  const parsed = schema.safeParse(data);
-  if (!parsed.success) {
-    throw new ApiError(0, { error: "invalid_response" });
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new ApiError(0, { error: "invalid_response" });
+    }
+    throw error;
   }
-  return parsed.data;
 }
 
 export function apiGet<T>(path: string, schema: ZodType<T>): Promise<T> {

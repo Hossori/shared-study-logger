@@ -44,10 +44,10 @@ import {
   useRemoveGroupMemberMutation,
 } from "./api/useAdminDirectory";
 import {
-  AddGroupMemberRequestSchema,
-  CreateAdminGroupRequestSchema,
-  CreateAdminUserRequestSchema,
-} from "@shared/schemas";
+  AddGroupMemberFormSchema,
+  CreateAdminGroupFormSchema,
+  CreateAdminUserFormSchema,
+} from "./adminDirectoryForm";
 
 function mutationErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -102,7 +102,7 @@ export default function AdminDirectoryPage() {
 
   const handleCreateGroup = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = CreateAdminGroupRequestSchema.safeParse({ name: groupName });
+    const parsed = CreateAdminGroupFormSchema.safeParse({ name: groupName });
     if (!parsed.success) {
       setGroupFormError("グループ名を入力してください。");
       return;
@@ -119,7 +119,7 @@ export default function AdminDirectoryPage() {
 
   const handleCreateUser = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = CreateAdminUserRequestSchema.safeParse({
+    const parsed = CreateAdminUserFormSchema.safeParse({
       email,
       password,
       displayName,
@@ -143,7 +143,7 @@ export default function AdminDirectoryPage() {
   const handleAddMember = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!effectiveGroupId || !selectedUserId) return;
-    const parsed = AddGroupMemberRequestSchema.safeParse({
+    const parsed = AddGroupMemberFormSchema.safeParse({
       userId: selectedUserId,
     });
     if (!parsed.success) return;
