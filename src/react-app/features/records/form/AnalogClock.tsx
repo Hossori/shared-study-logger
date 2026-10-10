@@ -108,10 +108,10 @@ export default function AnalogClock({
   const labelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const selectedDuringGestureRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
   const modeSwitchTimerRef = useRef<number | null>(null);
-  const skipInitialFocusRef = useRef(true);
+  const prevModeRef = useRef<AnalogClockMode>("hour");
   const [mode, setMode] = useState<AnalogClockMode>("hour");
-  const [capturing, setCapturing] = useState(false);
   const selectedMinute = snapToClockMinute(minute);
   const hourAngle = hourHandAngleDegrees(hour);
   const minuteAngle = minuteHandAngleDegrees(selectedMinute);
@@ -126,10 +126,8 @@ export default function AnalogClock({
   }, []);
 
   useLayoutEffect(() => {
-    if (skipInitialFocusRef.current) {
-      skipInitialFocusRef.current = false;
-      return;
-    }
+    if (prevModeRef.current === mode) return;
+    prevModeRef.current = mode;
     const selected = rootRef.current?.querySelector<HTMLButtonElement>(
       '[aria-pressed="true"]',
     );
@@ -160,23 +158,25 @@ export default function AnalogClock({
   );
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !event.isPrimary) return;
     selectedDuringGestureRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
-    setCapturing(true);
+    activePointerIdRef.current = event.pointerId;
     setValueFromPointer(event);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    if (event.pointerId !== activePointerIdRef.current) return;
     setValueFromPointer(event);
   };
 
-  const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerId !== activePointerIdRef.current) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    setCapturing(false);
-    if (mode === "hour" && selectedDuringGestureRef.current) {
+    const selectedDuringGesture = selectedDuringGestureRef.current;
+    if (mode === "hour" && selectedDuringGesture) {
       // pointerup 直後の click が新しい分ボタンに落ちないよう、次タスクで切り替える。
       modeSwitchTimerRef.current = window.setTimeout(() => {
         modeSwitchTimerRef.current = null;
@@ -184,9 +184,23 @@ export default function AnalogClock({
       }, 0);
       return;
     }
-    if (mode === "minute" && selectedDuringGestureRef.current) {
+    if (mode === "minute" && selectedDuringGesture) {
       onMinuteCommit?.();
     }
+  };
+
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerId !== activePointerIdRef.current) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    selectedDuringGestureRef.current = false;
+    activePointerIdRef.current = null;
+  };
+
+  const handleLostPointerCapture = () => {
+    selectedDuringGestureRef.current = false;
+    activePointerIdRef.current = null;
   };
 
   const selectHour = (nextHour: number) => {
@@ -240,12 +254,10 @@ export default function AnalogClock({
         aria-labelledby={labelId}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-        onPointerCancel={handlePointerEnd}
-        className={cn(
-          "relative aspect-square w-full select-none",
-          capturing && "touch-none",
-        )}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onLostPointerCapture={handleLostPointerCapture}
+        className="relative aspect-square w-full touch-none select-none"
       >
         <svg
           viewBox={`0 0 ${ANALOG_CLOCK_SIZE} ${ANALOG_CLOCK_SIZE}`}
@@ -268,33 +280,6 @@ export default function AnalogClock({
               strokeWidth={1}
             />
           ) : null}
-          {/* 秒メモリ */}
-          {/* {Array.from({ length: 60 }, (_, index) => {
-            const angle = index * 6;
-            const outer = polarToCartesian(
-              ANALOG_CLOCK_CENTER,
-              ANALOG_CLOCK_CENTER,
-              132,
-              angle,
-            );
-            const inner = polarToCartesian(
-              ANALOG_CLOCK_CENTER,
-              ANALOG_CLOCK_CENTER,
-              index % 5 === 0 ? 124 : 128,
-              angle,
-            );
-            return (
-              <line
-                key={index}
-                x1={inner.x}
-                y1={inner.y}
-                x2={outer.x}
-                y2={outer.y}
-                className="stroke-muted-foreground/70"
-                strokeWidth={index % 5 === 0 ? 2 : 1}
-              />
-            );
-          })} */}
           {mode === "minute" ? (
             <ClockHand
               angle={minuteAngle}
