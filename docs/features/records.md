@@ -23,6 +23,12 @@ API のペア規則・カーソルは [api.md](../api.md)。
 
 PTR: ホーム画面の `PullToRefresh` が `recordsQueryKeys.list(groupId)` を invalidate。ジェスチャの純関数は `src/react-app/app/shell/pullRefresh.ts` / `pullGesture.ts`。
 
+## 記録フォーム
+
+- 時計面は常時 `touch-none` で、タッチ・ペンのドラッグ選択に対応する。`pointercancel` では確定せず、主ボタン以外とマルチタッチは無視する。
+- 送信中（投稿・保存）は Escape・オーバーレイ・キャンセルでモーダルを閉じられない。
+- 投稿モーダルは開くたびに内側を再マウントし、入力値とエラー表示を初期化する。
+
 ## 変更するとき
 
 スキーマは `shared/schemas.ts`。画面契約なら `pnpm test:e2e`。API なら `pnpm test:worker`。[testing.md](../testing.md)。
