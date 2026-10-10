@@ -21,6 +21,7 @@ pnpm lint
 pnpm run format:check
 pnpm run check:zod-deprecated
 pnpm run check:d1-migrations
+pnpm run openapi:check
 ```
 
 ## 自動化する範囲
@@ -77,6 +78,7 @@ Push 実送信・購読 UI・PWA / Service Worker / iOS 実機は [manual-checkl
 | `pnpm run format:check` | Prettier と Tailwind クラス順序 |
 | `pnpm run check:zod-deprecated` | Zod の文字列フォーマット API |
 | `pnpm run check:d1-migrations` | D1: CASCADE 親 DROP の子退避漏れ |
+| `pnpm run openapi:check` | `openapi/api.yaml` と生成 Zod・クライアント API 版のずれ（失敗時は `pnpm openapi:generate`） |
 | `pnpm openapi:check` | Orval 再生成で `shared/generated/api.zod.ts` が変わらないこと。`info.version` とヘッダ pattern がクライアント API 版と一致すること |
 | `pnpm run typecheck` | `tsc -b` |
 
