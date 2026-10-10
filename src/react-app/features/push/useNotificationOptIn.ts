@@ -160,7 +160,7 @@ export function useNotificationOptIn(): NotificationOptInController {
         return;
       }
       try {
-        await postPushSubscription(parsed.data);
+        await subscribeMutation.mutateAsync(parsed.data);
       } catch (err) {
         console.error(err);
         try {

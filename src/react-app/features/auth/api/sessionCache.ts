@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { authQueryKeys } from "./useAuth";
+import { authQueryKeys } from "./authQueryKeys";
 
 /**
  * ログインユーザーに紐づく TanStack Query キャッシュを破棄する。

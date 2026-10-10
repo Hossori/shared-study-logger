@@ -89,7 +89,7 @@ export function useRecordsQuery(
         params.append("userIds", id);
       }
       return apiGet(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records?${params.toString()}`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records?${params.toString()}`,
         StudyRecordsResponseSchema,
       );
     },
@@ -105,7 +105,7 @@ export function useCreateRecordMutation(groupId: string | null) {
     mutationFn: (input: CreateStudyRecordRequest) => {
       if (!groupId) throw new Error("groupId is required");
       return apiPost(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records`,
         StudyRecordResponseSchema,
         input,
       );
@@ -130,7 +130,7 @@ export function useUpdateRecordMutation(groupId: string | null) {
     }) => {
       if (!groupId) throw new Error("groupId is required");
       return apiPatch(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records/${encodeURIComponent(recordId)}`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records/${encodeURIComponent(recordId)}`,
         StudyRecordResponseSchema,
         input,
       );
@@ -149,7 +149,7 @@ export function useDeleteRecordMutation(groupId: string | null) {
     mutationFn: (recordId: string) => {
       if (!groupId) throw new Error("groupId is required");
       return apiDelete(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records/${encodeURIComponent(recordId)}`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records/${encodeURIComponent(recordId)}`,
         OkResponseSchema,
       );
     },
@@ -170,7 +170,7 @@ export function useRecordReactionsQuery(
     queryKey: recordsQueryKeys.reactions(groupId, recordId),
     queryFn: () =>
       apiGet(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records/${encodeURIComponent(recordId)}/reactions`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records/${encodeURIComponent(recordId)}/reactions`,
         RecordReactionsResponseSchema,
       ),
     enabled: enabled && groupId !== null,
@@ -189,7 +189,7 @@ export function useAddRecordReactionMutation(groupId: string | null) {
     }) => {
       if (!groupId) throw new Error("groupId is required");
       return apiPost(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records/${encodeURIComponent(recordId)}/reactions`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records/${encodeURIComponent(recordId)}/reactions`,
         RecordReactionResponseSchema,
         { stamp },
       );
@@ -235,7 +235,7 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
     }) => {
       if (!groupId) throw new Error("groupId is required");
       return apiDelete(
-        `/api/groups/${encodeURIComponent(String(groupId))}/records/${encodeURIComponent(recordId)}/reactions/${encodeURIComponent(stamp)}`,
+        `/api/groups/${encodeURIComponent(groupId as string)}/records/${encodeURIComponent(recordId)}/reactions/${encodeURIComponent(stamp)}`,
         OkResponseSchema,
       );
     },

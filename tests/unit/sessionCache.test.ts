@@ -32,9 +32,10 @@ describe("clearUserScopedQueries", () => {
     expect(queryClient.getQueryData(["users", "other"])).toBeUndefined();
   });
 
-  it("notifies me observers when setQueryData(me, null)", async () => {
+  it("keeps me observer subscribed after clearUserScopedQueries and notifies on null", () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(authQueryKeys.me, sampleUser);
+    queryClient.setQueryData(["groups"], [{ id: "g1" }]);
 
     const observer = new QueryObserver(queryClient, {
       queryKey: authQueryKeys.me,
@@ -42,10 +43,20 @@ describe("clearUserScopedQueries", () => {
     });
     const listener = vi.fn();
     observer.subscribe(listener);
+    listener.mockClear();
+
+    clearUserScopedQueries(queryClient);
+
+    expect(queryClient.getQueryData(authQueryKeys.me)).toEqual(sampleUser);
+    expect(listener).not.toHaveBeenCalled();
 
     queryClient.setQueryData(authQueryKeys.me, null);
 
     expect(observer.getCurrentResult().data).toBeNull();
+    expect(listener).toHaveBeenCalled();
+    const lastCall = listener.mock.calls[listener.mock.calls.length - 1];
+    const lastResult = lastCall?.[0];
+    expect(lastResult?.data).toBeNull();
     observer.destroy();
   });
 });

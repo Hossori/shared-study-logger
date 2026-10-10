@@ -1,8 +1,8 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, type MutationFunctionContext } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import {
   authQueryKeys,
-  onLoginMutationSuccess,
+  loginMutationOptions,
 } from "../../src/react-app/features/auth/api/useAuth";
 import type { User } from "@shared/schemas";
 
@@ -23,13 +23,26 @@ const userB = {
   displayName: "B",
 } satisfies User;
 
-describe("onLoginMutationSuccess", () => {
-  it("clears non-me queries when user changes", async () => {
+function mutationContext(
+  queryClient: QueryClient,
+): MutationFunctionContext {
+  return { client: queryClient, meta: undefined };
+}
+
+describe("loginMutationOptions wiring", () => {
+  it("clears non-me queries when user changes via onSuccess", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(authQueryKeys.me, userA);
     queryClient.setQueryData(["groups"], [{ id: "g1" }]);
 
-    await onLoginMutationSuccess(queryClient, userB);
+    const { onSuccess } = loginMutationOptions(queryClient);
+    expect(onSuccess).toBeDefined();
+    await onSuccess!(
+      { user: userB },
+      { email: "", password: "" },
+      undefined,
+      mutationContext(queryClient),
+    );
 
     expect(queryClient.getQueryData(authQueryKeys.me)).toEqual(userB);
     expect(queryClient.getQueryData(["groups"])).toBeUndefined();
@@ -41,7 +54,13 @@ describe("onLoginMutationSuccess", () => {
     queryClient.setQueryData(["groups"], [{ id: "g1" }]);
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-    await onLoginMutationSuccess(queryClient, userA);
+    const { onSuccess } = loginMutationOptions(queryClient);
+    await onSuccess!(
+      { user: userA },
+      { email: "", password: "" },
+      undefined,
+      mutationContext(queryClient),
+    );
 
     expect(queryClient.getQueryData(["groups"])).toEqual([{ id: "g1" }]);
     expect(invalidateSpy).toHaveBeenCalled();

@@ -7,6 +7,7 @@ import {
   useQuery,
   useQueryClient,
   type QueryClient,
+  type UseMutationOptions,
 } from "@tanstack/react-query";
 import {
   OkResponseSchema,
@@ -17,12 +18,11 @@ import {
   type User,
 } from "@shared/schemas";
 import { apiGet, apiPatch, apiPost, ApiError } from "../../../lib/api";
+import { authQueryKeys } from "./authQueryKeys";
 import { clearUserScopedQueries } from "./sessionCache";
 import { userQueryKeys } from "./useUser";
 
-export const authQueryKeys = {
-  me: ["auth", "me"] as const,
-};
+export { authQueryKeys } from "./authQueryKeys";
 
 export async function onLoginMutationSuccess(
   queryClient: QueryClient,
@@ -40,6 +40,25 @@ export async function onLoginMutationSuccess(
 
 export function onLogoutMutationSettled(queryClient: QueryClient): void {
   queryClient.setQueryData(authQueryKeys.me, null);
+}
+
+export function loginMutationOptions(
+  queryClient: QueryClient,
+): UseMutationOptions<{ user: User }, Error, LoginRequest, unknown> {
+  return {
+    mutationFn: (input: LoginRequest) =>
+      apiPost("/api/auth/login", UserResponseSchema, input),
+    onSuccess: async ({ user }) => onLoginMutationSuccess(queryClient, user),
+  };
+}
+
+export function logoutMutationOptions(
+  queryClient: QueryClient,
+): UseMutationOptions<{ ok: true }, Error, void, unknown> {
+  return {
+    mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
+    onSettled: () => onLogoutMutationSettled(queryClient),
+  };
 }
 
 /**
@@ -69,11 +88,7 @@ export function useMeQuery() {
  */
 export function useLoginMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: LoginRequest) =>
-      apiPost("/api/auth/login", UserResponseSchema, input),
-    onSuccess: async ({ user }) => onLoginMutationSuccess(queryClient, user),
-  });
+  return useMutation(loginMutationOptions(queryClient));
 }
 
 /**
@@ -81,10 +96,7 @@ export function useLoginMutation() {
  */
 export function useLogoutMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
-    onSettled: () => onLogoutMutationSettled(queryClient),
-  });
+  return useMutation(logoutMutationOptions(queryClient));
 }
 
 /**

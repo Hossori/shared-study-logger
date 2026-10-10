@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { isSessionExpiredError } from "../../lib/api";
-import { authQueryKeys } from "./api/useAuth";
+import { authQueryKeys } from "./api/authQueryKeys";
 
 /**
  * セッション失効（401 unauthorized 等）を横断検知し、ログイン中ユーザー cache を null にする。

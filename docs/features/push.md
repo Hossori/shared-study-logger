@@ -12,13 +12,13 @@
 
 1. `Notification.requestPermission` → `pushManager.subscribe`
 2. `POST /api/push/subscribe` で endpoint をキーに upsert
-
-ログアウト時（`ProfileMenu`）はログアウト API の前に `unsubscribePushOnLogout` で DELETE + ブラウザ購読解除を試みる（上限約 5 秒、失敗してもログアウトは続行）。401 失効時は Cookie が使えないためサーバー DELETE は行わず、ブラウザ側の購読だけ残る場合がある。
-
-マウント時に既存の Push 購読があれば、ユーザー操作なしで `POST /api/push/subscribe` により再紐付けする（TanStack Query の `["push","resync",endpoint]` で重複排除）。`Notification.permission === "denied"` のときは再 POST せず UI は案内のみ（Switch 無効）。
 3. 投稿成功時に投稿者以外を enqueue
 4. `queue()` が購読ごとに送信し `message.ack()`
 5. SW が `showNotification`。`notificationclick` で既存タブへ `postMessage`（`shared/sw-messages.ts`）し、一覧を `resetQueries`
+
+ログアウト時（`ProfileMenu`）はログアウト API の前に `unsubscribePushOnLogout` で DELETE + ブラウザ購読解除を試みる（上限約 5 秒、失敗してもログアウトは続行）。401 失効時は Cookie が使えないためサーバー DELETE は行わず、ブラウザ側の購読だけ残る場合がある。
+
+マウント時に既存の Push 購読があれば、マイページの `PushSettingsCard` やヘッダー通知まわりのマウント時に、ユーザー操作なしで `POST /api/push/subscribe` により再紐付けする。TanStack Query の `["push","resync",endpoint]`（`staleTime: Infinity`）により、同一 query キャッシュ（gcTime）内では重複 POST を抑える。`Notification.permission === "denied"` のときは再 POST せず UI は案内のみ（Switch 無効）。
 
 `urlBase64ToUint8Array` はフロントと SW で別バンドルのため両方にある。
 
