@@ -721,6 +721,23 @@ describe("records routes", () => {
 		expect(sameEnd.map((r) => r.id)).toEqual(idsDesc);
 	});
 
+	it("returns 400 for cursor with invalid sortKey format", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const badSortKeyCursor = btoa("2026-08-01T12:00:00.000Z|record-1");
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records?cursor=${encodeURIComponent(badSortKeyCursor)}`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(400);
+	});
+
 	it("returns 400 for old 3-part cursor", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,
@@ -873,6 +890,84 @@ describe("records routes", () => {
 		expect(page2.records).toHaveLength(1);
 		expect(page2.records[0]!.userId).toBe(SEED.admin.id);
 		expect(page2.records[0]!.title).toBe("Filter page 2");
+	});
+
+	it("lists 100 records with reaction summaries without exceeding D1 bind limits", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const { cookie: testCookie } = await loginAs(
+			workerFetch,
+			SEED.testUser.email,
+			SEED.testUser.password,
+		);
+
+		const now = "2026-08-10T10:00:00.000Z";
+		const insertStatements = [];
+		const recordIds: string[] = [];
+		for (let i = 0; i < 100; i++) {
+			const id = crypto.randomUUID();
+			recordIds.push(id);
+			insertStatements.push(
+				env.DB.prepare(
+					`INSERT INTO study_records
+            (id, group_id, user_id, study_datetime, title, duration_minutes, memo, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				).bind(
+					id,
+					SEED.groupMember,
+					SEED.admin.id,
+					now,
+					`Bulk record ${i}`,
+					30,
+					null,
+					now,
+					now,
+				),
+			);
+		}
+		await env.DB.batch(insertStatements);
+
+		await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records/${recordIds[0]}/reactions`,
+				{
+					method: "POST",
+					headers: {
+						cookie: testCookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({ stamp: "thumbs_up" }),
+				},
+			),
+		);
+
+		const listRes = await workerFetch(
+			new Request(
+				`http://example.com/api/groups/${SEED.groupMember}/records?limit=100`,
+				{ headers: { cookie } },
+			),
+		);
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as {
+			records: Array<{
+				id: string;
+				reactions: Array<{ stamp: string; count: number; reactedByMe: boolean }>;
+			}>;
+		};
+		expect(list.records).toHaveLength(100);
+		const reacted = list.records.find((r) => r.id === recordIds[0]);
+		expect(reacted?.reactions).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					stamp: "thumbs_up",
+					count: 1,
+					reactedByMe: false,
+				}),
+			]),
+		);
 	});
 
 	it("returns 403 for non-member even with userIds", async () => {
