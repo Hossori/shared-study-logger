@@ -163,7 +163,7 @@ export default function AnalogClock({
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
-      return;
+      // capture できなくてもタップ選択は成立させる（ドラッグ追従のみ劣化する）
     }
     activePointerIdRef.current = event.pointerId;
     setValueFromPointer(event);
