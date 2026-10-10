@@ -5,12 +5,8 @@ import { z } from "zod";
 import {
   CreateStudyRecordRequestSchema,
   DURATION_MINUTES_MAX,
-  RECORD_MEMO_MAX,
-  RECORD_TITLE_MAX,
   UpdateStudyRecordRequestSchema,
 } from "@shared/schemas";
-
-export { RECORD_MEMO_MAX, RECORD_TITLE_MAX };
 import type { StudyRecord } from "@shared/schemas";
 import { applyClockMinuteSnap } from "./analogClockUtils";
 

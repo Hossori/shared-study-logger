@@ -160,7 +160,11 @@ export default function AnalogClock({
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !event.isPrimary) return;
     selectedDuringGestureRef.current = false;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      return;
+    }
     activePointerIdRef.current = event.pointerId;
     setValueFromPointer(event);
   };
@@ -172,10 +176,11 @@ export default function AnalogClock({
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerId !== activePointerIdRef.current) return;
+    const selectedDuringGesture = selectedDuringGestureRef.current;
+    activePointerIdRef.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    const selectedDuringGesture = selectedDuringGestureRef.current;
     if (mode === "hour" && selectedDuringGesture) {
       // pointerup 直後の click が新しい分ボタンに落ちないよう、次タスクで切り替える。
       modeSwitchTimerRef.current = window.setTimeout(() => {
@@ -198,7 +203,10 @@ export default function AnalogClock({
     activePointerIdRef.current = null;
   };
 
-  const handleLostPointerCapture = () => {
+  const handleLostPointerCapture = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    if (event.pointerId !== activePointerIdRef.current) return;
     selectedDuringGestureRef.current = false;
     activePointerIdRef.current = null;
   };

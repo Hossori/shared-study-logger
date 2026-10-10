@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { RECORD_MEMO_MAX, RECORD_TITLE_MAX } from "@shared/schemas";
 import {
   addDurationToClock,
   buildRecordFormSource,
   CreateRecordFormSchema,
-  RECORD_MEMO_MAX,
-  RECORD_TITLE_MAX,
   UpdateRecordFormSchema,
   clampDurationDraft,
   durationFromStartAndEndClock,
