@@ -198,7 +198,15 @@ self.addEventListener("pushsubscriptionchange", (event) => {
           applicationServerKey: urlBase64ToUint8Array(publicKey),
         });
         const json = newSubscription.toJSON();
-        await fetch("/api/push/subscribe", {
+        const p256dh = json.keys?.p256dh;
+        const auth = json.keys?.auth;
+        if (!p256dh || !auth) {
+          console.error(
+            "pushsubscriptionchange: missing p256dh or auth in subscription keys",
+          );
+          return;
+        }
+        const res = await fetch("/api/push/subscribe", {
           method: "POST",
           credentials: "include",
           headers: {
@@ -207,12 +215,15 @@ self.addEventListener("pushsubscriptionchange", (event) => {
           },
           body: JSON.stringify({
             endpoint: newSubscription.endpoint,
-            keys: {
-              p256dh: json.keys?.p256dh ?? "",
-              auth: json.keys?.auth ?? "",
-            },
+            keys: { p256dh, auth },
           }),
         });
+        if (!res.ok) {
+          console.error(
+            "pushsubscriptionchange: POST /api/push/subscribe failed",
+            res.status,
+          );
+        }
       } catch (error) {
         console.error(
           "Failed to resubscribe after pushsubscriptionchange",
