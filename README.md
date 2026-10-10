@@ -9,6 +9,7 @@
 [`docs/api.md`](docs/api.md)・
 [`docs/data-model.md`](docs/data-model.md)・
 [`docs/testing.md`](docs/testing.md)・
+`openapi/api.yaml`（HTTP 契約）・
 `migrations/` 配下のマイグレーションファイル（gitで管理されているもの）です。
 
 ## 主な機能
@@ -17,6 +18,9 @@
 - 所属グループの切り替え（複数グループに所属している場合）
 - 学習記録の投稿（学習日時・学習時間（任意）・タイトル・メモ）とカーソルページネーションによる一覧表示
 - ライト / ダークテーマ切替（未保存時は OS の `prefers-color-scheme` に従う）
+- 記録へのスタンプ（リアクション）、メンバー絞り込み
+- マイページでのプロフィール編集・パスワード変更、アプリ内お知らせ
+- 管理者画面（ユーザー・グループ・所属・お知らせの管理。`users.role = ADMIN` のみ）
 - 記録投稿時、同じグループの他メンバーへ Web Push 通知を送信（Cloudflare Queues 経由）
 - PWA 対応（ホーム画面への追加、Service Worker によるオフラインキャッシュ、Push 通知受信）
 
@@ -36,7 +40,7 @@
 | 非同期処理       | Cloudflare Queues（Push通知の非同期配信・DLQ付き）                                                                                    |
 | Push通知         | Web Push（VAPID）、`@pushforge/builder`                                                                                               |
 | PWA              | `vite-plugin-pwa`（`injectManifest`戦略）、Workbox                                                                                    |
-| バリデーション   | Zod（`shared/schemas.ts`でフロント・バックエンド共通定義）                                                                            |
+| バリデーション   | Zod（`openapi/api.yaml` を正本に Orval で `shared/generated/` を生成し、`shared/schemas.ts` が差分を補う。フロント・Worker 共通）    |
 
 ## データモデル
 
@@ -49,22 +53,25 @@ shared-study-logger/
   src/
     worker/            # Hono API + Cloudflare Queuesコンシューマ（バックエンド）
       index.ts           # fetch(Hono app) と queue() をexport
-      routes/            # auth / groups / records / push の各エンドポイント
-      lib/               # 認証・セッション・DBアクセス・Push送信のヘルパー
-      middleware/        # 認証ミドルウェア
+      routes/            # auth / users / groups / records / push / notifications / admin-* の各エンドポイント
+      lib/               # 認証・セッション・DBアクセス・Push送信・応答検証のヘルパー
+      middleware/        # 認証・管理者・クライアント API 版のミドルウェア
       types/env.d.ts     # wrangler typesが生成しないシークレットの型補完
     react-app/         # Reactフロントエンド
       app/               # 起動、ルータ、ガード、シェル、横断エフェクト
       pages/             # URL に対応する画面（複数 feature の合成）
       features/          # 認証・グループ・記録・通知・Push・PWA（他 feature を import しない）
       stores/            # アプリ全体の設定（preferencesStore。正本は localStorage）
-      components/        # 共有 UI。ui/ はドメイン非依存（Button, FormField, ErrorMessage）
+      components/        # 共有 UI。ui/ はドメイン非依存（shadcn 系の Button, Field, ErrorMessage 等）
       hooks/             # 共有 hook
       lib/               # api.ts(axios) / theme.ts / utils.ts（cn）
+  openapi/
+    api.yaml           # HTTP 契約の正本（変更後は pnpm openapi:generate）
   shared/
-    schemas.ts         # Zodスキーマ（Worker/フロント共通）
+    schemas.ts         # Zodスキーマのファサード（Worker/フロント共通。生成物 + 差分）
+    generated/         # Orval 生成の Zod（手編集しない）
   migrations/           # D1マイグレーション
-  scripts/seed-users.mjs # 初期ユーザー・グループ投入スクリプト
+  scripts/              # seed-users.mjs（初期ユーザー・グループ投入）と各種 check スクリプト
   public/
     sw.ts               # カスタムService Worker（injectManifestのソース）
     manifest.webmanifest
@@ -126,9 +133,10 @@ pnpm exec pushforge vapid
 pnpm seed
 ```
 
-`admin@example.com` / `ChangeMe123!` のサンプル管理者ユーザーと、それが所属する
-「サンプル学習グループ」がローカルD1に1件ずつ投入されます。再実行するとメールアドレスの
-UNIQUE制約でエラーになるため、再投入したい場合はローカルD1をリセットしてください。
+管理者（`admin@example.com` / `ChangeMe123!`）とテストユーザー（`test@example.com`）の
+2名、サンプルグループ3件、所属、動作確認用の学習記録（2つ目のグループに61件）がローカルD1に
+投入されます。固定IDと `INSERT OR IGNORE` で冪等なので再実行しても重複しません。
+ローカルD1を作り直して投入し直す場合は `pnpm seed:reset` を使います。
 
 ### 6. 開発サーバーの起動
 
