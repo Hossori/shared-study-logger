@@ -12,6 +12,7 @@ import {
   isSkipWaitingMessage,
   NOTIFICATION_CLICK_MESSAGE_TYPE,
 } from "@shared/sw-messages";
+import { getInstallMigrationAction } from "@shared/sw-lifecycle";
 import { getStudyRecordNotificationTag } from "@shared/notification-tags";
 import {
   CLIENT_API_VERSION,
@@ -48,9 +49,19 @@ async function savePwaUpdateMigrationMarker(): Promise<void> {
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    hasPwaUpdateMigrationMarker().then((hasMarker) => {
-      if (!hasMarker) return self.skipWaiting();
-    }),
+    (async () => {
+      const hasMarker = await hasPwaUpdateMigrationMarker();
+      const hasActiveWorker = Boolean(self.registration.active);
+      const action = getInstallMigrationAction({ hasMarker, hasActiveWorker });
+
+      if (action === "skip-waiting") {
+        await self.skipWaiting();
+        return;
+      }
+      if (action === "save-marker") {
+        await savePwaUpdateMigrationMarker();
+      }
+    })(),
   );
 });
 
