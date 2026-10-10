@@ -20,8 +20,8 @@
 
 ## Service Worker
 
-- **`push`**: 受信 JSON は `normalizePushPayload` で title / body / data を正規化してから `showNotification` する。
-- **`pushsubscriptionchange`**: 新しい購読を取得したあと `POST /api/push/subscribe` する。応答が `ok` でない場合、または `p256dh` / `auth` が欠けている場合はサーバーへ送らず `console.error` する。
+- **`push`**: 受信 JSON は `normalizePushPayload` で title / body / data を正規化してから `showNotification` する。title が空文字・非文字列、または JSON がオブジェクトでない場合はデフォルト title に置き換える。
+- **`pushsubscriptionchange`**: 新しい購読を取得したあと `POST /api/push/subscribe` する。`p256dh` / `auth` が欠けている場合はリクエストを送らず `console.error` する。送信後に応答が `ok` でなければ `console.error` する。
 
 ## 変更するとき
 

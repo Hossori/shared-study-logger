@@ -128,6 +128,33 @@ describe("waitForInstalledWorker", () => {
 
     await expect(promise).resolves.toBeNull();
   });
+
+  it("returns null immediately when neither installing nor waiting exists", async () => {
+    const registration = createRegistration();
+
+    await expect(
+      waitForInstalledWorker(
+        registration as unknown as ServiceWorkerRegistration,
+        30_000,
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it.each(["activating", "activated"] as const)(
+    "returns null when installing is already %s",
+    async (workerState) => {
+      const registration = createRegistration();
+      const installing = new MockServiceWorker(workerState);
+      registration.installing = installing as unknown as ServiceWorker;
+
+      await expect(
+        waitForInstalledWorker(
+          registration as unknown as ServiceWorkerRegistration,
+          5000,
+        ),
+      ).resolves.toBeNull();
+    },
+  );
 });
 
 describe("activateWaitingServiceWorker", () => {
@@ -242,18 +269,27 @@ describe("applyServiceWorkerUpdate", () => {
       activationTimeoutMs: 5000,
     });
 
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
     expect(registration.update).toHaveBeenCalled();
 
     registration.waiting = installing as unknown as ServiceWorker;
     installing.setState("installed");
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
     dispatchControllerChange();
 
     await expect(promise).resolves.toBeUndefined();
     expect(installing.postMessage).toHaveBeenCalled();
+  });
+
+  it("returns reload quickly when update() leaves no installing or waiting worker", async () => {
+    const registration = createRegistration();
+    setServiceWorkerRegistration(registration as unknown as ServiceWorkerRegistration);
+
+    const promise = applyServiceWorkerUpdate({ updateTimeoutMs: 30_000 });
+    await vi.advanceTimersByTimeAsync(0);
+
+    await expect(promise).resolves.toBe("reload");
+    expect(registration.update).toHaveBeenCalled();
   });
 
   it("returns reload when registration.update fails", async () => {
@@ -276,8 +312,7 @@ describe("applyServiceWorkerUpdate", () => {
       updateTimeoutMs: 1000,
       activationTimeoutMs: 5000,
     });
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(1001);
 
     await expect(promise).resolves.toBe("reload");

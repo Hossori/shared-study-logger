@@ -61,44 +61,66 @@ export async function requestServiceWorkerUpdate(): Promise<void> {
   await state.registration?.update();
 }
 
+function isPastInstalledState(state: ServiceWorkerState): boolean {
+  return (
+    state === "activating" || state === "activated" || state === "redundant"
+  );
+}
+
 function waitForWorkerState(
   worker: ServiceWorker,
   targetState: ServiceWorkerState,
   timeoutMs: number,
-): Promise<ServiceWorker | null> {
+): { promise: Promise<ServiceWorker | null>; cancel: () => void } {
   if (worker.state === targetState) {
-    return Promise.resolve(worker);
+    return { promise: Promise.resolve(worker), cancel: () => {} };
   }
-  if (worker.state === "redundant") {
-    return Promise.resolve(null);
+  if (isPastInstalledState(worker.state)) {
+    return { promise: Promise.resolve(null), cancel: () => {} };
   }
 
-  return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  let onStateChange: (() => void) | undefined;
+  let settled = false;
+
+  const cancel = () => {
+    if (settled) return;
+    settled = true;
+    if (timeout !== undefined) clearTimeout(timeout);
+    if (onStateChange) {
       worker.removeEventListener("statechange", onStateChange);
+    }
+  };
+
+  const promise = new Promise<ServiceWorker | null>((resolve) => {
+    timeout = setTimeout(() => {
+      cancel();
       resolve(null);
     }, timeoutMs);
 
-    const onStateChange = () => {
+    onStateChange = () => {
       if (worker.state === targetState) {
-        clearTimeout(timeout);
-        worker.removeEventListener("statechange", onStateChange);
+        settled = true;
+        if (timeout !== undefined) clearTimeout(timeout);
+        worker.removeEventListener("statechange", onStateChange!);
         resolve(worker);
         return;
       }
-      if (worker.state === "redundant") {
-        clearTimeout(timeout);
-        worker.removeEventListener("statechange", onStateChange);
+      if (isPastInstalledState(worker.state)) {
+        cancel();
         resolve(null);
       }
     };
 
     worker.addEventListener("statechange", onStateChange);
   });
+
+  return { promise, cancel };
 }
 
 /**
  * 待機中 Worker があればそれを返す。なければ installing の installed 到達を待つ。
+ * installing / waiting が共に無い場合は即 null（update() 後に新 SW が来ないケース）。
  */
 export async function waitForInstalledWorker(
   registration: ServiceWorkerRegistration,
@@ -109,47 +131,18 @@ export async function waitForInstalledWorker(
   }
 
   const installing = registration.installing;
-  if (installing) {
-    const installed = await waitForWorkerState(
-      installing,
-      "installed",
-      timeoutMs,
-    );
-    if (!installed) return null;
-    return registration.waiting ?? installed;
+  if (!installing) {
+    return null;
   }
 
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (worker: ServiceWorker | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      registration.removeEventListener("updatefound", onUpdateFound);
-      resolve(worker);
-    };
+  if (isPastInstalledState(installing.state)) {
+    return null;
+  }
 
-    const timeout = setTimeout(() => finish(null), timeoutMs);
-
-    const onUpdateFound = () => {
-      const worker = registration.installing;
-      if (!worker) {
-        finish(null);
-        return;
-      }
-      void waitForWorkerState(worker, "installed", timeoutMs).then(
-        (installed) => {
-          if (!installed) {
-            finish(null);
-            return;
-          }
-          finish(registration.waiting ?? installed);
-        },
-      );
-    };
-
-    registration.addEventListener("updatefound", onUpdateFound);
-  });
+  const { promise } = waitForWorkerState(installing, "installed", timeoutMs);
+  const installed = await promise;
+  if (!installed) return null;
+  return registration.waiting ?? installed;
 }
 
 function waitForControllerChange(timeoutMs: number): Promise<boolean> {
@@ -230,6 +223,10 @@ export async function applyServiceWorkerUpdate(options?: {
     try {
       await registration.update();
     } catch {
+      return "reload";
+    }
+
+    if (!registration.waiting && !registration.installing) {
       return "reload";
     }
 

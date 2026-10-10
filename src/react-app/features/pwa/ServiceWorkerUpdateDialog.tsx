@@ -44,8 +44,9 @@ export default function ServiceWorkerUpdateDialog() {
       const result = await applyServiceWorkerUpdate();
       if (result === "reload") {
         window.location.reload();
+        return;
       }
-    } finally {
+    } catch {
       setIsApplyingUpdate(false);
     }
   };
