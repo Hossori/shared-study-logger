@@ -8,7 +8,7 @@ paths: shared/schemas.ts,shared/avatars.ts
 
 # Zod スキーマ規約
 
-HTTP の形の正本は [openapi/api.yaml](/openapi/api.yaml)。Orval が [shared/generated/api.zod.ts](/shared/generated/api.zod.ts) を生成し、[shared/schemas.ts](/shared/schemas.ts) が既存 export 名のファサードになる。trim・横断制約・クエリ正規化など OAS に載せない overlay だけ `shared/schemas.ts` に書く。
+HTTP の形の正本は [openapi/api.yaml](/openapi/api.yaml)。Orval が [shared/generated/api.zod.ts](/shared/generated/api.zod.ts) を生成し、[shared/schemas.ts](/shared/schemas.ts) が既存 export 名のファサードになる。trim・横断制約・クエリ正規化など OAS に載せない overlay だけ `shared/schemas.ts` に書く。画面 UX スキーマとリクエスト / レスポンスの `safeParse` / `parse` の役割分担は [docs/design-decisions.md](/docs/design-decisions.md) の Orval 節が正本。
 
 `shared/schemas.ts` または OAS を変更するときだけ読む。
 

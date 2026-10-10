@@ -2,7 +2,7 @@
  * ログインフォーム。画面の枠とテーマ切替は `pages/LoginPage` が持つ。
  */
 import { useState, type FormEvent } from "react";
-import { LoginRequestSchema } from "@shared/schemas";
+import { LoginFormSchema } from "./loginForm";
 import { useLoginMutation } from "./api/useAuth";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ export default function LoginForm() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = LoginRequestSchema.safeParse({ email, password });
+    const parsed = LoginFormSchema.safeParse({ email, password });
     if (!parsed.success) {
       setClientError("入力内容を確認してください。");
       return;

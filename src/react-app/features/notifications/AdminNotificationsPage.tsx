@@ -48,7 +48,7 @@ import {
   useToggleNotificationMutation,
 } from "./api/useNotifications";
 import { ApiError } from "@/lib/api";
-import { CreateInAppNotificationRequestSchema } from "@shared/schemas";
+import { CreateInAppNotificationFormSchema } from "./notificationForm";
 import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
 
 function mutationErrorMessage(error: unknown): string {
@@ -58,13 +58,6 @@ function mutationErrorMessage(error: unknown): string {
     if (error.status === 404) return "通知が見つかりません。";
   }
   return "操作に失敗しました。しばらくしてから再度お試しください。";
-}
-
-function createFormErrorMessage(
-  parsed: ReturnType<typeof CreateInAppNotificationRequestSchema.safeParse>,
-): string {
-  if (parsed.success) return "";
-  return "タイトルと本文を入力してください。";
 }
 
 export default function AdminNotificationsPage() {
@@ -117,12 +110,12 @@ export default function AdminNotificationsPage() {
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = CreateInAppNotificationRequestSchema.safeParse({
+    const parsed = CreateInAppNotificationFormSchema.safeParse({
       title,
       body,
     });
     if (!parsed.success) {
-      setFormError(createFormErrorMessage(parsed));
+      setFormError("タイトルと本文を入力してください。");
       return;
     }
     setFormError(null);

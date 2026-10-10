@@ -3,7 +3,7 @@
  * 失敗した成功ボディは送らない。
  */
 import type { Context } from "hono";
-import type { z } from "zod";
+import { ZodError, type z } from "zod";
 import { ResourceIdSchema } from "@shared/schemas";
 
 export function parseResourceId(value: string | undefined): string | null {
@@ -17,10 +17,13 @@ export function jsonParsed<T>(
   body: unknown,
   status: 200 | 201 = 200,
 ) {
-  const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    console.error("invalid_response", parsed.error.issues);
-    return c.json({ error: "invalid_response" }, 500);
+  try {
+    return c.json(schema.parse(body), status);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      console.error("invalid_response", error.issues);
+      return c.json({ error: "invalid_response" }, 500);
+    }
+    throw error;
   }
-  return c.json(parsed.data, status);
 }
