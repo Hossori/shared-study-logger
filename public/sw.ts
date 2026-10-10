@@ -12,11 +12,16 @@ import {
   isSkipWaitingMessage,
   NOTIFICATION_CLICK_MESSAGE_TYPE,
 } from "@shared/sw-messages";
+import { getInstallMigrationAction } from "@shared/sw-lifecycle";
 import { getStudyRecordNotificationTag } from "@shared/notification-tags";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
 } from "@shared/client-api-version";
+import {
+  normalizePushPayload,
+  urlBase64ToUint8Array,
+} from "@shared/web-push";
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;
@@ -48,9 +53,19 @@ async function savePwaUpdateMigrationMarker(): Promise<void> {
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    hasPwaUpdateMigrationMarker().then((hasMarker) => {
-      if (!hasMarker) return self.skipWaiting();
-    }),
+    (async () => {
+      const hasMarker = await hasPwaUpdateMigrationMarker();
+      const hasActiveWorker = Boolean(self.registration.active);
+      const action = getInstallMigrationAction({ hasMarker, hasActiveWorker });
+
+      if (action === "skip-waiting") {
+        await self.skipWaiting();
+        return;
+      }
+      if (action === "save-marker") {
+        await savePwaUpdateMigrationMarker();
+      }
+    })(),
   );
 });
 
@@ -88,23 +103,24 @@ self.addEventListener("message", (event) => {
   }
 });
 
-interface PushNotificationPayload {
-  title: string;
-  body?: string;
-  data?: Record<string, unknown>;
-}
+const DEFAULT_PUSH_TITLE = "学習記録シェア";
 
 self.addEventListener("push", (event) => {
-  let payload: PushNotificationPayload = { title: "学習記録シェア" };
+  let payload = normalizePushPayload(undefined, DEFAULT_PUSH_TITLE);
   try {
     if (event.data) {
-      payload = {
-        ...payload,
-        ...(event.data.json() as PushNotificationPayload),
-      };
+      payload = normalizePushPayload(
+        event.data.json() as unknown,
+        DEFAULT_PUSH_TITLE,
+      );
     }
   } catch {
-    if (event.data) payload.body = event.data.text();
+    if (event.data) {
+      payload = {
+        ...normalizePushPayload(undefined, DEFAULT_PUSH_TITLE),
+        body: event.data.text(),
+      };
+    }
   }
 
   const notificationOptions: NotificationOptions = {
@@ -153,18 +169,6 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-/** base64url文字列をVAPID公開鍵として`applicationServerKey`に渡せる`Uint8Array`に変換する。 */
-function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
-  const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
-  const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 // ブラウザ/OS側の都合で購読が失効した場合、新しい購読を取得してサーバーに再登録する。
 // 参考: https://developer.mozilla.org/docs/Web/API/PushSubscriptionCallback/pushsubscriptionchange_event
 self.addEventListener("pushsubscriptionchange", (event) => {
@@ -187,7 +191,15 @@ self.addEventListener("pushsubscriptionchange", (event) => {
           applicationServerKey: urlBase64ToUint8Array(publicKey),
         });
         const json = newSubscription.toJSON();
-        await fetch("/api/push/subscribe", {
+        const p256dh = json.keys?.p256dh;
+        const auth = json.keys?.auth;
+        if (!p256dh || !auth) {
+          console.error(
+            "pushsubscriptionchange: missing p256dh or auth in subscription keys",
+          );
+          return;
+        }
+        const res = await fetch("/api/push/subscribe", {
           method: "POST",
           credentials: "include",
           headers: {
@@ -196,12 +208,15 @@ self.addEventListener("pushsubscriptionchange", (event) => {
           },
           body: JSON.stringify({
             endpoint: newSubscription.endpoint,
-            keys: {
-              p256dh: json.keys?.p256dh ?? "",
-              auth: json.keys?.auth ?? "",
-            },
+            keys: { p256dh, auth },
           }),
         });
+        if (!res.ok) {
+          console.error(
+            "pushsubscriptionchange: POST /api/push/subscribe failed",
+            res.status,
+          );
+        }
       } catch (error) {
         console.error(
           "Failed to resubscribe after pushsubscriptionchange",
