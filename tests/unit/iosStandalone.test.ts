@@ -64,6 +64,25 @@ describe("isIosNonStandalone", () => {
     expect(isIosNonStandalone()).toBe(false);
   });
 
+  it("returns false when iPhone reports display-mode standalone", () => {
+    stubNavigator({
+      userAgent:
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+      displayModeStandalone: true,
+    });
+    expect(isIosNonStandalone()).toBe(false);
+  });
+
+  it("returns false when iPadOS desktop UA reports display-mode standalone", () => {
+    stubNavigator({
+      userAgent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15",
+      maxTouchPoints: 5,
+      displayModeStandalone: true,
+    });
+    expect(isIosNonStandalone()).toBe(false);
+  });
+
   it("returns false for desktop Mac without touch", () => {
     stubNavigator({
       userAgent:

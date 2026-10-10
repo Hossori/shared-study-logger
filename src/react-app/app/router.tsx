@@ -13,6 +13,7 @@ import { createBrowserRouter } from "react-router";
 import AdminRoute from "@/app/guards/AdminRoute";
 import GuestRoute from "@/app/guards/GuestRoute";
 import ProtectedRoute from "@/app/guards/ProtectedRoute";
+import LoadingScreen from "@/app/shell/LoadingScreen";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import MyPage from "@/pages/MyPage";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/admin/notifications",
+            HydrateFallback: LoadingScreen,
             lazy: async () => {
               const { default: Component } =
                 await import("@/pages/AdminNotificationsPage");
@@ -43,6 +45,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "/admin/groups",
+            HydrateFallback: LoadingScreen,
             lazy: async () => {
               const { default: Component } =
                 await import("@/pages/AdminDirectoryPage");
