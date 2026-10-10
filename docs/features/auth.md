@@ -15,6 +15,12 @@
 
 フロントは `useMeQuery`（`GET /api/auth/me`）。401 は `null`。ガードは [routing.md](routing.md)。
 
+ログアウト（API 成功・失敗・401 いずれも）は `useLogoutMutation` の `onSettled` で `setQueryData(me, null)` のみ行い、`ProtectedRoute` が `/login` へ遷移したあと `resetSessionState` で me 以外の Query キャッシュと選択グループ（store + localStorage）を破棄する。別ユーザーでログインしたときは `onLoginMutationSuccess` が me 以外の query を先に消す。
+
+401 の横断処理: `main.tsx` の QueryClient が query / mutation の `onError` で `handleSessionExpired` を呼ぶ。`requireAuth` 失効は `{ error: "unauthorized" }` などで me を null 化する。ログイン・パスワード変更の誤りは `{ error: "invalid_credentials" }` で、失効扱いにしない。
+
+`GET /api/auth/me` が 5xx などで失敗したときは未ログイン扱いにせず、ガードのエラー画面から再試行する（[routing.md](routing.md)）。
+
 プロフィール: `PATCH /api/auth/me`。パスワード: `POST /api/auth/password`（現在のパスワード検証のうえ再ハッシュ）。
 
 ## 変更するとき
