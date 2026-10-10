@@ -19,7 +19,6 @@
     "axios": "^1.19.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cn": "^0.2.5",
     "date-fns": "^4.4.0",
     "hono": "^4.13.0",
     "lucide-react": "^1.31.0",
@@ -65,7 +64,7 @@
   "scripts": {
     "build": "tsc -b && vite build",
     "cf-typegen": "wrangler types",
-    "check": "tsc && vite build && wrangler deploy --dry-run",
+    "check": "pnpm typecheck && vite build && wrangler deploy --dry-run",
     "check:d1-migrations": "node scripts/check-d1-migrations.mjs",
     "check:zod-deprecated": "node scripts/check-zod-deprecated.mjs",
     "openapi:generate": "orval --config orval.config.ts && prettier --write shared/generated/api.zod.ts",
