@@ -930,19 +930,25 @@ describe("records routes", () => {
 		}
 		await env.DB.batch(insertStatements);
 
-		await workerFetch(
-			new Request(
-				`http://example.com/api/groups/${SEED.groupMember}/records/${recordIds[0]}/reactions`,
-				{
-					method: "POST",
-					headers: {
-						cookie: testCookie,
-						"content-type": "application/json",
+		// 同一時刻の記録は id 降順で並ぶため、先頭と末尾は別チャンクで集計される
+		const sortedIds = [...recordIds].sort().reverse();
+		const reactedIds = [sortedIds[0], sortedIds[99]];
+		for (const recordId of reactedIds) {
+			const reactRes = await workerFetch(
+				new Request(
+					`http://example.com/api/groups/${SEED.groupMember}/records/${recordId}/reactions`,
+					{
+						method: "POST",
+						headers: {
+							cookie: testCookie,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify({ stamp: "thumbs_up" }),
 					},
-					body: JSON.stringify({ stamp: "thumbs_up" }),
-				},
-			),
-		);
+				),
+			);
+			expect(reactRes.status).toBe(201);
+		}
 
 		const listRes = await workerFetch(
 			new Request(
@@ -958,16 +964,18 @@ describe("records routes", () => {
 			}>;
 		};
 		expect(list.records).toHaveLength(100);
-		const reacted = list.records.find((r) => r.id === recordIds[0]);
-		expect(reacted?.reactions).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					stamp: "thumbs_up",
-					count: 1,
-					reactedByMe: false,
-				}),
-			]),
-		);
+		for (const recordId of reactedIds) {
+			const reacted = list.records.find((r) => r.id === recordId);
+			expect(reacted?.reactions).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						stamp: "thumbs_up",
+						count: 1,
+						reactedByMe: false,
+					}),
+				]),
+			);
+		}
 	});
 
 	it("returns 403 for non-member even with userIds", async () => {

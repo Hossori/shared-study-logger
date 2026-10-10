@@ -14,8 +14,8 @@ export interface SessionData {
 }
 
 const SessionDataSchema = z.object({
-  userId: z.string(),
-  expiresAt: z.number().finite(),
+  userId: z.string().min(1),
+  expiresAt: z.number(),
 });
 
 function sessionKey(token: string): string {
