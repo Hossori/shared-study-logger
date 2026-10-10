@@ -26,7 +26,7 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -171,23 +171,24 @@ export default function AdminNotificationsPage() {
             <form onSubmit={handleCreate}>
               <FieldGroup>
                 <Field data-invalid={formError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-notification-title" required>
+                  <FieldTitle id="admin-notification-title-label" required>
                     タイトル
-                  </FieldLabel>
+                  </FieldTitle>
                   <Input
                     id="admin-notification-title"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     maxLength={200}
                     required
+                    aria-labelledby="admin-notification-title-label"
                     aria-invalid={formError ? true : undefined}
                   />
                 </Field>
                 <Field data-invalid={formError ? true : undefined}>
                   <div className="flex items-center justify-between gap-2">
-                    <FieldLabel htmlFor="admin-notification-body" required>
+                    <FieldTitle id="admin-notification-body-label" required>
                       本文
-                    </FieldLabel>
+                    </FieldTitle>
                     <Button
                       type="button"
                       variant="ghost"
@@ -205,6 +206,7 @@ export default function AdminNotificationsPage() {
                   <Textarea
                     id="admin-notification-body"
                     ref={bodyRef}
+                    aria-labelledby="admin-notification-body-label"
                     value={body}
                     onChange={(event) => {
                       setBody(event.target.value);

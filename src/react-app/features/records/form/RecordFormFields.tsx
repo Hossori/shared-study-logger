@@ -1,7 +1,7 @@
 /**
  * 学習記録の投稿/編集で共有するフォームフィールド群。
  */
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import StudyDatetimeField from "./StudyDatetimeField";
@@ -21,13 +21,14 @@ export default function RecordFormFields({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor={`${idPrefix}-title`} required>
+        <FieldTitle id={`${idPrefix}-title-label`} required>
           タイトル・学習内容
-        </FieldLabel>
+        </FieldTitle>
         <Input
           id={`${idPrefix}-title`}
           type="text"
           required
+          aria-labelledby={`${idPrefix}-title-label`}
           maxLength={200}
           value={values.title}
           onChange={(e) => onChange({ ...values, title: e.target.value })}
@@ -49,10 +50,11 @@ export default function RecordFormFields({
       />
 
       <Field>
-        <FieldLabel htmlFor={`${idPrefix}-memo`}>メモ</FieldLabel>
+        <FieldTitle id={`${idPrefix}-memo-label`}>メモ</FieldTitle>
         <Textarea
           id={`${idPrefix}-memo`}
           rows={3}
+          aria-labelledby={`${idPrefix}-memo-label`}
           maxLength={2000}
           value={values.memo}
           onChange={(e) => onChange({ ...values, memo: e.target.value })}

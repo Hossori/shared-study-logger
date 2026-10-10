@@ -19,7 +19,7 @@ import {
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -134,14 +134,15 @@ export default function ChangePasswordModal({
             <Field
               data-invalid={Boolean(fieldErrors.currentPassword) || undefined}
             >
-              <FieldLabel htmlFor="modal-currentPassword" required>
+              <FieldTitle id="modal-currentPassword-label" required>
                 現在のパスワード
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="modal-currentPassword"
                 type="password"
                 required
                 autoComplete="current-password"
+                aria-labelledby="modal-currentPassword-label"
                 value={currentPassword}
                 onChange={(e) => {
                   setCurrentPassword(e.target.value);
@@ -160,15 +161,16 @@ export default function ChangePasswordModal({
             </Field>
 
             <Field data-invalid={Boolean(fieldErrors.newPassword) || undefined}>
-              <FieldLabel htmlFor="modal-newPassword" required>
+              <FieldTitle id="modal-newPassword-label" required>
                 新しいパスワード
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="modal-newPassword"
                 type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
+                aria-labelledby="modal-newPassword-label"
                 value={newPassword}
                 onChange={(e) => {
                   setNewPassword(e.target.value);
@@ -190,15 +192,16 @@ export default function ChangePasswordModal({
             <Field
               data-invalid={Boolean(fieldErrors.confirmPassword) || undefined}
             >
-              <FieldLabel htmlFor="modal-confirmPassword" required>
+              <FieldTitle id="modal-confirmPassword-label" required>
                 新しいパスワード（確認）
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="modal-confirmPassword"
                 type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
+                aria-labelledby="modal-confirmPassword-label"
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
