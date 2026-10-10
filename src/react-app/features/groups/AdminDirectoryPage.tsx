@@ -108,6 +108,9 @@ export default function AdminDirectoryPage() {
       return;
     }
     setGroupFormError(null);
+    createUserMutation.reset();
+    addMemberMutation.reset();
+    removeMemberMutation.reset();
     createGroupMutation.mutate(parsed.data, {
       onSuccess: (result) => {
         setGroupName("");
@@ -131,6 +134,9 @@ export default function AdminDirectoryPage() {
       return;
     }
     setUserFormError(null);
+    createGroupMutation.reset();
+    addMemberMutation.reset();
+    removeMemberMutation.reset();
     createUserMutation.mutate(parsed.data, {
       onSuccess: () => {
         setEmail("");
@@ -147,6 +153,9 @@ export default function AdminDirectoryPage() {
       userId: selectedUserId,
     });
     if (!parsed.success) return;
+    createGroupMutation.reset();
+    createUserMutation.reset();
+    removeMemberMutation.reset();
     addMemberMutation.mutate(
       { groupId: effectiveGroupId, userId: parsed.data.userId },
       {
@@ -169,6 +178,9 @@ export default function AdminDirectoryPage() {
       variant: "danger",
     });
     if (!ok) return;
+    createGroupMutation.reset();
+    createUserMutation.reset();
+    addMemberMutation.reset();
     removeMemberMutation.mutate({ groupId: effectiveGroupId, userId });
   };
 
