@@ -13,6 +13,29 @@ import {
   notifyClientApiUpdateRequired,
 } from "./clientApiUpdateRequired";
 
+function apiErrorBodyField(body: unknown, field: string): unknown {
+  if (typeof body === "object" && body !== null && field in body) {
+    return (body as Record<string, unknown>)[field];
+  }
+  return undefined;
+}
+
+export function isInvalidCredentialsError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    apiErrorBodyField(error.body, "error") === "invalid_credentials"
+  );
+}
+
+export function isSessionExpiredError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    apiErrorBodyField(error.body, "error") !== "invalid_credentials"
+  );
+}
+
 export class ApiError extends Error {
   status: number;
   body: unknown;

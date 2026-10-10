@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import UserAvatar from "@/components/UserAvatar";
 import { useConfirm } from "@/components/useConfirm";
+import { useState } from "react";
 import { useLogoutMutation } from "@/features/auth";
+import { unsubscribePushOnLogout } from "@/features/push";
+import { ApiError } from "@/lib/api";
 
 interface ProfileMenuProps {
   user: User;
@@ -26,6 +29,7 @@ interface ProfileMenuProps {
 export default function ProfileMenu({ user }: ProfileMenuProps) {
   const logoutMutation = useLogoutMutation();
   const confirm = useConfirm();
+  const [isPreparing, setIsPreparing] = useState(false);
 
   const handleLogout = async () => {
     const ok = await confirm({
@@ -35,7 +39,34 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
       variant: "danger",
     });
     if (!ok) return;
-    logoutMutation.mutate();
+    setIsPreparing(true);
+    try {
+      await unsubscribePushOnLogout();
+    } finally {
+      setIsPreparing(false);
+    }
+    await logoutWithRetry();
+  };
+
+  const logoutWithRetry = async (): Promise<void> => {
+    for (;;) {
+      try {
+        await logoutMutation.mutateAsync();
+        return;
+      } catch (error) {
+        // 401 は既に未ログイン。me が null になり ProtectedRoute が /login へ遷移する。
+        if (error instanceof ApiError && error.status === 401) return;
+        const retry = await confirm({
+          title: "ログアウトに失敗しました",
+          message:
+            "ログアウトできませんでした。ログイン状態のままです。再試行しますか？",
+          confirmLabel: "再試行",
+          cancelLabel: "閉じる",
+          variant: "danger",
+        });
+        if (!retry) return;
+      }
+    }
   };
 
   return (
@@ -75,7 +106,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
           ) : null}
           <DropdownMenuItem
             variant="destructive"
-            disabled={logoutMutation.isPending}
+            disabled={logoutMutation.isPending || isPreparing}
             onClick={() => {
               void handleLogout();
             }}
