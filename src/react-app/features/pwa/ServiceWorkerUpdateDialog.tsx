@@ -10,10 +10,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  activateWaitingServiceWorker,
+  applyServiceWorkerUpdate,
   dismissServiceWorkerUpdate,
   getServiceWorkerUpdateSnapshot,
-  requestServiceWorkerUpdate,
   subscribeServiceWorkerUpdate,
 } from "./serviceWorkerUpdate";
 import {
@@ -30,6 +29,7 @@ export default function ServiceWorkerUpdateDialog() {
   const [isUpdateRequired, setIsUpdateRequired] = useState(
     () => getClientApiUpdateRequiredEvent() !== null,
   );
+  const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
   useEffect(
     () => subscribeClientApiUpdateRequired(() => setIsUpdateRequired(true)),
@@ -39,14 +39,14 @@ export default function ServiceWorkerUpdateDialog() {
   const isOpen = isUpdateRequired || serviceWorkerUpdate.isUpdateAvailable;
 
   const applyUpdate = async () => {
-    if (activateWaitingServiceWorker()) return;
-
-    // API が更新必須を返したのに待機中の SW がない場合も、HTML を再検証して復旧を試みる。
+    setIsApplyingUpdate(true);
     try {
-      await requestServiceWorkerUpdate();
-      if (activateWaitingServiceWorker()) return;
+      const result = await applyServiceWorkerUpdate();
+      if (result === "reload") {
+        window.location.reload();
+      }
     } finally {
-      window.location.reload();
+      setIsApplyingUpdate(false);
     }
   };
 
@@ -54,7 +54,7 @@ export default function ServiceWorkerUpdateDialog() {
     <AlertDialog
       open={isOpen}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen && !isUpdateRequired) {
+        if (!nextOpen && !isUpdateRequired && !isApplyingUpdate) {
           dismissServiceWorkerUpdate();
         }
       }}
@@ -74,12 +74,16 @@ export default function ServiceWorkerUpdateDialog() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           {!isUpdateRequired && (
-            <AlertDialogCancel onClick={dismissServiceWorkerUpdate}>
+            <AlertDialogCancel disabled={isApplyingUpdate}>
               後で
             </AlertDialogCancel>
           )}
-          <AlertDialogAction type="button" onClick={applyUpdate}>
-            更新する
+          <AlertDialogAction
+            type="button"
+            disabled={isApplyingUpdate}
+            onClick={applyUpdate}
+          >
+            {isApplyingUpdate ? "更新中…" : "更新する"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
