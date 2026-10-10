@@ -101,11 +101,17 @@ test("学習記録を投稿できる", async ({ page }) => {
   const title = `e2e-record-${Date.now()}`;
   await openPostModal(page);
 
-  const studyDatetimeHelp = page.getByRole("button", { name: "学習日時のヘルプ" });
+  const studyDatetimeHelp = page.getByRole("button", {
+    name: "学習日時のヘルプ",
+  });
   await studyDatetimeHelp.click();
-  await expect(page.getByText("未設定の場合は投稿時刻が設定されます")).toBeVisible();
+  await expect(
+    page.getByText("未設定の場合は投稿時刻が設定されます"),
+  ).toBeVisible();
   await studyDatetimeHelp.click();
-  await expect(page.getByText("未設定の場合は投稿時刻が設定されます")).toBeHidden();
+  await expect(
+    page.getByText("未設定の場合は投稿時刻が設定されます"),
+  ).toBeHidden();
 
   await page.getByRole("button", { name: "学習日時を設定" }).click();
   const datetimeDialog = page.getByRole("dialog", { name: "学習日時を設定" });
@@ -211,7 +217,9 @@ test("学習記録を投稿できる", async ({ page }) => {
   );
   await page.getByRole("button", { name: "投稿する" }).click();
   expect((await datetimeOnlyResponse).ok()).toBeTruthy();
-  const datetimeOnlyCard = page.locator("li").filter({ hasText: datetimeOnlyTitle });
+  const datetimeOnlyCard = page
+    .locator("li")
+    .filter({ hasText: datetimeOnlyTitle });
   await expect(datetimeOnlyCard.getByText("9:30")).toBeVisible();
   await expect(datetimeOnlyCard.getByText("～")).toHaveCount(0);
   await expect(datetimeOnlyCard.getByText(/^\d+分$/)).toHaveCount(0);
@@ -244,14 +252,37 @@ test("自分の学習記録を削除できる", async ({ page }) => {
   await expect(card).toHaveCount(0);
 });
 
-test("ログアウト後は /login に戻る", async ({ page }) => {
+test("ログアウト後は /login に戻る。失敗時はログイン状態を維持して再試行できる", async ({
+  page,
+}) => {
   await loginAsAdmin(page);
+  let failLogout = true;
+  await page.route("**/api/auth/logout", async (route) => {
+    if (failLogout) {
+      failLogout = false;
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "internal_error" }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
   await page.getByLabel("プロフィールメニュー").click();
   await page.getByRole("menuitem", { name: "ログアウト" }).click();
   await page
     .getByRole("alertdialog")
     .getByRole("button", { name: "ログアウト" })
     .click();
+
+  const failureDialog = page.getByRole("alertdialog", {
+    name: "ログアウトに失敗しました",
+  });
+  await expect(failureDialog).toBeVisible();
+  await expect(page).not.toHaveURL(/\/login/);
+  await failureDialog.getByRole("button", { name: "再試行" }).click();
   await expect(page).toHaveURL(/\/login/);
 });
 

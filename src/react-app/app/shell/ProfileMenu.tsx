@@ -20,6 +20,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { useState } from "react";
 import { useLogoutMutation } from "@/features/auth";
 import { unsubscribePushOnLogout } from "@/features/push";
+import { ApiError } from "@/lib/api";
 
 interface ProfileMenuProps {
   user: User;
@@ -44,7 +45,28 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
     } finally {
       setIsPreparing(false);
     }
-    logoutMutation.mutate();
+    await logoutWithRetry();
+  };
+
+  const logoutWithRetry = async (): Promise<void> => {
+    for (;;) {
+      try {
+        await logoutMutation.mutateAsync();
+        return;
+      } catch (error) {
+        // 401 は既に未ログイン。me が null になり ProtectedRoute が /login へ遷移する。
+        if (error instanceof ApiError && error.status === 401) return;
+        const retry = await confirm({
+          title: "ログアウトに失敗しました",
+          message:
+            "ログアウトできませんでした。ログイン状態のままです。再試行しますか？",
+          confirmLabel: "再試行",
+          cancelLabel: "閉じる",
+          variant: "danger",
+        });
+        if (!retry) return;
+      }
+    }
   };
 
   return (

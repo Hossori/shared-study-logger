@@ -38,8 +38,22 @@ export async function onLoginMutationSuccess(
   }
 }
 
-export function onLogoutMutationSettled(queryClient: QueryClient): void {
+/** ログアウト成功時のみ me を null にする。 */
+export function onLogoutMutationSuccess(queryClient: QueryClient): void {
   queryClient.setQueryData(authQueryKeys.me, null);
+}
+
+/**
+ * ログアウト失敗時の me の扱い。401 はサーバー側で既に未ログインなので null にする。
+ * それ以外（5xx・ネットワーク）はセッションが残りうるため me を維持し、呼び出し側で再試行させる。
+ */
+export function onLogoutMutationError(
+  queryClient: QueryClient,
+  error: unknown,
+): void {
+  if (error instanceof ApiError && error.status === 401) {
+    queryClient.setQueryData(authQueryKeys.me, null);
+  }
 }
 
 export function loginMutationOptions(
@@ -57,7 +71,8 @@ export function logoutMutationOptions(
 ): UseMutationOptions<{ ok: true }, Error, void, unknown> {
   return {
     mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
-    onSettled: () => onLogoutMutationSettled(queryClient),
+    onSuccess: () => onLogoutMutationSuccess(queryClient),
+    onError: (error) => onLogoutMutationError(queryClient, error),
   };
 }
 
