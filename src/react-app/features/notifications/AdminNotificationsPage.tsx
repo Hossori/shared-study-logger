@@ -48,6 +48,7 @@ import {
   useToggleNotificationMutation,
 } from "./api/useNotifications";
 import { ApiError } from "@/lib/api";
+import { resetMutationIfIdle } from "@/lib/resetMutationIfIdle";
 import { CreateInAppNotificationFormSchema } from "./notificationForm";
 import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
 import { resolveAdminNotificationPendingRowId } from "./adminNotificationPendingId";
@@ -120,8 +121,8 @@ export default function AdminNotificationsPage() {
       return;
     }
     setFormError(null);
-    toggleMutation.reset();
-    deleteMutation.reset();
+    resetMutationIfIdle(toggleMutation);
+    resetMutationIfIdle(deleteMutation);
     createMutation.mutate(parsed.data, {
       onSuccess: () => {
         setTitle("");
@@ -132,8 +133,8 @@ export default function AdminNotificationsPage() {
   };
 
   const handleToggle = (id: string, enabled: boolean) => {
-    createMutation.reset();
-    deleteMutation.reset();
+    resetMutationIfIdle(createMutation);
+    resetMutationIfIdle(deleteMutation);
     toggleMutation.mutate({ id, enabled });
   };
 
@@ -145,8 +146,8 @@ export default function AdminNotificationsPage() {
       variant: "danger",
     });
     if (!ok) return;
-    createMutation.reset();
-    toggleMutation.reset();
+    resetMutationIfIdle(createMutation);
+    resetMutationIfIdle(toggleMutation);
     deleteMutation.mutate(id);
   };
 

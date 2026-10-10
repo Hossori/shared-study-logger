@@ -18,7 +18,11 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useDeleteRecordMutation, useRecordsQuery } from "../api/useRecords";
-import { GroupsResponseSchema, type StudyRecord } from "@shared/schemas";
+import {
+  GroupsResponseSchema,
+  type Group,
+  type StudyRecord,
+} from "@shared/schemas";
 import { apiGet } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,7 +60,7 @@ import {
   isFilterApplied,
   type RecordsFilterMode,
 } from "./recordsFilterUtils";
-/** GroupSwitcher の useGroupsQuery と同一キー（feature 間 import 回避のためここで定義）。 */
+/** queryKey は `features/groups/api/useGroups.ts` の groupsQueryKeys.list（["groups"]）と同一。 */
 const GROUPS_LIST_QUERY_KEY = ["groups"] as const;
 
 interface RecordCardProps {
@@ -245,10 +249,11 @@ function NoGroupContent({
     data: groups,
     isLoading,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: GROUPS_LIST_QUERY_KEY,
-    queryFn: async () => {
+    queryFn: async (): Promise<Group[]> => {
       const { groups: list } = await apiGet(
         "/api/groups",
         GroupsResponseSchema,
@@ -289,6 +294,7 @@ function NoGroupContent({
                 variant="outline"
                 size="sm"
                 className="mt-2"
+                disabled={isFetching}
                 onClick={() => {
                   void refetch();
                 }}
@@ -523,7 +529,7 @@ function GroupRecordsContent({
         </div>
       ) : null}
 
-      {isRefetchError ? (
+      {isRefetchError && !isFetchNextPageError ? (
         <p className="text-muted-foreground mt-3 text-center text-sm">
           更新に失敗しました。
           <Button
@@ -531,6 +537,7 @@ function GroupRecordsContent({
             variant="link"
             size="sm"
             className="h-auto px-1"
+            disabled={isFetching}
             onClick={() => {
               void refetch();
             }}

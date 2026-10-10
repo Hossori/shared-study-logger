@@ -35,6 +35,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useConfirm } from "@/components/useConfirm";
 import { ApiError } from "@/lib/api";
+import { resetMutationIfIdle } from "@/lib/resetMutationIfIdle";
 import {
   useAddGroupMemberMutation,
   useAdminGroupsQuery,
@@ -108,9 +109,9 @@ export default function AdminDirectoryPage() {
       return;
     }
     setGroupFormError(null);
-    createUserMutation.reset();
-    addMemberMutation.reset();
-    removeMemberMutation.reset();
+    resetMutationIfIdle(createUserMutation);
+    resetMutationIfIdle(addMemberMutation);
+    resetMutationIfIdle(removeMemberMutation);
     createGroupMutation.mutate(parsed.data, {
       onSuccess: (result) => {
         setGroupName("");
@@ -134,9 +135,9 @@ export default function AdminDirectoryPage() {
       return;
     }
     setUserFormError(null);
-    createGroupMutation.reset();
-    addMemberMutation.reset();
-    removeMemberMutation.reset();
+    resetMutationIfIdle(createGroupMutation);
+    resetMutationIfIdle(addMemberMutation);
+    resetMutationIfIdle(removeMemberMutation);
     createUserMutation.mutate(parsed.data, {
       onSuccess: () => {
         setEmail("");
@@ -153,9 +154,9 @@ export default function AdminDirectoryPage() {
       userId: selectedUserId,
     });
     if (!parsed.success) return;
-    createGroupMutation.reset();
-    createUserMutation.reset();
-    removeMemberMutation.reset();
+    resetMutationIfIdle(createGroupMutation);
+    resetMutationIfIdle(createUserMutation);
+    resetMutationIfIdle(removeMemberMutation);
     addMemberMutation.mutate(
       { groupId: effectiveGroupId, userId: parsed.data.userId },
       {
@@ -178,9 +179,9 @@ export default function AdminDirectoryPage() {
       variant: "danger",
     });
     if (!ok) return;
-    createGroupMutation.reset();
-    createUserMutation.reset();
-    addMemberMutation.reset();
+    resetMutationIfIdle(createGroupMutation);
+    resetMutationIfIdle(createUserMutation);
+    resetMutationIfIdle(addMemberMutation);
     removeMemberMutation.mutate({ groupId: effectiveGroupId, userId });
   };
 

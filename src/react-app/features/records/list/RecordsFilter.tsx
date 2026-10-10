@@ -230,7 +230,7 @@ export default function RecordsFilter({
             anchor={specifyAnchorRef}
           >
             <PopoverTitle>メンバーを選択</PopoverTitle>
-            {membersError ? (
+            {membersError && !members ? (
               <div className="flex flex-col items-center gap-2 py-2 text-sm">
                 <p className="text-muted-foreground">
                   メンバーの取得に失敗しました。
