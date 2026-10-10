@@ -2,7 +2,12 @@
  * 認証関連API（`GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/logout`,
  * `PATCH /api/auth/me`, `POST /api/auth/password`）を TanStack Queryで扱うフック。
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import {
   OkResponseSchema,
   UserResponseSchema,
@@ -12,11 +17,30 @@ import {
   type User,
 } from "@shared/schemas";
 import { apiGet, apiPatch, apiPost, ApiError } from "../../../lib/api";
+import { clearUserScopedQueries } from "./sessionCache";
 import { userQueryKeys } from "./useUser";
 
 export const authQueryKeys = {
   me: ["auth", "me"] as const,
 };
+
+export async function onLoginMutationSuccess(
+  queryClient: QueryClient,
+  user: User,
+): Promise<void> {
+  const prev = queryClient.getQueryData<User | null>(authQueryKeys.me);
+  if (prev?.id !== user.id) {
+    clearUserScopedQueries(queryClient);
+  }
+  queryClient.setQueryData(authQueryKeys.me, user);
+  if (prev?.id === user.id) {
+    await queryClient.invalidateQueries();
+  }
+}
+
+export function onLogoutMutationSettled(queryClient: QueryClient): void {
+  queryClient.setQueryData(authQueryKeys.me, null);
+}
 
 /**
  * ログイン中ユーザー情報を取得する。未ログイン(401)の場合はエラーにせず`null`を返す。
@@ -48,10 +72,7 @@ export function useLoginMutation() {
   return useMutation({
     mutationFn: (input: LoginRequest) =>
       apiPost("/api/auth/login", UserResponseSchema, input),
-    onSuccess: async ({ user }) => {
-      queryClient.setQueryData(authQueryKeys.me, user);
-      await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
-    },
+    onSuccess: async ({ user }) => onLoginMutationSuccess(queryClient, user),
   });
 }
 
@@ -62,10 +83,7 @@ export function useLogoutMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
-    onSuccess: async () => {
-      queryClient.setQueryData(authQueryKeys.me, null);
-      await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
-    },
+    onSettled: () => onLogoutMutationSettled(queryClient),
   });
 }
 
