@@ -34,6 +34,7 @@ import {
   PublicUser as PublicUserSchemaGen,
   PublicUserResponse as PublicUserResponseSchemaGen,
   PushSubscription as PushSubscriptionSchemaGen,
+  PushUnsubscribeRequest as PushUnsubscribeRequestSchemaGen,
   ReactionStamp as ReactionStampSchemaGen,
   ReactionSummary as ReactionSummarySchemaGen,
   RecordReactionEntry as RecordReactionEntrySchemaGen,
@@ -298,12 +299,10 @@ export type ListStudyRecordsQuery = z.infer<typeof ListStudyRecordsQuerySchema>;
 
 // ---- Push通知 ---------------------------------------------------------------
 
-// ブラウザの `PushSubscription.toJSON()` の形に合わせたスキーマ（endpoint は https のみ）
-const pushSubscriptionEndpointSchema = z.url({ protocol: /^https$/ }).max(2048);
-
-export const PushSubscriptionSchema = PushSubscriptionSchemaGen.extend({
-  endpoint: pushSubscriptionEndpointSchema,
-});
+// ブラウザの `PushSubscription.toJSON()` の形に合わせたスキーマ（endpoint の https / 長さ制限は OAS 側）
+export const PushSubscriptionSchema = PushSubscriptionSchemaGen;
+// 解除は過去に登録された endpoint も対象にするため、https / 長さの制限をかけない
+export const PushUnsubscribeSchema = PushUnsubscribeRequestSchemaGen;
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
 export const VapidPublicKeyResponseSchema = VapidPublicKeyResponseSchemaGen;

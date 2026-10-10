@@ -64,6 +64,7 @@ export async function sendPushNotification(
     method: "POST",
     headers,
     body,
+    // SSRF 対策としてリダイレクトは追わない。3xx は ok=false となり Queue の再試行・DLQ に委ねる。
     redirect: "manual",
     signal: AbortSignal.timeout(10_000),
   });

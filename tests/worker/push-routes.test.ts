@@ -31,4 +31,54 @@ describe("push routes", () => {
 		const body = (await response.json()) as { error: string };
 		expect(body.error).toBe("invalid_request");
 	});
+
+	it("accepts unsubscribe for endpoints that subscribe would reject", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		for (const endpoint of [
+			"http://push.example.test/legacy",
+			`https://push.example.test/${"a".repeat(2100)}`,
+		]) {
+			const response = await workerFetch(
+				new Request("http://example.com/api/push/subscribe", {
+					method: "DELETE",
+					headers: {
+						cookie,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({ endpoint }),
+				}),
+			);
+
+			expect(response.status).toBe(200);
+		}
+	});
+
+	it("rejects subscribe endpoints longer than 2048 characters", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+
+		const response = await workerFetch(
+			new Request("http://example.com/api/push/subscribe", {
+				method: "POST",
+				headers: {
+					cookie,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					endpoint: `https://push.example.test/${"a".repeat(2100)}`,
+					keys: { p256dh: "key", auth: "auth" },
+				}),
+			}),
+		);
+
+		expect(response.status).toBe(400);
+	});
 });
