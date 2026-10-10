@@ -3,6 +3,9 @@ import {
   addDurationToClock,
   buildRecordFormSource,
   CreateRecordFormSchema,
+  RECORD_MEMO_MAX,
+  RECORD_TITLE_MAX,
+  UpdateRecordFormSchema,
   clampDurationDraft,
   durationFromStartAndEndClock,
   formatClockTime,
@@ -321,6 +324,130 @@ describe("recordFormUtils", () => {
     expect(source.durationMinutes).toBe(0);
     expect(
       CreateRecordFormSchema.safeParse(source).success,
+    ).toBe(false);
+  });
+
+  it("isRecordDateString rejects invalid calendar dates", () => {
+    expect(isRecordDateString("2026-02-31")).toBe(false);
+    expect(isRecordDateString("2026-13-01")).toBe(false);
+    expect(isRecordDateString("2026-00-10")).toBe(false);
+    expect(isRecordDateString("2026-8-1")).toBe(false);
+  });
+
+  it("isRecordDateString accepts valid leap days only on leap years", () => {
+    expect(isRecordDateString("2028-02-29")).toBe(true);
+    expect(isRecordDateString("2027-02-29")).toBe(false);
+  });
+
+  it("parseRecordDatetime rejects invalid dates and trailing segments", () => {
+    expect(parseRecordDatetime("2026-02-31T10:00")).toBeNull();
+    expect(parseRecordDatetime("2026-08-10T10:60")).toBeNull();
+    expect(parseRecordDatetime("2026-08-10T10:00:00")).toBeNull();
+    expect(parseRecordDatetime("2026-8-1T10:00")).toBeNull();
+  });
+
+  it("UpdateRecordFormSchema enforces title and memo length limits", () => {
+    const titleOk = "a".repeat(RECORD_TITLE_MAX);
+    const titleNg = "a".repeat(RECORD_TITLE_MAX + 1);
+    const memoOk = "m".repeat(RECORD_MEMO_MAX);
+    const memoNg = "m".repeat(RECORD_MEMO_MAX + 1);
+
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({
+          studyDatetime: "2026-08-01T12:00",
+          title: titleOk,
+          memo: memoOk,
+          durationMinutes: null,
+        }),
+      ).success,
+    ).toBe(true);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({
+          studyDatetime: "2026-08-01T12:00",
+          title: titleNg,
+          memo: "",
+          durationMinutes: null,
+        }),
+      ).success,
+    ).toBe(false);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({
+          studyDatetime: "2026-08-01T12:00",
+          title: "x",
+          memo: memoNg,
+          durationMinutes: null,
+        }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("UpdateRecordFormSchema rejects empty title after trim", () => {
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({
+          studyDatetime: "2026-08-01T12:00",
+          title: "",
+          memo: "",
+          durationMinutes: null,
+        }),
+      ).success,
+    ).toBe(false);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({
+          studyDatetime: "2026-08-01T12:00",
+          title: "   ",
+          memo: "",
+          durationMinutes: null,
+        }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("UpdateRecordFormSchema enforces durationMinutes boundaries", () => {
+    const base = {
+      studyDatetime: "2026-08-01T12:00",
+      title: "x",
+      memo: "",
+    };
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({ ...base, durationMinutes: 5 }),
+      ).success,
+    ).toBe(true);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({ ...base, durationMinutes: 1435 }),
+      ).success,
+    ).toBe(true);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({ ...base, durationMinutes: 1440 }),
+      ).success,
+    ).toBe(false);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({ ...base, durationMinutes: 7 }),
+      ).success,
+    ).toBe(false);
+    expect(
+      UpdateRecordFormSchema.safeParse(
+        buildRecordFormSource({ ...base, durationMinutes: 0 }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("UpdateRecordFormSchema rejects duration without studyDatetime", () => {
+    expect(
+      UpdateRecordFormSchema.safeParse({
+        studyDatetime: null,
+        title: "x",
+        memo: undefined,
+        durationMinutes: 30,
+      }).success,
     ).toBe(false);
   });
 });
