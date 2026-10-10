@@ -21,7 +21,7 @@ export function useUserQuery(userId: string, isSelf = false) {
         throw new ApiError(400, { error: "user_id_is_required" });
       }
       const { user } = await apiGet(
-        `/api/users/${userId}`,
+        `/api/users/${encodeURIComponent(userId)}`,
         PublicUserResponseSchema,
       );
       return user;

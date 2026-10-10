@@ -18,7 +18,7 @@ export function useGroupMembersQuery(
     queryKey: groupMembersQueryKeys.members(groupId),
     queryFn: async () => {
       const { members } = await apiGet(
-        `/api/groups/${groupId}/members`,
+        `/api/groups/${encodeURIComponent(String(groupId))}/members`,
         GroupMembersResponseSchema,
       );
       return members;
