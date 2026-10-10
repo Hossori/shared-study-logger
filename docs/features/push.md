@@ -16,7 +16,12 @@
 4. `queue()` が購読ごとに送信し `message.ack()`
 5. SW が `showNotification`。`notificationclick` で既存タブへ `postMessage`（`shared/sw-messages.ts`）し、一覧を `resetQueries`
 
-`urlBase64ToUint8Array` はフロントと SW で別バンドルのため両方にある。
+`urlBase64ToUint8Array` と Push ペイロード正規化は `shared/web-push.ts` に集約し、フロント（`features/push/vapid.ts` 経由）と SW の両方から import する。
+
+## Service Worker
+
+- **`push`**: 受信 JSON は `normalizePushPayload` で title / body / data を正規化してから `showNotification` する。
+- **`pushsubscriptionchange`**: 新しい購読を取得したあと `POST /api/push/subscribe` する。応答が `ok` でない場合、または `p256dh` / `auth` が欠けている場合はサーバーへ送らず `console.error` する。
 
 ## 変更するとき
 
@@ -28,4 +33,5 @@
 - `src/worker/routes/push.ts`
 - `src/worker/index.ts` の `queue()`
 - `public/sw.ts`
+- `shared/web-push.ts`
 - `src/react-app/features/push/PushSettingsCard.tsx`
