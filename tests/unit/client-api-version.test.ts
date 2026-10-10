@@ -93,6 +93,25 @@ describe("API client version contract", () => {
     }
   });
 
+  it("rejects a 2xx body that does not match the response schema", async () => {
+    apiClient.defaults.adapter = async (config) => {
+      const response: AxiosResponse = {
+        data: { ok: false },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config,
+      };
+      return response;
+    };
+
+    await expect(apiGet("/api/get", OkResponseSchema)).rejects.toMatchObject({
+      name: "ApiError",
+      status: 0,
+      body: { error: "invalid_response" },
+    });
+  });
+
   it("notifies subscribers and rejects a dedicated error for client_update_required", async () => {
     const body = { error: "client_update_required" };
     let event: ClientApiUpdateRequiredEvent | undefined;

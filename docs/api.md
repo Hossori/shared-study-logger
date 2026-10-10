@@ -4,6 +4,7 @@
 
 | メソッド | パス | 認証 | 概要 |
 | --- | --- | --- | --- |
+| GET | `/api/` | 不要 | ヘルス（`{ name: "Cloudflare" }`。セッションは不要。`X-Client-Api-Version` は必要） |
 | POST | `/api/auth/login` | 不要 | ログイン（email/password検証、セッションCookie発行） |
 | POST | `/api/auth/logout` | 必要 | ログアウト（KVセッション削除、Cookieクリア） |
 | GET | `/api/auth/me` | 必要 | ログイン中ユーザー情報取得（`bio` / `avatarKey` / `role` 含む） |

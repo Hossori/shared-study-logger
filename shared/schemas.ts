@@ -25,6 +25,7 @@ import {
   GroupMembersResponse as GroupMembersResponseSchemaGen,
   GroupResponse as GroupResponseSchemaGen,
   GroupsResponse as GroupsResponseSchemaGen,
+  HealthResponse as HealthResponseSchemaGen,
   InAppNotification as InAppNotificationSchemaGen,
   InAppNotificationResponse as InAppNotificationResponseSchemaGen,
   InAppNotificationsResponse as InAppNotificationsResponseSchemaGen,
@@ -80,6 +81,9 @@ export const ResourceIdSchema = ResourceIdSchemaGen;
 
 /** API に載る日時。 */
 export const TimestampSchema = TimestampSchemaGen;
+
+export const HealthResponseSchema = HealthResponseSchemaGen;
+export type HealthResponse = z.infer<typeof HealthResponseSchema>;
 
 export const OkResponseSchema = OkResponseSchemaGen;
 export type OkResponse = z.infer<typeof OkResponseSchema>;

@@ -77,6 +77,13 @@ export const ReactionStamp = zod.enum([
 export type ReactionStamp = zod.input<typeof ReactionStamp>;
 export type ReactionStampOutput = zod.output<typeof ReactionStamp>;
 
+export const HealthResponse = zod.object({
+  name: zod.enum(["Cloudflare"]),
+});
+
+export type HealthResponse = zod.input<typeof HealthResponse>;
+export type HealthResponseOutput = zod.output<typeof HealthResponse>;
+
 export const OkResponse = zod.object({
   ok: zod.literal(true),
 });
@@ -487,6 +494,24 @@ export type UpdateInAppNotificationRequest = zod.input<
 export type UpdateInAppNotificationRequestOutput = zod.output<
   typeof UpdateInAppNotificationRequest
 >;
+/**
+ * @summary ヘルス
+ */
+export const getApiHealthHeaderXClientApiVersionRegExp = new RegExp(
+  "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+);
+
+export const GetApiHealthHeader = zod.object({
+  "X-Client-Api-Version": zod
+    .string()
+    .regex(getApiHealthHeaderXClientApiVersionRegExp)
+    .describe(
+      "クライアント API 版。info.version および CLIENT_API_VERSION と同じ major.minor.patch。",
+    ),
+});
+
+export const GetApiHealthResponse = HealthResponse;
+
 /**
  * @summary ログイン
  */
