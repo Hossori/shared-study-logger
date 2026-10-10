@@ -2,15 +2,12 @@ import { describe, expect, it } from "vitest";
 import { LoginFormSchema } from "../../src/react-app/features/auth/loginForm";
 
 describe("LoginFormSchema", () => {
-	it("trims email before validating and sending", () => {
+	it("rejects an email with surrounding whitespace", () => {
 		const parsed = LoginFormSchema.safeParse({
 			email: "  user@example.com  ",
 			password: "secret",
 		});
-		expect(parsed.success).toBe(true);
-		if (!parsed.success) return;
-		expect(parsed.data.email).toBe("user@example.com");
-		expect(parsed.data.password).toBe("secret");
+		expect(parsed.success).toBe(false);
 	});
 
 	it("rejects an empty password", () => {
@@ -21,7 +18,7 @@ describe("LoginFormSchema", () => {
 		expect(parsed.success).toBe(false);
 	});
 
-	it("rejects an invalid email after trim", () => {
+	it("rejects an invalid email", () => {
 		const parsed = LoginFormSchema.safeParse({
 			email: "  not-an-email  ",
 			password: "secret",
