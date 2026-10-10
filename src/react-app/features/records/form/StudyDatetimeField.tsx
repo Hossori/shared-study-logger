@@ -463,32 +463,30 @@ export default function StudyDatetimeField({
                         idPrefix={`${idPrefix}-end`}
                         hour={draft.endClockHour}
                         minute={draft.endClockMinute}
-                        onHourChange={(hour) => {
-                          const duration = durationFromStartAndEndClock(
-                            draft.startHour,
-                            draft.startMinute,
-                            hour,
-                            draft.endClockMinute,
-                          );
+                        onHourChange={(hour) =>
                           setDraft((current) =>
                             withEndFromDuration(current, {
-                              durationMinutes: duration,
+                              durationMinutes: durationFromStartAndEndClock(
+                                current.startHour,
+                                current.startMinute,
+                                hour,
+                                current.endClockMinute,
+                              ),
                             }),
-                          );
-                        }}
-                        onMinuteChange={(minute) => {
-                          const duration = durationFromStartAndEndClock(
-                            draft.startHour,
-                            draft.startMinute,
-                            draft.endClockHour,
-                            minute,
-                          );
+                          )
+                        }
+                        onMinuteChange={(minute) =>
                           setDraft((current) =>
                             withEndFromDuration(current, {
-                              durationMinutes: duration,
+                              durationMinutes: durationFromStartAndEndClock(
+                                current.startHour,
+                                current.startMinute,
+                                current.endClockHour,
+                                minute,
+                              ),
                             }),
-                          );
-                        }}
+                          )
+                        }
                         onMinuteCommit={() => setOpenPicker(null)}
                       />
                     </PopoverContent>

@@ -1,16 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
+	ANALOG_CLOCK_CENTER,
 	applyClockMinuteSnap,
+	CLOCK_MINUTE_RADIUS,
 	hourHandAngleDegrees,
 	hourHandLength,
 	hourLabelFromPointer,
 	INNER_HAND_LENGTH,
+	INNER_NUMBER_RADIUS,
 	OUTER_CLOCK_HOURS,
 	OUTER_HAND_LENGTH,
+	OUTER_NUMBER_RADIUS,
 	minuteFromPointer,
 	minuteHandAngleDegrees,
 	snapToClockMinute,
 } from "../../src/react-app/features/records/form/analogClockUtils";
+
+const clockCx = ANALOG_CLOCK_CENTER;
+const clockCy = ANALOG_CLOCK_CENTER;
+
+function pointAt(dist: number, angleDegrees: number) {
+	const radians = ((angleDegrees - 90) * Math.PI) / 180;
+	return {
+		x: clockCx + dist * Math.cos(radians),
+		y: clockCy + dist * Math.sin(radians),
+	};
+}
 
 describe("analogClockUtils", () => {
 	it("lists outer ring hours as 13-0 without 24", () => {
@@ -72,5 +87,124 @@ describe("analogClockUtils", () => {
 		expect(minuteFromPointer(cx, cy + 110, cx, cy)).toBe(30);
 		expect(minuteFromPointer(cx - 110, cy, cx, cy)).toBe(45);
 		expect(minuteFromPointer(cx, cy, cx, cy)).toBeNull();
+	});
+
+	it("hourLabelFromPointer respects inner and outer distance bounds", () => {
+		const innerMin = INNER_NUMBER_RADIUS * 0.4;
+		const outerMax = OUTER_NUMBER_RADIUS + 24;
+		const inside = pointAt(innerMin + 0.1, 0);
+		const outside = pointAt(innerMin - 0.1, 0);
+		expect(hourLabelFromPointer(inside.x, inside.y, clockCx, clockCy)).toBe(
+			12,
+		);
+		expect(
+			hourLabelFromPointer(outside.x, outside.y, clockCx, clockCy),
+		).toBeNull();
+
+		const inOuter = pointAt(outerMax - 0.1, 0);
+		const outOuter = pointAt(outerMax + 0.1, 0);
+		expect(hourLabelFromPointer(inOuter.x, inOuter.y, clockCx, clockCy)).toBe(
+			0,
+		);
+		expect(
+			hourLabelFromPointer(outOuter.x, outOuter.y, clockCx, clockCy),
+		).toBeNull();
+	});
+
+	it("hourLabelFromPointer switches inner and outer rings at the midpoint", () => {
+		const midpoint = (INNER_NUMBER_RADIUS + OUTER_NUMBER_RADIUS) / 2;
+		const innerSide = pointAt(midpoint - 0.1, 0);
+		const outerSide = pointAt(midpoint + 0.1, 0);
+		expect(
+			hourLabelFromPointer(innerSide.x, innerSide.y, clockCx, clockCy),
+		).toBe(12);
+		expect(
+			hourLabelFromPointer(outerSide.x, outerSide.y, clockCx, clockCy),
+		).toBe(0);
+	});
+
+	it("hourLabelFromPointer wraps 359 degrees to 12 and 0 on outer ring", () => {
+		const dist = OUTER_NUMBER_RADIUS;
+		const near359 = pointAt(dist, 359);
+		const at0 = pointAt(dist, 0);
+		expect(hourLabelFromPointer(near359.x, near359.y, clockCx, clockCy)).toBe(
+			0,
+		);
+		expect(hourLabelFromPointer(at0.x, at0.y, clockCx, clockCy)).toBe(0);
+	});
+
+	it("hourLabelFromPointer rounds 15 degree boundaries to adjacent hours", () => {
+		const dist = INNER_NUMBER_RADIUS;
+		const before15 = pointAt(dist, 14);
+		const after15 = pointAt(dist, 16);
+		expect(
+			hourLabelFromPointer(before15.x, before15.y, clockCx, clockCy),
+		).toBe(12);
+		expect(
+			hourLabelFromPointer(after15.x, after15.y, clockCx, clockCy),
+		).toBe(1);
+	});
+
+	it("minuteFromPointer respects inner and outer distance bounds", () => {
+		const innerMin = CLOCK_MINUTE_RADIUS * 0.45;
+		const outerMax = CLOCK_MINUTE_RADIUS + 24;
+		const inside = pointAt(innerMin + 0.1, 0);
+		const outside = pointAt(innerMin - 0.1, 0);
+		expect(minuteFromPointer(inside.x, inside.y, clockCx, clockCy)).toBe(0);
+		expect(minuteFromPointer(outside.x, outside.y, clockCx, clockCy)).toBeNull();
+
+		const inOuter = pointAt(outerMax - 0.1, 0);
+		const outOuter = pointAt(outerMax + 0.1, 0);
+		expect(minuteFromPointer(inOuter.x, inOuter.y, clockCx, clockCy)).toBe(0);
+		expect(
+			minuteFromPointer(outOuter.x, outOuter.y, clockCx, clockCy),
+		).toBeNull();
+	});
+
+	it("minuteFromPointer wraps 359 degrees to 0 minutes", () => {
+		const dist = CLOCK_MINUTE_RADIUS;
+		const near359 = pointAt(dist, 359);
+		expect(minuteFromPointer(near359.x, near359.y, clockCx, clockCy)).toBe(0);
+	});
+
+	it("minuteFromPointer rounds 15 degree boundaries to 5-minute steps", () => {
+		const dist = CLOCK_MINUTE_RADIUS;
+		const beforeSnap = pointAt(dist, 14);
+		const afterSnap = pointAt(dist, 16);
+		expect(minuteFromPointer(beforeSnap.x, beforeSnap.y, clockCx, clockCy)).toBe(
+			0,
+		);
+		expect(minuteFromPointer(afterSnap.x, afterSnap.y, clockCx, clockCy)).toBe(
+			5,
+		);
+	});
+
+	it("applyClockMinuteSnap rolls month, year, and leap-day boundaries", () => {
+		const janEnd = applyClockMinuteSnap(new Date(2026, 0, 31, 23, 58, 0));
+		expect(janEnd.getFullYear()).toBe(2026);
+		expect(janEnd.getMonth()).toBe(1);
+		expect(janEnd.getDate()).toBe(1);
+		expect(janEnd.getHours()).toBe(0);
+		expect(janEnd.getMinutes()).toBe(0);
+
+		const yearEnd = applyClockMinuteSnap(new Date(2026, 11, 31, 23, 58, 0));
+		expect(yearEnd.getFullYear()).toBe(2027);
+		expect(yearEnd.getMonth()).toBe(0);
+		expect(yearEnd.getDate()).toBe(1);
+
+		const leapEve = applyClockMinuteSnap(new Date(2028, 1, 28, 23, 58, 0));
+		expect(leapEve.getFullYear()).toBe(2028);
+		expect(leapEve.getMonth()).toBe(1);
+		expect(leapEve.getDate()).toBe(29);
+
+		const leapEnd = applyClockMinuteSnap(new Date(2028, 1, 29, 23, 58, 0));
+		expect(leapEnd.getFullYear()).toBe(2028);
+		expect(leapEnd.getMonth()).toBe(2);
+		expect(leapEnd.getDate()).toBe(1);
+
+		const nonLeapFeb = applyClockMinuteSnap(new Date(2027, 1, 28, 23, 58, 0));
+		expect(nonLeapFeb.getFullYear()).toBe(2027);
+		expect(nonLeapFeb.getMonth()).toBe(2);
+		expect(nonLeapFeb.getDate()).toBe(1);
 	});
 });
