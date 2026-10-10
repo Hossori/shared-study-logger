@@ -148,9 +148,14 @@ function NotificationListItem({
           <Button
             size="sm"
             onClick={() => {
-              void pwa.promptInstall().then((outcome) => {
-                if (outcome === "accepted") onDismiss();
-              });
+              void pwa
+                .promptInstall()
+                .then((outcome) => {
+                  if (outcome === "accepted") onDismiss();
+                })
+                .catch(() => {
+                  // ブラウザがプロンプトを拒否した場合など
+                });
             }}
           >
             ホーム画面に追加

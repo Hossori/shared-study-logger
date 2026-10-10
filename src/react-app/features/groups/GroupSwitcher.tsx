@@ -13,6 +13,7 @@ import {
   resolveSelectedGroupId,
   SELECTED_GROUP_QUERY_KEY,
 } from "./selectedGroup";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronsUpDown } from "lucide-react";
 import {
@@ -39,7 +40,7 @@ function buildSearchParamsWithGroup(
 }
 
 export default function GroupSwitcher() {
-  const { data: groups, isLoading, isError } = useGroupsQuery();
+  const { data: groups, isLoading, isError, refetch } = useGroupsQuery();
   const selectedGroupId = useSelectedGroupStore(
     (state) => state.selectedGroupId,
   );
@@ -110,8 +111,18 @@ export default function GroupSwitcher() {
 
   if (groups == null || isError) {
     return (
-      <span className="text-muted-foreground text-sm">
+      <span className="text-muted-foreground inline-flex flex-wrap items-center gap-2 text-sm">
         グループを読み込めません
+        <Button
+          type="button"
+          variant="outline"
+          size="xs"
+          onClick={() => {
+            void refetch();
+          }}
+        >
+          再試行
+        </Button>
       </span>
     );
   }
