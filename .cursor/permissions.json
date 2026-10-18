@@ -1,7 +1,7 @@
 {
   "autoRun": {
     "allow_instructions": [
-      "コミット前ゲートの pnpm は確認なしで実行してよい: pnpm test（test:worker / test:e2e / test:watch を含む）, pnpm lint, pnpm run lint, pnpm format:check, pnpm run format:check, pnpm typecheck, pnpm run typecheck, pnpm run typecheck:tests, pnpm check, pnpm run check（check:zod-deprecated / check:d1-migrations / dry-run の check を含む）。pnpm 全体は許可しない",
+      "コミット前ゲートの pnpm は確認なしで実行してよい: pnpm test（test:worker / test:e2e / test:watch を含む）, pnpm lint, pnpm run lint, pnpm format:check, pnpm run format:check, pnpm typecheck, pnpm run typecheck, pnpm run typecheck:tests, pnpm check, pnpm run check（check:zod-deprecated / check:d1-migrations / openapi:check / dry-run の check を含む）。pnpm 全体は許可しない",
       "読み取り専用の git は確認なしで実行してよい: git status, git diff, git log, git show, git rev-parse, git ls-files, git blame, git remote -v",
       "rg と git grep によるリポジトリ内のコード検索は確認なしで実行してよい",
       "作業ブランチに対する git add と git commit は確認なしで実行してよい。develop への直接コミットは除く",

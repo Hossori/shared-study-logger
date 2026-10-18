@@ -30,6 +30,7 @@ jobs:
       - run: pnpm run format:check
       - run: pnpm run check:zod-deprecated
       - run: pnpm run check:d1-migrations
+      - run: pnpm run openapi:check
       # tsc -b: app/node/worker/sw + unit/worker tests（tsconfig.* references）
       - run: pnpm run typecheck
 
