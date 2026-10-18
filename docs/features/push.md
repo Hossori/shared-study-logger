@@ -20,7 +20,12 @@
 
 マウント時に既存の Push 購読があれば、マイページの `PushSettingsCard` やヘッダー通知まわりのマウント時に、ユーザー操作なしで `POST /api/push/subscribe` により再紐付けする。TanStack Query の `["push","resync",endpoint]`（`staleTime: Infinity`）により、同一 query キャッシュ（gcTime）内では重複 POST を抑える。`Notification.permission === "denied"` のときは再 POST せず UI は案内のみ（Switch 無効）。
 
-`urlBase64ToUint8Array` はフロントと SW で別バンドルのため両方にある。
+`urlBase64ToUint8Array` と Push ペイロード正規化は `shared/web-push.ts` に集約し、フロント（`features/push/vapid.ts` 経由）と SW の両方から import する。
+
+## Service Worker
+
+- **`push`**: 受信 JSON は `normalizePushPayload` で title / body / data を正規化してから `showNotification` する。title が空文字・非文字列、または JSON がオブジェクトでない場合はデフォルト title に置き換える。
+- **`pushsubscriptionchange`**: 新しい購読を取得したあと `POST /api/push/subscribe` する。`p256dh` / `auth` が欠けている場合はリクエストを送らず `console.error` する。送信後に応答が `ok` でなければ `console.error` する。
 
 ## 変更するとき
 
@@ -32,4 +37,5 @@
 - `src/worker/routes/push.ts`
 - `src/worker/index.ts` の `queue()`
 - `public/sw.ts`
+- `shared/web-push.ts`
 - `src/react-app/features/push/PushSettingsCard.tsx`
