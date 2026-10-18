@@ -12,8 +12,10 @@ export default function AdminRoute() {
   if (!isAdmin(user)) {
     return (
       <Layout user={user}>
-        <h2 className="text-xl font-bold text-gray-900">アクセスできません</h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <h2 className="text-foreground text-xl font-bold">
+          アクセスできません
+        </h2>
+        <p className="text-muted-foreground mt-2 text-sm">
           このページは管理者専用です（403）。
         </p>
       </Layout>

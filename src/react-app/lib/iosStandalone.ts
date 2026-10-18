@@ -6,8 +6,13 @@ interface NavigatorStandalone extends Navigator {
   standalone?: boolean;
 }
 
+function isIosDevice(userAgent: string): boolean {
+  if (/iphone|ipad|ipod/i.test(userAgent)) return true;
+  return /Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1;
+}
+
 export function isIosNonStandalone(): boolean {
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isIos = isIosDevice(navigator.userAgent);
   const isStandalone =
     window.matchMedia?.("(display-mode: standalone)").matches ||
     (navigator as NavigatorStandalone).standalone === true;
