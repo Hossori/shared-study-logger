@@ -57,6 +57,7 @@
     "cf-typegen": "wrangler types",
     "check": "pnpm typecheck && vite build && wrangler deploy --dry-run",
     "check:d1-migrations": "node scripts/check-d1-migrations.mjs",
+    "check:path-casing": "node scripts/check-path-casing.mjs",
     "check:zod-deprecated": "node scripts/check-zod-deprecated.mjs",
     "openapi:generate": "orval --config orval.config.ts && prettier --write shared/generated/api.zod.ts",
     "openapi:check": "node scripts/openapi-check.mjs",

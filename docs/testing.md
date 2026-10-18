@@ -21,6 +21,7 @@ pnpm lint
 pnpm run format:check
 pnpm run check:zod-deprecated
 pnpm run check:d1-migrations
+pnpm run check:path-casing
 pnpm run openapi:check
 ```
 
@@ -58,6 +59,7 @@ Push 実送信・購読 UI・PWA / Service Worker / iOS 実機は [manual-checkl
 - 時刻・乱数が必要なアサーションは固定値にする
 - worker の DB 書き込みはテスト間で隔離する
 - CI は ubuntu。Windows で `wrangler d1` が失敗する場合は WSL または CI を正とする
+- 同じディレクトリに、拡張子を除いた名前の綴りが大文字小文字だけ違うファイルを置かない。`LoginForm.tsx` と `loginForm.ts` は Windows で同じモジュール名になり、Linux の `tsc` は通す。`pnpm run check:path-casing` がこの組を落とす。綴りが同じ `index.ts` と `index.tsx` は対象外
 
 ## 変更時
 
@@ -78,6 +80,7 @@ Push 実送信・購読 UI・PWA / Service Worker / iOS 実機は [manual-checkl
 | `pnpm run format:check` | Prettier と Tailwind クラス順序 |
 | `pnpm run check:zod-deprecated` | Zod の文字列フォーマット API |
 | `pnpm run check:d1-migrations` | D1: CASCADE 親 DROP の子退避漏れ |
+| `pnpm run check:path-casing` | 同一ディレクトリで、拡張子を除いた名前が大文字小文字だけ違うファイル |
 | `pnpm openapi:check` | Orval 再生成で `shared/generated/api.zod.ts` が変わらないこと。`info.version` とヘッダ pattern がクライアント API 版と一致すること（失敗時は `pnpm openapi:generate`） |
 | `pnpm run typecheck` | `tsc -b` |
 
