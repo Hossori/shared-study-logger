@@ -16,6 +16,8 @@ import {
   CreateAdminUserRequest as CreateAdminUserRequestGen,
   CreateInAppNotificationRequest as CreateInAppNotificationRequestGen,
   CreateStudyRecordRequest as CreateStudyRecordRequestGen,
+  createStudyRecordRequestMemoMax,
+  createStudyRecordRequestTitleMax,
   DurationMinutes as DurationMinutesSchemaGen,
   DurationMinutesMax,
   DurationMinutesMin,
@@ -230,6 +232,9 @@ export type RecordReactionsResponse = z.infer<
 export const DURATION_MINUTES_STEP = DurationMinutesMultipleOf;
 export const DURATION_MINUTES_MIN = DurationMinutesMin;
 export const DURATION_MINUTES_MAX = DurationMinutesMax;
+
+export const RECORD_TITLE_MAX = createStudyRecordRequestTitleMax;
+export const RECORD_MEMO_MAX = createStudyRecordRequestMemoMax;
 
 export const DurationMinutesSchema = DurationMinutesSchemaGen;
 

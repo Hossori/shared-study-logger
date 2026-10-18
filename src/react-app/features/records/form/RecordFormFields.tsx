@@ -4,6 +4,7 @@
 import { Field, FieldGroup, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RECORD_MEMO_MAX, RECORD_TITLE_MAX } from "@shared/schemas";
 import StudyDatetimeField from "./StudyDatetimeField";
 import type { RecordFormValues } from "./recordFormUtils";
 
@@ -29,7 +30,7 @@ export default function RecordFormFields({
           type="text"
           required
           aria-labelledby={`${idPrefix}-title-label`}
-          maxLength={200}
+          maxLength={RECORD_TITLE_MAX}
           value={values.title}
           onChange={(e) => onChange({ ...values, title: e.target.value })}
         />
@@ -55,7 +56,7 @@ export default function RecordFormFields({
           id={`${idPrefix}-memo`}
           rows={3}
           aria-labelledby={`${idPrefix}-memo-label`}
-          maxLength={2000}
+          maxLength={RECORD_MEMO_MAX}
           value={values.memo}
           onChange={(e) => onChange({ ...values, memo: e.target.value })}
           placeholder="振り返りや気づきなど"
