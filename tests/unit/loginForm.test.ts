@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LoginFormSchema } from "../../src/react-app/features/auth/loginForm";
+import { LoginFormSchema } from "../../src/react-app/features/auth/loginFormSchema";
 
 describe("LoginFormSchema", () => {
 	it("rejects an email with surrounding whitespace", () => {
