@@ -59,7 +59,7 @@ Push 実送信・購読 UI・PWA / Service Worker / iOS 実機は [manual-checkl
 - 時刻・乱数が必要なアサーションは固定値にする
 - worker の DB 書き込みはテスト間で隔離する
 - CI は ubuntu。Windows で `wrangler d1` が失敗する場合は WSL または CI を正とする
-- 同じディレクトリに、拡張子を除いた名前の綴りが大文字小文字だけ違うファイルを置かない。Windows では同じモジュール名になり、Linux の `tsc` は通す。`pnpm run check:path-casing` が落とす
+- 同じディレクトリに、拡張子を除いた名前の綴りが大文字小文字だけ違うファイルを置かない。Windows では同じモジュール名になるためエラーとなるが、Linux の `tsc` は通るという不整合が起きるため。左記は `pnpm run check:path-casing` で落とす
 
 ## 変更時
 
