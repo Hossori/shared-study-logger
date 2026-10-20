@@ -2,12 +2,8 @@
  * Windows はパスの大文字小文字を区別しない。
  * 同一ディレクトリで、拡張子を除いた名前の綴りが大文字小文字だけ違うファイルを失敗させる。
  *
- * TypeScript は `./LoginForm` を `LoginForm.ts` としても探す。
- * そのため `loginForm.ts` と `LoginForm.tsx` は Windows で衝突する。
- * フルパスを小文字化した一致だけでは、拡張子が違うこの組を見逃す。
- *
- * 綴りが完全に同じ組（`index.ts` と `index.tsx`）は対象外。
- * 解決順は Linux でも同じで、今回の Windows 固有の問題ではない。
+ * TypeScript は拡張子を補ってモジュールを解決する。
+ * フルパスを小文字化した一致だけでは、拡張子が違う組を見逃す。
  */
 import { execFileSync } from "node:child_process";
 import { basename, dirname, extname, resolve } from "node:path";
