@@ -10,6 +10,8 @@
 
 新しいサーバー状態は、その feature の `api/` に hook を足す。ミューテーション成功時は自分のクエリを `invalidateQueries` する。他 feature のキャッシュを無効化する処理は `pages` か `app` に置く。記録フィルタは一覧コンポーネントの state。
 
+セッション終了（ログアウト・401 失効・未ログイン判定）時は `app/session/resetSessionState` が me 以外の Query と選択グループ（URL 正本はホームだが store / localStorage の残留を防ぐ）を破棄する。
+
 HTTP の集約は `src/react-app/lib/api.ts`。
 
 ## 入口

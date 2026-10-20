@@ -15,6 +15,12 @@
 
 フロントは `useMeQuery`（`GET /api/auth/me`）。401 は `null`。ガードは [routing.md](routing.md)。
 
+ログアウトは API 成功時と 401（サーバー側で既に未ログイン）のときだけ `setQueryData(me, null)` する。5xx・ネットワーク失敗では `me` を維持し、`ProfileMenu` が失敗ダイアログで再試行を促す（セッションがサーバーに残ったまま未ログイン表示になるのを避ける）。`me` が null になると `ProtectedRoute` が `/login` へ遷移したあと `resetSessionState` で me 以外の Query キャッシュと選択グループ（store + localStorage）を破棄する。Push 購読の解除はログアウト API の前に行うため、ログアウトに失敗した場合は購読が解除済みになりうる（マイページで再度有効化する）。別ユーザーでログインしたときは `onLoginMutationSuccess` が me 以外の query を先に消す。
+
+401 の横断処理: `main.tsx` の QueryClient が query / mutation の `onError` で `handleSessionExpired` を呼ぶ。`requireAuth` 失効は `{ error: "unauthorized" }` などで me を null 化する。ログイン・パスワード変更の誤りは `{ error: "invalid_credentials" }` で、失効扱いにしない。
+
+`GET /api/auth/me` が 5xx などで失敗したときは未ログイン扱いにせず、ガードのエラー画面から再試行する（[routing.md](routing.md)）。
+
 プロフィール: `PATCH /api/auth/me`。パスワード: `POST /api/auth/password`（現在のパスワード検証のうえ再ハッシュ）。
 
 ## 変更するとき

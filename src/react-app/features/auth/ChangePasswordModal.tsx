@@ -26,11 +26,13 @@ import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "@/components/ui/ErrorMessage";
 import { useUnsavedCloseGuard } from "@/hooks/useUnsavedCloseGuard";
 import { useChangePasswordMutation } from "./api/useAuth";
-import { ApiError } from "@/lib/api";
+import { ApiError, isInvalidCredentialsError } from "@/lib/api";
 
 function passwordApiErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 401) return "現在のパスワードが正しくありません。";
+    if (error.status === 401 && isInvalidCredentialsError(error)) {
+      return "現在のパスワードが正しくありません。";
+    }
     if (error.status === 400)
       return "新しいパスワードは8文字以上で入力してください。";
   }
@@ -94,7 +96,7 @@ export default function ChangePasswordModal({
         onClose();
       },
       onError: (error) => {
-        if (error instanceof ApiError && error.status === 401) {
+        if (isInvalidCredentialsError(error)) {
           setFieldErrors({
             currentPassword: "現在のパスワードが正しくありません。",
           });

@@ -28,10 +28,15 @@ export function useVapidPublicKeyQuery() {
   });
 }
 
+export function postPushSubscription(
+  input: PushSubscriptionInput,
+): Promise<{ ok: true }> {
+  return apiPost("/api/push/subscribe", OkResponseSchema, input);
+}
+
 export function useSubscribePushMutation() {
   return useMutation({
-    mutationFn: (input: PushSubscriptionInput) =>
-      apiPost("/api/push/subscribe", OkResponseSchema, input),
+    mutationFn: postPushSubscription,
   });
 }
 

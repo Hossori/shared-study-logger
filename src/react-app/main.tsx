@@ -1,6 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import { handleSessionExpired } from "@/features/auth";
+import { defaultQueryRetry } from "@/lib/queryRetry";
 import "./index.css";
 import App from "./app/App.tsx";
 import {
@@ -12,9 +19,19 @@ import {
 } from "@/features/pwa";
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      handleSessionExpired(queryClient, error);
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      handleSessionExpired(queryClient, error);
+    },
+  }),
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: defaultQueryRetry,
       refetchOnWindowFocus: false,
     },
   },
