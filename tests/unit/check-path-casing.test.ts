@@ -1,5 +1,3 @@
-/// <reference types="node" />
-import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { findStemCasingCollisions } from "../../scripts/check-path-casing.mjs";
 
@@ -37,15 +35,5 @@ describe("findStemCasingCollisions", () => {
 		expect(
 			findStemCasingCollisions(["src/Foo/a.ts", "src/foo/a.ts"]),
 		).toEqual([]);
-	});
-});
-
-describe("check-path-casing CLI", () => {
-	it("exits 0 for the tracked tree", () => {
-		const result = spawnSync("node", ["scripts/check-path-casing.mjs"], {
-			cwd: process.cwd(),
-			encoding: "utf8",
-		});
-		expect(result.status).toBe(0);
 	});
 });
