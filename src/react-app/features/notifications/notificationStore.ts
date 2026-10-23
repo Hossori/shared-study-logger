@@ -29,7 +29,6 @@ function writeDismissedIds(ids: string[]) {
 interface NotificationUiState {
   dismissedIds: string[];
   dismiss: (id: string) => void;
-  isDismissed: (id: string) => boolean;
 }
 
 export const useNotificationStore = create<NotificationUiState>((set, get) => ({
@@ -40,6 +39,4 @@ export const useNotificationStore = create<NotificationUiState>((set, get) => ({
     writeDismissedIds(next);
     set({ dismissedIds: next });
   },
-
-  isDismissed: (id) => get().dismissedIds.includes(id),
 }));
