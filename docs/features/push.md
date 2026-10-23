@@ -6,6 +6,8 @@
 
 - 購読はマイページの `PushSettingsCard` からのユーザー操作（iOS は standalone 必須）
 - 1 人 1 メッセージ。410/404 なら購読行を削除
+- 購読 `endpoint` は `https:` のみ（最大 2048 文字）。制限の正本は `openapi/api.yaml`（`PushSubscription`）で、`POST /api/push/subscribe` が検証する。`DELETE` は過去登録分も解除できるよう制限しない（`PushUnsubscribeRequest`）
+- 送信 `fetch` はリダイレクトを追わず 10 秒でタイムアウトする。3xx・タイムアウトは失敗扱いで Queue の再試行・DLQ に委ね、購読は削除しない
 - VAPID 実装は `@pushforge/builder`（Web Crypto）
 
 ## 流れ

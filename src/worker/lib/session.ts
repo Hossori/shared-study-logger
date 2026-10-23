@@ -3,6 +3,7 @@
  * `session:{token}` -> `{ userId, expiresAt }` を保存する。
  * KVのTTL機能(`expirationTtl`)でexpireを管理し、ログアウト時は明示的に削除する。
  */
+import { z } from "zod";
 
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30日
 const SESSION_KEY_PREFIX = "session:";
@@ -11,6 +12,11 @@ export interface SessionData {
   userId: string;
   expiresAt: number; // epoch seconds
 }
+
+const SessionDataSchema = z.object({
+  userId: z.string().min(1),
+  expiresAt: z.number(),
+});
 
 function sessionKey(token: string): string {
   return `${SESSION_KEY_PREFIX}${token}`;
@@ -47,13 +53,22 @@ export async function getSession(
   kv: KVNamespace,
   token: string,
 ): Promise<SessionData | null> {
-  const raw = await kv.get(sessionKey(token));
+  const key = sessionKey(token);
+  const raw = await kv.get(key);
   if (!raw) return null;
+  let parsed: unknown;
   try {
-    return JSON.parse(raw) as SessionData;
+    parsed = JSON.parse(raw);
   } catch {
+    await kv.delete(key);
     return null;
   }
+  const validated = SessionDataSchema.safeParse(parsed);
+  if (!validated.success) {
+    await kv.delete(key);
+    return null;
+  }
+  return validated.data;
 }
 
 /** セッションを削除する(ログアウト)。 */

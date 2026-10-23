@@ -1208,6 +1208,8 @@ components:
         endpoint:
           type: string
           format: uri
+          pattern: '^https://.+'
+          maxLength: 2048
         keys:
           $ref: "#/components/schemas/PushSubscriptionKeys"
 

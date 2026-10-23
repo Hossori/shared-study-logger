@@ -118,6 +118,48 @@ describe("auth routes", () => {
 		expect(response.status).toBe(401);
 	});
 
+	it("rejects session cookie when KV holds invalid JSON", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const token = cookie.replace(/^session=/, "");
+		await env.SESSIONS.put(`session:${token}`, "{not-json", {
+			expirationTtl: 3600,
+		});
+
+		const meRes = await workerFetch(
+			new Request("http://example.com/api/auth/me", {
+				headers: { cookie },
+			}),
+		);
+		expect(meRes.status).toBe(401);
+		const remaining = await env.SESSIONS.get(`session:${token}`);
+		expect(remaining).toBeNull();
+	});
+
+	it("rejects session cookie when expiresAt is missing", async () => {
+		const { cookie } = await loginAs(
+			workerFetch,
+			SEED.admin.email,
+			SEED.admin.password,
+		);
+		const token = cookie.replace(/^session=/, "");
+		await env.SESSIONS.put(
+			`session:${token}`,
+			JSON.stringify({ userId: SEED.admin.id }),
+			{ expirationTtl: 3600 },
+		);
+
+		const meRes = await workerFetch(
+			new Request("http://example.com/api/auth/me", {
+				headers: { cookie },
+			}),
+		);
+		expect(meRes.status).toBe(401);
+	});
+
 	it("logout clears session", async () => {
 		const { cookie } = await loginAs(
 			workerFetch,

@@ -406,8 +406,15 @@ export type PushSubscriptionKeysOutput = zod.output<
   typeof PushSubscriptionKeys
 >;
 
+export const pushSubscriptionEndpointMax = 2048;
+
+export const pushSubscriptionEndpointRegExp = new RegExp("^https://.+");
+
 export const PushSubscription = zod.object({
-  endpoint: zod.url(),
+  endpoint: zod
+    .url()
+    .max(pushSubscriptionEndpointMax)
+    .regex(pushSubscriptionEndpointRegExp),
   keys: PushSubscriptionKeys,
 });
 

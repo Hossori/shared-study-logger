@@ -2,7 +2,7 @@
  * Push 購読の有効化・無効化ペイロード。HTTP 契約へ pipe する。
  */
 import { z } from "zod";
-import { PushSubscriptionSchema } from "@shared/schemas";
+import { PushSubscriptionSchema, PushUnsubscribeSchema } from "@shared/schemas";
 
 export const PushSubscribeFormSchema = z
   .object({
@@ -18,4 +18,4 @@ export const PushUnsubscribeFormSchema = z
   .object({
     endpoint: z.string(),
   })
-  .pipe(PushSubscriptionSchema.pick({ endpoint: true }));
+  .pipe(PushUnsubscribeSchema);

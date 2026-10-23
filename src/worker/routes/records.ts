@@ -313,7 +313,12 @@ recordsRoutes.delete("/:groupId/records/:recordId", async (c) => {
     return c.json({ error: "forbidden" }, 403);
   }
 
-  const deleted = await deleteStudyRecord(c.env.DB, groupId, recordId);
+  const deleted = await deleteStudyRecord(
+    c.env.DB,
+    groupId,
+    recordId,
+    user.id,
+  );
   if (!deleted) {
     return c.json({ error: "not_found" }, 404);
   }
