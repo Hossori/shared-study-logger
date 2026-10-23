@@ -26,6 +26,10 @@ interface RecordModalShellProps {
   children: ReactNode;
 }
 
+interface CloseEventDetails {
+  cancel: () => void;
+}
+
 export default function RecordModalShell({
   open,
   title,
@@ -40,8 +44,24 @@ export default function RecordModalShell({
   const { requestClose, handleOpenChange, formGuardProps, confirmNode } =
     useUnsavedCloseGuard(open, onClose);
 
+  const guardedOpenChange = (
+    nextOpen: boolean,
+    eventDetails: CloseEventDetails,
+  ) => {
+    if (isPending && !nextOpen) {
+      eventDetails.cancel();
+      return;
+    }
+    handleOpenChange(nextOpen, eventDetails);
+  };
+
+  const guardedRequestClose = () => {
+    if (isPending) return;
+    requestClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={guardedOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={onSubmit} className="contents" {...formGuardProps}>
           <DialogHeader>
@@ -53,7 +73,12 @@ export default function RecordModalShell({
           {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
 
           <DialogButtonArea>
-            <Button type="button" variant="outline" onClick={requestClose}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isPending}
+              onClick={guardedRequestClose}
+            >
               キャンセル
             </Button>
             <Button type="submit" disabled={isPending}>
