@@ -23,6 +23,12 @@ test("未認証で / は /login へリダイレクト", async ({ page }) => {
 
 test("ログイン失敗でエラー表示", async ({ page }) => {
   await page.goto("/login");
+  const emailByLabel = page.getByLabel("メールアドレス");
+  await expect(emailByLabel).toHaveAttribute("id", "email");
+  await expect(page.locator("#email")).toHaveAccessibleName("メールアドレス");
+  await page.locator("#email-label").click();
+  await expect(page.locator("#email")).not.toBeFocused();
+
   await page.locator("#email").fill(SEED_ADMIN.email);
   await page.locator("#password").fill("wrong-password");
   await page.getByRole("button", { name: "ログイン" }).click();
@@ -30,6 +36,18 @@ test("ログイン失敗でエラー表示", async ({ page }) => {
     page.getByText("メールアドレスまたはパスワードが正しくありません。"),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
+
+  await loginAsAdmin(page);
+  await openPostModal(page);
+  const titleByLabel = page.getByLabel("タイトル・学習内容");
+  await expect(titleByLabel).toHaveAttribute("id", "post-title");
+  await expect(page.locator("#post-title")).toHaveAccessibleName(
+    "タイトル・学習内容",
+  );
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("heading", { name: "学習記録を投稿" }),
+  ).toBeHidden();
 });
 
 test("ログイン成功でグループ切替が表示される", async ({ page }) => {

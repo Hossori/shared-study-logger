@@ -12,7 +12,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "@/components/ui/ErrorMessage";
@@ -53,13 +53,14 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="email" required>
+              <FieldTitle id="email-label" required>
                 メールアドレス
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
+                aria-labelledby="email-label"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -68,13 +69,14 @@ export default function LoginForm() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="password" required>
+              <FieldTitle id="password-label" required>
                 パスワード
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
+                aria-labelledby="password-label"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

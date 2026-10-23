@@ -16,7 +16,7 @@ import {
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
@@ -171,13 +171,14 @@ export default function EditProfileModal({
             </FieldSet>
 
             <Field data-invalid={displayNameInvalid || undefined}>
-              <FieldLabel htmlFor="edit-displayName" required>
+              <FieldTitle id="edit-displayName-label" required>
                 表示名
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="edit-displayName"
                 required
                 maxLength={50}
+                aria-labelledby="edit-displayName-label"
                 value={displayName}
                 onChange={(e) => {
                   setDisplayName(e.target.value);
@@ -195,10 +196,11 @@ export default function EditProfileModal({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="edit-bio">自己紹介</FieldLabel>
+              <FieldTitle id="edit-bio-label">自己紹介</FieldTitle>
               <Textarea
                 id="edit-bio"
                 rows={4}
+                aria-labelledby="edit-bio-label"
                 maxLength={500}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}

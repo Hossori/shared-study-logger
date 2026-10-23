@@ -127,16 +127,32 @@ function FieldLabel({
   );
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
+function FieldTitle({
+  className,
+  required,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & { required?: boolean }) {
   return (
     <div
       data-slot="field-label"
       className={cn(
-        "flex w-fit items-center gap-2 text-sm font-medium group-data-[disabled=true]/field:opacity-50",
+        "flex w-fit items-center gap-2 text-sm leading-snug font-medium select-none group-data-[disabled=true]/field:opacity-50",
         className,
       )}
       {...props}
-    />
+    >
+      {required ? (
+        <span className="inline-flex items-baseline">
+          {typeof children === "string" ? children.trim() : children}
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+        </span>
+      ) : (
+        children
+      )}
+    </div>
   );
 }
 
