@@ -18,12 +18,8 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useDeleteRecordMutation, useRecordsQuery } from "../api/useRecords";
-import {
-  GroupsResponseSchema,
-  type Group,
-  type StudyRecord,
-} from "@shared/schemas";
-import { apiGet } from "@/lib/api";
+import { type StudyRecord } from "@shared/schemas";
+import { groupsListQueryOptions } from "@/lib/groupsListQuery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,8 +56,6 @@ import {
   isFilterApplied,
   type RecordsFilterMode,
 } from "./recordsFilterUtils";
-/** queryKey は `features/groups/api/useGroups.ts` の groupsQueryKeys.list（["groups"]）と同一。 */
-const GROUPS_LIST_QUERY_KEY = ["groups"] as const;
 
 interface RecordCardProps {
   groupId: string;
@@ -251,16 +245,7 @@ function NoGroupContent({
     isError,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: GROUPS_LIST_QUERY_KEY,
-    queryFn: async (): Promise<Group[]> => {
-      const { groups: list } = await apiGet(
-        "/api/groups",
-        GroupsResponseSchema,
-      );
-      return list;
-    },
-  });
+  } = useQuery(groupsListQueryOptions());
 
   if (isLoading || (groups != null && groups.length > 0)) {
     return (
