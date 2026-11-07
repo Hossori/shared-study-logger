@@ -48,8 +48,10 @@ import {
   useToggleNotificationMutation,
 } from "./api/useNotifications";
 import { ApiError } from "@/lib/api";
+import { resetMutationIfIdle } from "@/lib/resetMutationIfIdle";
 import { CreateInAppNotificationFormSchema } from "./notificationForm";
 import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
+import { resolveAdminNotificationPendingRowId } from "./adminNotificationPendingId";
 
 function mutationErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -84,10 +86,10 @@ export default function AdminNotificationsPage() {
   }, [body]);
 
   const notifications = listQuery.data?.notifications ?? [];
-  const pendingId =
-    toggleMutation.isPending || deleteMutation.isPending
-      ? (toggleMutation.variables?.id ?? deleteMutation.variables)
-      : undefined;
+  const pendingId = resolveAdminNotificationPendingRowId(
+    toggleMutation,
+    deleteMutation,
+  );
 
   const rememberBodySelection = () => {
     const el = bodyRef.current;
@@ -119,6 +121,8 @@ export default function AdminNotificationsPage() {
       return;
     }
     setFormError(null);
+    resetMutationIfIdle(toggleMutation);
+    resetMutationIfIdle(deleteMutation);
     createMutation.mutate(parsed.data, {
       onSuccess: () => {
         setTitle("");
@@ -129,6 +133,8 @@ export default function AdminNotificationsPage() {
   };
 
   const handleToggle = (id: string, enabled: boolean) => {
+    resetMutationIfIdle(createMutation);
+    resetMutationIfIdle(deleteMutation);
     toggleMutation.mutate({ id, enabled });
   };
 
@@ -140,6 +146,8 @@ export default function AdminNotificationsPage() {
       variant: "danger",
     });
     if (!ok) return;
+    resetMutationIfIdle(createMutation);
+    resetMutationIfIdle(toggleMutation);
     deleteMutation.mutate(id);
   };
 

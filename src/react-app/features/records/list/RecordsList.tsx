@@ -5,12 +5,25 @@
  * 自分の記録には編集・削除操作を表示する。
  * 再取得の引っ張り操作はページ側の PullToRefresh が包む。
  */
-import { useState, type ReactNode } from "react";
+import {
+  memo,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useDeleteRecordMutation, useRecordsQuery } from "../api/useRecords";
-import { type StudyRecord } from "@shared/schemas";
+import {
+  GroupsResponseSchema,
+  type Group,
+  type StudyRecord,
+} from "@shared/schemas";
+import { apiGet } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +60,8 @@ import {
   isFilterApplied,
   type RecordsFilterMode,
 } from "./recordsFilterUtils";
+/** queryKey は `features/groups/api/useGroups.ts` の groupsQueryKeys.list（["groups"]）と同一。 */
+const GROUPS_LIST_QUERY_KEY = ["groups"] as const;
 
 interface RecordCardProps {
   groupId: string;
@@ -57,7 +72,7 @@ interface RecordCardProps {
   isDeleting: boolean;
 }
 
-function RecordCard({
+const RecordCard = memo(function RecordCard({
   groupId,
   record,
   isOwner,
@@ -145,7 +160,7 @@ function RecordCard({
       </Card>
     </li>
   );
-}
+});
 
 function EmptyRecordsMessage() {
   return (
@@ -221,6 +236,95 @@ function RecordsListFrame({
   );
 }
 
+function NoGroupContent({
+  onOpenPost,
+  groupId,
+  toolbarStart,
+}: {
+  onOpenPost: () => void;
+  groupId: string | null;
+  toolbarStart?: ReactNode;
+}) {
+  const {
+    data: groups,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: GROUPS_LIST_QUERY_KEY,
+    queryFn: async (): Promise<Group[]> => {
+      const { groups: list } = await apiGet(
+        "/api/groups",
+        GroupsResponseSchema,
+      );
+      return list;
+    },
+  });
+
+  if (isLoading || (groups != null && groups.length > 0)) {
+    return (
+      <RecordsListFrame
+        onOpenPost={onOpenPost}
+        groupId={groupId}
+        toolbarStart={toolbarStart}
+      >
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </RecordsListFrame>
+    );
+  }
+
+  if (isError) {
+    return (
+      <RecordsListFrame
+        onOpenPost={onOpenPost}
+        groupId={groupId}
+        toolbarStart={toolbarStart}
+      >
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>グループの取得に失敗しました。</EmptyTitle>
+            <EmptyDescription>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                disabled={isFetching}
+                onClick={() => {
+                  void refetch();
+                }}
+              >
+                再試行
+              </Button>
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </RecordsListFrame>
+    );
+  }
+
+  return (
+    <RecordsListFrame
+      onOpenPost={onOpenPost}
+      groupId={groupId}
+      toolbarStart={toolbarStart}
+    >
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>
+            所属しているグループがありません。管理者にグループへの追加を依頼してください。
+          </EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    </RecordsListFrame>
+  );
+}
+
 function GroupRecordsContent({
   groupId,
   currentUserId,
@@ -249,14 +353,43 @@ function GroupRecordsContent({
     isPending,
     isFetching,
     isError,
+    refetch,
+    isFetchNextPageError,
+    isRefetchError,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
   } = useRecordsQuery(groupId, effectiveUserIds);
   const deleteRecordMutation = useDeleteRecordMutation(groupId);
   const confirm = useConfirm();
+  const confirmRef = useRef(confirm);
+  const deleteMutateAsyncRef = useRef(deleteRecordMutation.mutateAsync);
+  useLayoutEffect(() => {
+    confirmRef.current = confirm;
+    deleteMutateAsyncRef.current = deleteRecordMutation.mutateAsync;
+  });
   const [editingRecord, setEditingRecord] = useState<StudyRecord | null>(null);
   const [editSession, setEditSession] = useState(0);
+
+  const onEdit = useCallback((record: StudyRecord) => {
+    setEditSession((session) => session + 1);
+    setEditingRecord(record);
+  }, []);
+
+  const handleDelete = useCallback(async (record: StudyRecord) => {
+    const confirmed = await confirmRef.current({
+      title: "記録の削除",
+      message: `「${record.title}」を削除しますか？この操作は取り消せません。`,
+      confirmLabel: "削除",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+    try {
+      await deleteMutateAsyncRef.current(record.id);
+    } catch {
+      // 一覧の invalidate は onSuccess 側。失敗時は現状維持。
+    }
+  }, []);
 
   const filterSlot = (
     <RecordsFilter
@@ -271,21 +404,6 @@ function GroupRecordsContent({
   );
 
   const isInitialLoading = isPending || (isFetching && !data);
-
-  const handleDelete = async (record: StudyRecord) => {
-    const confirmed = await confirm({
-      title: "記録の削除",
-      message: `「${record.title}」を削除しますか？この操作は取り消せません。`,
-      confirmLabel: "削除",
-      variant: "danger",
-    });
-    if (!confirmed) return;
-    try {
-      await deleteRecordMutation.mutateAsync(record.id);
-    } catch {
-      // 一覧の invalidate は onSuccess 側。失敗時は現状維持。
-    }
-  };
 
   if (isInitialLoading) {
     return (
@@ -304,7 +422,7 @@ function GroupRecordsContent({
     );
   }
 
-  if (isError) {
+  if (isError && !data) {
     return (
       <RecordsListFrame
         onOpenPost={onOpenPost}
@@ -315,6 +433,19 @@ function GroupRecordsContent({
         <Empty>
           <EmptyHeader>
             <EmptyTitle>学習記録の取得に失敗しました。</EmptyTitle>
+            <EmptyDescription>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  void refetch();
+                }}
+              >
+                再試行
+              </Button>
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       </RecordsListFrame>
@@ -354,10 +485,7 @@ function GroupRecordsContent({
             groupId={groupId}
             record={record}
             isOwner={meId === record.userId}
-            onEdit={(record) => {
-              setEditSession((session) => session + 1);
-              setEditingRecord(record);
-            }}
+            onEdit={onEdit}
             onDelete={handleDelete}
             isDeleting={
               deleteRecordMutation.isPending &&
@@ -367,7 +495,22 @@ function GroupRecordsContent({
         ))}
       </ul>
 
-      {hasNextPage && (
+      {isFetchNextPageError ? (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <p className="text-muted-foreground text-sm">
+            次のページの取得に失敗しました。
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void fetchNextPage();
+            }}
+            disabled={isFetchingNextPage}
+          >
+            再試行
+          </Button>
+        </div>
+      ) : hasNextPage ? (
         <div className="mt-4 flex justify-center">
           <Button
             variant="outline"
@@ -384,7 +527,25 @@ function GroupRecordsContent({
             )}
           </Button>
         </div>
-      )}
+      ) : null}
+
+      {isRefetchError && !isFetchNextPageError ? (
+        <p className="text-muted-foreground mt-3 text-center text-sm">
+          更新に失敗しました。
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto px-1"
+            disabled={isFetching}
+            onClick={() => {
+              void refetch();
+            }}
+          >
+            再試行
+          </Button>
+        </p>
+      ) : null}
 
       <EditRecordModal
         key={editSession}
@@ -413,17 +574,11 @@ export default function RecordsList({
   let body: ReactNode;
   if (!groupId) {
     body = (
-      <RecordsListFrame
+      <NoGroupContent
         onOpenPost={openPost}
         groupId={groupId}
         toolbarStart={toolbarStart}
-      >
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>グループを選択してください。</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </RecordsListFrame>
+      />
     );
   } else {
     body = (

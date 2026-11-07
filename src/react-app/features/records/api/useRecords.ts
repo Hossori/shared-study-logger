@@ -28,6 +28,11 @@ import {
 } from "@shared/schemas";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
 import { applyAddReaction, applyRemoveReaction } from "./reactionSummaries";
+import {
+  addRecordReactionMutationKey,
+  removeRecordReactionMutationKey,
+  shouldInvalidateAfterReactionSettled,
+} from "./reactionMutationInvalidate";
 
 const RECORDS_PAGE_LIMIT = 20;
 
@@ -180,6 +185,7 @@ export function useRecordReactionsQuery(
 export function useAddRecordReactionMutation(groupId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: addRecordReactionMutationKey,
     mutationFn: ({
       recordId,
       stamp,
@@ -212,11 +218,19 @@ export function useAddRecordReactionMutation(groupId: string | null) {
         }
       }
     },
-    onSettled: async (_data, _error, variables) => {
-      await queryClient.invalidateQueries({
+    onSettled: (_data, _error, variables) => {
+      if (
+        !shouldInvalidateAfterReactionSettled(
+          queryClient,
+          addRecordReactionMutationKey,
+        )
+      ) {
+        return;
+      }
+      void queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.list(groupId),
       });
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.reactions(groupId, variables.recordId),
       });
     },
@@ -226,6 +240,7 @@ export function useAddRecordReactionMutation(groupId: string | null) {
 export function useDeleteRecordReactionMutation(groupId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: removeRecordReactionMutationKey,
     mutationFn: ({
       recordId,
       stamp,
@@ -257,11 +272,19 @@ export function useDeleteRecordReactionMutation(groupId: string | null) {
         }
       }
     },
-    onSettled: async (_data, _error, variables) => {
-      await queryClient.invalidateQueries({
+    onSettled: (_data, _error, variables) => {
+      if (
+        !shouldInvalidateAfterReactionSettled(
+          queryClient,
+          removeRecordReactionMutationKey,
+        )
+      ) {
+        return;
+      }
+      void queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.list(groupId),
       });
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: recordsQueryKeys.reactions(groupId, variables.recordId),
       });
     },

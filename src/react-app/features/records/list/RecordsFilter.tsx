@@ -91,12 +91,14 @@ export default function RecordsFilter({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [draftUserIds, setDraftUserIds] = useState<string[]>([]);
 
-  const { data: members, isPending: membersPending } = useGroupMembersQuery(
-    groupId,
-    {
-      enabled: panelOpen || mode === "specify" || pickerOpen,
-    },
-  );
+  const {
+    data: members,
+    isPending: membersPending,
+    isError: membersError,
+    refetch: refetchMembers,
+  } = useGroupMembersQuery(groupId, {
+    enabled: panelOpen || mode === "specify" || pickerOpen,
+  });
   const showSpecifyOption = (members?.length ?? 0) > 1;
 
   const applyDraftAndClose = () => {
@@ -228,7 +230,23 @@ export default function RecordsFilter({
             anchor={specifyAnchorRef}
           >
             <PopoverTitle>メンバーを選択</PopoverTitle>
-            {membersPending || !members ? (
+            {membersError && !members ? (
+              <div className="flex flex-col items-center gap-2 py-2 text-sm">
+                <p className="text-muted-foreground">
+                  メンバーの取得に失敗しました。
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  onClick={() => {
+                    void refetchMembers();
+                  }}
+                >
+                  再試行
+                </Button>
+              </div>
+            ) : membersPending || !members ? (
               <div className="flex justify-center py-2">
                 <Spinner />
               </div>
