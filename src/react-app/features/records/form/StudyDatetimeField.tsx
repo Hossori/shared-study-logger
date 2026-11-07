@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldTitle } from "@/components/ui/field";
 import {
   Popover,
   PopoverContent,
@@ -250,7 +250,7 @@ export default function StudyDatetimeField({
     <Field ref={fieldRef}>
       <div className="flex flex-col items-start gap-2">
         <div className="flex items-center gap-1">
-          <FieldLabel>学習日時</FieldLabel>
+          <FieldTitle>学習日時</FieldTitle>
           <Popover open={unsetHelpOpen} onOpenChange={setUnsetHelpOpen}>
             <PopoverTrigger
               render={

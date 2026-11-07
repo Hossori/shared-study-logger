@@ -30,6 +30,8 @@ Python Workers（FastAPI）は無料プランの CPU 制限・コールドスタ
 
 Atomic Design の 5 階層はコンポーネント数が少なく過剰で、`features/` のドメイン構成と衝突しやすい。ドメイン非依存の汎用 UI（Button / FormField / ErrorMessage 等）だけ `components/ui/` へ置く。確認ダイアログの見た目（`ConfirmDialog`）は `ui/`、Context / Promise 解決を持つ `ConfirmProvider` と `useConfirm` は `components/` 直下。
 
+フォームの項目見出しは `FieldTitle`（`id`）とコントロールの `aria-labelledby` で accessible name を付ける。見出しクリックで入力へフォーカスさせない。ラベルクリックで操作したい Radio / Checkbox だけ本物の `<label>`（`Label` / `FieldLabel`）。
+
 ### オーバーレイ: Dialog / Drawer / AlertDialog
 
 記録・プロフィール・パスワード・ConfirmDialog は `Dialog` の CSS 下端ボトムシート（`sm` 未満）。アプリ内通知だけモバイルで Base UI `Drawer`（スナップ 0.5 / 1）に分岐し、高さ変更をスワイプで行う。`AlertDialog` は常にビューポート中央。
