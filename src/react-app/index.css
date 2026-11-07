@@ -186,6 +186,10 @@ body {
     @apply font-sans;
     overscroll-behavior-y: none;
   }
+  /* iOS standalone の端スワイプを横パンとして扱わせない。時計面は touch-none のまま。 */
+  html[data-ios-standalone] {
+    touch-action: pan-y;
+  }
   /* PC: オーバーレイの scroll-lock でスクロールバーが消えても幅が変わらないようにする */
   @media (hover: hover) and (pointer: fine) {
     [data-layout-scroll] {
