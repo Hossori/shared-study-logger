@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
   OkResponseSchema,
   PushSubscriptionSchema,
+  PushUnsubscribeSchema,
   VapidPublicKeyResponseSchema,
 } from "@shared/schemas";
 import {
@@ -33,7 +34,10 @@ pushRoutes.post("/subscribe", requireAuth, async (c) => {
   const json = await c.req.json().catch(() => null);
   const parsed = PushSubscriptionSchema.safeParse(json);
   if (!parsed.success) {
-    return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+    return c.json(
+      { error: "invalid_request", issues: parsed.error.issues },
+      400,
+    );
   }
 
   await upsertPushSubscription(c.env.DB, {
@@ -51,11 +55,12 @@ pushRoutes.post("/subscribe", requireAuth, async (c) => {
 pushRoutes.delete("/subscribe", requireAuth, async (c) => {
   const user = c.get("user");
   const json = await c.req.json().catch(() => null);
-  const parsed = PushSubscriptionSchema.pick({ endpoint: true }).safeParse(
-    json,
-  );
+  const parsed = PushUnsubscribeSchema.safeParse(json);
   if (!parsed.success) {
-    return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+    return c.json(
+      { error: "invalid_request", issues: parsed.error.issues },
+      400,
+    );
   }
 
   await deletePushSubscriptionByEndpoint(

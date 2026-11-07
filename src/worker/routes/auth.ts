@@ -16,6 +16,8 @@ import {
   updateUserProfile,
 } from "../lib/db";
 import {
+  DUMMY_LOGIN_HASH_HEX,
+  DUMMY_LOGIN_SALT_HEX,
   generateSaltHex,
   hashPassword,
   verifyPassword,
@@ -51,6 +53,7 @@ authRoutes.post("/login", async (c) => {
 
   const userRow = await getUserByEmail(c.env.DB, email);
   if (!userRow) {
+    await verifyPassword(password, DUMMY_LOGIN_SALT_HEX, DUMMY_LOGIN_HASH_HEX);
     return c.json({ error: "invalid_credentials" }, 401);
   }
 

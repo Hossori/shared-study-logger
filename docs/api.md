@@ -21,7 +21,7 @@
 | DELETE | `/api/groups/:groupId/records/:recordId/reactions/:stamp` | 必要+所属チェック | 自分のスタンプ取消（該当行が無ければ 404） |
 | GET | `/api/groups/:groupId/records/:recordId/reactions` | 必要+所属チェック | スタンプごとのユーザー一覧（`created_at, id` 昇順） |
 | GET | `/api/push/vapid-public-key` | 不要 | Push購読用のVAPID公開鍵取得 |
-| POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert） |
+| POST | `/api/push/subscribe` | 必要 | Push購読情報の登録（upsert）。`endpoint` は https のみ |
 | DELETE | `/api/push/subscribe` | 必要 | Push購読の解除 |
 | GET | `/api/notifications` | 必要 | 有効なアプリ内通知一覧（全ユーザー。本文の `[label](https://...)` はクライアントでリンク化） |
 | GET | `/api/admin/users` | 必要+ADMIN | 全ユーザー一覧（email 含む） |

@@ -9,6 +9,11 @@
 const PBKDF2_ITERATIONS = 100_000;
 const DERIVED_KEY_BITLEN = 256; // 32byte
 
+/** 存在しないユーザーでのログイン時も PBKDF2 を走らせるためのダミー値（16byte salt / 32byte hash の hex）。 */
+export const DUMMY_LOGIN_SALT_HEX = "00112233445566778899aabbccddeeff";
+export const DUMMY_LOGIN_HASH_HEX =
+  "0000000000000000000000000000000000000000000000000000000000000000";
+
 function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
