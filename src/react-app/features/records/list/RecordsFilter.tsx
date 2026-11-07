@@ -1,6 +1,7 @@
 /**
  * 学習記録一覧のユーザーフィルタ（全員 / 自分のみ / 指定する）。
- * 「指定する」はポップアップで複数選択し、閉じたときに適用する。
+ * 「指定する」はパネルを開いた時点で出す。メンバー一覧の待ちはポップアップ内に出す。
+ * ポップアップは複数選択し、閉じたときに適用する。
  * state は親（GroupRecordsContent）が保持する controlled コンポーネント。
  * 親は `key={groupId}` でマウントし直すとリセットされる。
  */
@@ -99,7 +100,6 @@ export default function RecordsFilter({
   } = useGroupMembersQuery(groupId, {
     enabled: panelOpen || mode === "specify" || pickerOpen,
   });
-  const showSpecifyOption = (members?.length ?? 0) > 1;
 
   const applyDraftAndClose = () => {
     if (draftUserIds.length === 0) {
@@ -203,20 +203,18 @@ export default function RecordsFilter({
               >
                 <RadioGroupItem value="mine">自分のみ</RadioGroupItem>
               </div>
-              {showSpecifyOption ? (
-                <div
-                  ref={specifyAnchorRef}
-                  className="w-fit"
-                  onClickCapture={() => {
-                    if (mode === "specify" && !pickerOpen) {
-                      ignoreNextPickerCloseRef.current = true;
-                      openSpecifyPicker();
-                    }
-                  }}
-                >
-                  <RadioGroupItem value="specify">指定する</RadioGroupItem>
-                </div>
-              ) : null}
+              <div
+                ref={specifyAnchorRef}
+                className="w-fit"
+                onClickCapture={() => {
+                  if (mode === "specify" && !pickerOpen) {
+                    ignoreNextPickerCloseRef.current = true;
+                    openSpecifyPicker();
+                  }
+                }}
+              >
+                <RadioGroupItem value="specify">指定する</RadioGroupItem>
+              </div>
             </RadioGroup>
           </FieldSet>
         </div>
@@ -250,6 +248,10 @@ export default function RecordsFilter({
               <div className="flex justify-center py-2">
                 <Spinner />
               </div>
+            ) : members.length === 0 ? (
+              <p className="text-muted-foreground py-2 text-sm">
+                選択できるメンバーがいません。
+              </p>
             ) : (
               <MemberMultiSelectList
                 members={members}

@@ -13,7 +13,7 @@ API のペア規則・カーソルは [api.md](../api.md)。
 
 ## 流れ
 
-一覧: `GET .../records?cursor&limit&userIds` → 所属チェック → `listStudyRecords`。カーソルは base64 の `sortKey|id`。同じページのリアクションを集計して返す。フロントは `useInfiniteQuery`。フィルタはコンポーネント state（全員 / 自分のみ / 指定する）。
+一覧: `GET .../records?cursor&limit&userIds` → 所属チェック → `listStudyRecords`。カーソルは base64 の `sortKey|id`。同じページのリアクションを集計して返す。フロントは `useInfiniteQuery`。フィルタはコンポーネント state（全員 / 自分のみ / 指定する）。3択はパネルを開いた時点で出す。メンバー一覧の取得待ち、失敗、空はポップオーバー内に出す。
 
 投稿: `POST` → INSERT → 他メンバーへ `PUSH_QUEUE` を 1 人 1 メッセージ（失敗しても 201）。フロントは一覧を invalidate。
 
