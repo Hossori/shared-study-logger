@@ -2,7 +2,7 @@
  * 学習記録の投稿モーダル（学習日時・学習時間(任意)・タイトル・メモ(任意)）。
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useCreateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
@@ -18,7 +18,7 @@ interface PostRecordModalProps {
   onClose: () => void;
 }
 
-export default function PostRecordModal({
+function PostRecordModalContent({
   groupId,
   open,
   onClose,
@@ -32,19 +32,6 @@ export default function PostRecordModal({
     memo: "",
     durationMinutes: null,
   });
-
-  useEffect(() => {
-    if (open) {
-      setValues({
-        studyDatetime: "",
-        title: "",
-        memo: "",
-        durationMinutes: null,
-      });
-      createRecordMutation.reset();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,5 +72,30 @@ export default function PostRecordModal({
     >
       <RecordFormFields idPrefix="post" values={values} onChange={setValues} />
     </RecordModalShell>
+  );
+}
+
+export default function PostRecordModal({
+  groupId,
+  open,
+  onClose,
+}: PostRecordModalProps) {
+  const [session, setSession] = useState(0);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setSession((current) => current + 1);
+    }
+  }
+
+  return (
+    <PostRecordModalContent
+      key={session}
+      groupId={groupId}
+      open={open}
+      onClose={onClose}
+    />
   );
 }

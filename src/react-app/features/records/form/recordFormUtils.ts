@@ -61,7 +61,17 @@ export function nowRecordDatetimeParts(): RecordDatetimeParts {
 }
 
 export function isRecordDateString(date: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(year, month - 1, day);
+  return (
+    parsed.getFullYear() === year &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day
+  );
 }
 
 /** YYYY-MM-DD をローカル日付に変換（UTC ずれを避ける）。 */
@@ -79,7 +89,7 @@ export function parseRecordDatetime(
   datetimeLocal: string,
 ): RecordDatetimeParts | null {
   if (!datetimeLocal) return null;
-  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(datetimeLocal);
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(datetimeLocal);
   if (!match) return null;
   const hour = Number(match[2]);
   const minute = Number(match[3]);
