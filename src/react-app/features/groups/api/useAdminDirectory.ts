@@ -14,7 +14,7 @@ import {
   type CreateAdminUserRequest,
 } from "@shared/schemas";
 import { apiDelete, apiGet, apiPost } from "../../../lib/api";
-import { groupsQueryKeys } from "./useGroups";
+import { groupsQueryKeys } from "../../../lib/groupsListQuery";
 
 export const adminDirectoryQueryKeys = {
   all: ["admin-directory"] as const,
