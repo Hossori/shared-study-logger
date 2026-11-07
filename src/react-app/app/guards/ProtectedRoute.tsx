@@ -6,18 +6,29 @@
  * 再度nullチェックをせずに`User`型として扱える（`useMeQuery()`を子ルートで呼び直すと
  * `User | null | undefined`型になり、認証済みであることをTypeScript上でも保証できないため）。
  */
+import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router";
 import type { User } from "@shared/schemas";
 import { useMeQuery } from "@/features/auth";
 import { getClientApiUpdateRequiredEvent } from "@/lib/clientApiUpdateRequired";
 import LoadingScreen from "@/app/shell/LoadingScreen";
+import ErrorScreen from "@/app/shell/ErrorScreen";
+import { resetSessionState } from "@/app/session/resetSessionState";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface AuthenticatedOutletContext {
   user: User;
 }
 
 export default function ProtectedRoute() {
-  const { data: user, isLoading } = useMeQuery();
+  const queryClient = useQueryClient();
+  const { data: user, isLoading, isError, isFetching, refetch } = useMeQuery();
+
+  useEffect(() => {
+    if (user === null) {
+      resetSessionState(queryClient);
+    }
+  }, [user, queryClient]);
 
   // 426はセッション失効ではない。App直下の必須更新ダイアログを維持し、/loginへの
   // リダイレクトでログアウトしたように見せない。
@@ -25,9 +36,20 @@ export default function ProtectedRoute() {
     return <LoadingScreen />;
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (user) {
+    return <Outlet context={{ user } satisfies AuthenticatedOutletContext} />;
   }
 
-  return <Outlet context={{ user } satisfies AuthenticatedOutletContext} />;
+  if (isError && user === undefined) {
+    return (
+      <ErrorScreen
+        onRetry={() => {
+          void refetch();
+        }}
+        isRetrying={isFetching}
+      />
+    );
+  }
+
+  return <Navigate to="/login" replace />;
 }

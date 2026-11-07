@@ -10,7 +10,7 @@
 - `/admin/notifications` と `/admin/groups` — `AdminRoute`（USER は 403 画面）
 - その他 — `NotFoundPage`
 
-`ProtectedRoute` / `GuestRoute` は `useMeQuery()`。ロード中は `LoadingScreen`。認証済み `user` は outlet context。ルートは画面と認証境界。
+`ProtectedRoute` / `GuestRoute` は `useMeQuery()`。ロード中は `LoadingScreen`。`/api/auth/me` の取得が 5xx 等で失敗し `data` が無いときは `ErrorScreen`（再試行）。未ログイン（`user === null`）は `/login` へ。認証済み `user` は outlet context。`ProtectedRoute` は `user === null` になったタイミングで `resetSessionState` を呼ぶ。ルートは画面と認証境界。
 
 ## 選択中グループ（ホーム）
 

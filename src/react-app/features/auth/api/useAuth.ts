@@ -2,7 +2,13 @@
  * 認証関連API（`GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/logout`,
  * `PATCH /api/auth/me`, `POST /api/auth/password`）を TanStack Queryで扱うフック。
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type UseMutationOptions,
+} from "@tanstack/react-query";
 import {
   OkResponseSchema,
   UserResponseSchema,
@@ -12,11 +18,63 @@ import {
   type User,
 } from "@shared/schemas";
 import { apiGet, apiPatch, apiPost, ApiError } from "../../../lib/api";
+import { authQueryKeys } from "./authQueryKeys";
+import { clearUserScopedQueries } from "./sessionCache";
 import { userQueryKeys } from "./useUser";
 
-export const authQueryKeys = {
-  me: ["auth", "me"] as const,
-};
+export { authQueryKeys } from "./authQueryKeys";
+
+export async function onLoginMutationSuccess(
+  queryClient: QueryClient,
+  user: User,
+): Promise<void> {
+  const prev = queryClient.getQueryData<User | null>(authQueryKeys.me);
+  if (prev?.id !== user.id) {
+    clearUserScopedQueries(queryClient);
+  }
+  queryClient.setQueryData(authQueryKeys.me, user);
+  if (prev?.id === user.id) {
+    await queryClient.invalidateQueries();
+  }
+}
+
+/** ログアウト成功時のみ me を null にする。 */
+export function onLogoutMutationSuccess(queryClient: QueryClient): void {
+  queryClient.setQueryData(authQueryKeys.me, null);
+}
+
+/**
+ * ログアウト失敗時の me の扱い。401 はサーバー側で既に未ログインなので null にする。
+ * それ以外（5xx・ネットワーク）はセッションが残りうるため me を維持し、呼び出し側で再試行させる。
+ */
+export function onLogoutMutationError(
+  queryClient: QueryClient,
+  error: unknown,
+): void {
+  if (error instanceof ApiError && error.status === 401) {
+    queryClient.setQueryData(authQueryKeys.me, null);
+  }
+}
+
+export function loginMutationOptions(
+  queryClient: QueryClient,
+): UseMutationOptions<{ user: User }, Error, LoginRequest, unknown> {
+  return {
+    mutationFn: (input: LoginRequest) =>
+      apiPost("/api/auth/login", UserResponseSchema, input),
+    onSuccess: async ({ user }) => onLoginMutationSuccess(queryClient, user),
+  };
+}
+
+export function logoutMutationOptions(
+  queryClient: QueryClient,
+): UseMutationOptions<{ ok: true }, Error, void, unknown> {
+  return {
+    mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
+    onSuccess: () => onLogoutMutationSuccess(queryClient),
+    onError: (error) => onLogoutMutationError(queryClient, error),
+  };
+}
 
 /**
  * ログイン中ユーザー情報を取得する。未ログイン(401)の場合はエラーにせず`null`を返す。
@@ -45,14 +103,7 @@ export function useMeQuery() {
  */
 export function useLoginMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: LoginRequest) =>
-      apiPost("/api/auth/login", UserResponseSchema, input),
-    onSuccess: async ({ user }) => {
-      queryClient.setQueryData(authQueryKeys.me, user);
-      await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
-    },
-  });
+  return useMutation(loginMutationOptions(queryClient));
 }
 
 /**
@@ -60,13 +111,7 @@ export function useLoginMutation() {
  */
 export function useLogoutMutation() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => apiPost("/api/auth/logout", OkResponseSchema),
-    onSuccess: async () => {
-      queryClient.setQueryData(authQueryKeys.me, null);
-      await queryClient.invalidateQueries(); // 全クエリをstaleにマーク
-    },
-  });
+  return useMutation(logoutMutationOptions(queryClient));
 }
 
 /**
