@@ -36,6 +36,16 @@ Atomic Design の 5 階層はコンポーネント数が少なく過剰で、`fe
 
 記録・プロフィール・パスワード・ConfirmDialog は `Dialog` の CSS 下端ボトムシート（`sm` 未満）。アプリ内通知だけモバイルで Base UI `Drawer`（スナップ 0.5 / 1）に分岐し、高さ変更をスワイプで行う。`AlertDialog` は常にビューポート中央。
 
+### iOS の履歴移動と画面の向き（2026-11-08）
+
+端スワイプによる履歴の進む・戻るは許可する。2026-11-08 時点で、ジェスチャの前に履歴移動を止める手段はない。`useBlocker` で POP を `reset()` すると、遷移が起きたあとで元の画面に戻る。
+
+画面の向きは固定しない。`manifest.orientation` は `any`。横向きも操作できる。2026-11-08 時点で、iOS はマニフェストの `orientation` も `screen.orientation.lock()` も実装していない。
+
+横向きから縦向きへ戻した直後、一部のボタンが押せないことがある。ボタンを無効化する処理は置いていない。シェルは `position: fixed; inset: 0`。文書スクロールは `html` / `body` の `overflow: hidden` で止め、スクロールは `[data-layout-scroll]` だけが行う。記録追加の丸ボタンは `document.body` へ `position: fixed` で出す。iPhone の横向きは幅が Tailwind の `sm`（640px）以上になり、丸ボタンはツールバーの「記録を追加」に替わる。縦に戻ると 640px 未満で丸ボタンに戻る。
+
+standalone の WebKit は、文書がスクロールしないと回転後の layout viewport と `position: fixed` の当たり判定を前の向きのまま残すことがある。見えている位置と当たり判定がずれると、一部のボタンだけ押せなくなる。2026-11-08 時点で、この当たり判定を戻す根本対策はない。viewport meta の書き換えは置かない。
+
 ### テーマは `html.dark` + localStorage
 
 shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に合わせ、クラス戦略で切り替える。未保存時だけ `prefers-color-scheme` に追従し、トグル後は `localStorage` の明示値を優先する。FOUC 防止の初期化は `index.html` のインラインスクリプトと `src/react-app/lib/theme.ts` でキーを揃える。React 側の現在値は `stores/preferencesStore.ts` が同じ純関数で初期化する。

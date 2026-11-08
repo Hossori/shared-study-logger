@@ -7,7 +7,7 @@
 - `vite-plugin-pwa` は `injectManifest`（`public/sw.ts`）
 - `manifest.webmanifest` は `display: "standalone"`（iOS Push の前提）
 - オフライン編集は対象外。プリキャッシュは最小構成
-- iOS standalone では履歴の POP（画面端スワイプの進む・戻る）をキャンセルし、今の画面に留める。画面遷移は `Link` などの PUSH / REPLACE のまま。WebKit がジェスチャの描画自体を出すことは残る。同じ条件で `html` に `touch-action: pan-y` を付ける
+- 履歴の進む・戻るは許可する。`manifest.orientation` は `any` で、横向きも操作できる。理由は [design-decisions.md](../design-decisions.md) の「iOS の履歴移動と画面の向き」を参照
 - API 非互換時は `shared/client-api-version.ts` の `CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を揃え、Worker が 426 `client_update_required` でハンドラ前に拒否する。ブリッジリリースだけ最小版を `null`
 
 ## ビルドと更新
@@ -30,7 +30,6 @@
 - `public/sw.ts`
 - `public/manifest.webmanifest`
 - `src/react-app/main.tsx`
-- `src/react-app/app/effects/IosStandaloneHistoryLock.tsx`
 - `src/react-app/lib/iosStandalone.ts`
 - `shared/client-api-version.ts`
 - `shared/sw-lifecycle.ts`
