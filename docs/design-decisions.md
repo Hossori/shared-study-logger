@@ -53,3 +53,7 @@ Hono ルートは生成されないためパスのドリフトは worker テス�
 代替として `@hono/zod-openapi`（Zod 正本から OAS を出す）はあるが、今回の学習目的は OAS 正本なので Orval を採る。エラーコードごとの網羅 OAS 分岐は書かず、ハンドラ側に残す。
 
 画面の送信前は機能横の手書き UX スキーマを `safeParse` し、成功値を `@shared/schemas` のリクエストスキーマ（overlay 含む）へ `pipe` してから送る。レスポンスは Orval 生成 Zod を `parse` する（フロントは `src/react-app/lib/api.ts`、Worker 成功 JSON は `jsonParsed`）。不一致は成功ボディにしない。Worker の受信ボディは HTTP 契約スキーマの `safeParse` で 400 とし、UX スキーマではない。
+
+### PWA: 縦固定と端スワイプ抑止は採らない（2026-11-08）
+
+縦画面固定も端スワイプによる履歴移動の事前阻止も、2026-11-08 時点の iOS PWA では実現できない。横画面と履歴移動を許可する。詳細は [features/pwa.md](features/pwa.md)。

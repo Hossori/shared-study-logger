@@ -30,8 +30,9 @@ export default function Layout({ user, children }: LayoutProps) {
     <LayoutScrollContext.Provider
       value={{ scrollRef, setPullToRefreshActive: setPtrActive }}
     >
-      <div className="bg-background fixed inset-0 flex flex-col overflow-hidden">
-        <header className="bg-background/90 z-20 shrink-0 border-b backdrop-blur">
+      {/* 全画面 fixed とヘッダーの backdrop-filter は、回転後にヒット領域が横画面のまま残り動いたボタンだけ押せなくなる。詳細は docs/features/pwa.md */}
+      <div className="bg-background flex h-full min-h-0 flex-col overflow-hidden">
+        <header className="bg-background z-20 shrink-0 border-b">
           <div className="mx-auto flex max-w-4xl items-center gap-2 pt-[max(0.625rem,var(--safe-area-inset-top))] pr-[max(0.75rem,var(--safe-area-inset-right))] pb-2.5 pl-[max(0.75rem,var(--safe-area-inset-left))] sm:gap-3 sm:pt-[max(0.75rem,var(--safe-area-inset-top))] sm:pr-[max(1.5rem,var(--safe-area-inset-right))] sm:pb-3 sm:pl-[max(1.5rem,var(--safe-area-inset-left))]">
             <Link
               to="/"

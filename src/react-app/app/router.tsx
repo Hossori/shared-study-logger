@@ -10,7 +10,6 @@
  * - それ以外の全パス: 404画面。
  */
 import { createBrowserRouter } from "react-router";
-import IosStandaloneHistoryLock from "@/app/effects/IosStandaloneHistoryLock";
 import AdminRoute from "@/app/guards/AdminRoute";
 import GuestRoute from "@/app/guards/GuestRoute";
 import ProtectedRoute from "@/app/guards/ProtectedRoute";
@@ -23,47 +22,42 @@ import UserPage from "@/pages/UserPage";
 
 export const router = createBrowserRouter([
   {
-    element: <IosStandaloneHistoryLock />,
+    element: <GuestRoute />,
+    children: [{ path: "/login", element: <LoginPage /> }],
+  },
+  {
+    element: <ProtectedRoute />,
     children: [
+      { path: "/", element: <HomePage /> },
+      { path: "/users/:userId", element: <UserPage /> },
+      { path: "/mypage", element: <MyPage /> },
       {
-        element: <GuestRoute />,
-        children: [{ path: "/login", element: <LoginPage /> }],
-      },
-      {
-        element: <ProtectedRoute />,
+        element: <AdminRoute />,
         children: [
-          { path: "/", element: <HomePage /> },
-          { path: "/users/:userId", element: <UserPage /> },
-          { path: "/mypage", element: <MyPage /> },
           {
-            element: <AdminRoute />,
-            children: [
-              {
-                path: "/admin/notifications",
-                HydrateFallback: LoadingScreen,
-                lazy: async () => {
-                  const { default: Component } =
-                    await import("@/pages/AdminNotificationsPage");
-                  return { Component };
-                },
-              },
-              {
-                path: "/admin/groups",
-                HydrateFallback: LoadingScreen,
-                lazy: async () => {
-                  const { default: Component } =
-                    await import("@/pages/AdminDirectoryPage");
-                  return { Component };
-                },
-              },
-            ],
+            path: "/admin/notifications",
+            HydrateFallback: LoadingScreen,
+            lazy: async () => {
+              const { default: Component } =
+                await import("@/pages/AdminNotificationsPage");
+              return { Component };
+            },
+          },
+          {
+            path: "/admin/groups",
+            HydrateFallback: LoadingScreen,
+            lazy: async () => {
+              const { default: Component } =
+                await import("@/pages/AdminDirectoryPage");
+              return { Component };
+            },
           },
         ],
       },
-      {
-        path: "*",
-        element: <NotFoundPage />,
-      },
     ],
+  },
+  {
+    path: "*",
+    element: <NotFoundPage />,
   },
 ]);

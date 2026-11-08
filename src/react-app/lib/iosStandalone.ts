@@ -22,11 +22,6 @@ export function isIosStandalone(): boolean {
   return isIosDevice(navigator.userAgent) && isStandaloneDisplay();
 }
 
-/** iOS standalone の端スワイプは履歴の POP。進むも戻るもここを止める。 */
-export function shouldBlockIosStandalonePop(historyAction: string): boolean {
-  return isIosStandalone() && historyAction === "POP";
-}
-
 export function isIosNonStandalone(): boolean {
   return isIosDevice(navigator.userAgent) && !isStandaloneDisplay();
 }
