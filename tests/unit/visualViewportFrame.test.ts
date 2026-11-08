@@ -1,42 +1,97 @@
 import { describe, expect, it } from "vitest";
-import { visualViewportFrame } from "../../src/react-app/app/shell/visualViewportFrame";
+import {
+  isTextEntryElement,
+  keyboardOverlapPx,
+  shellFrame,
+} from "../../src/react-app/app/shell/visualViewportFrame";
 
-describe("visualViewportFrame", () => {
-  it("uses visualHeight when positive", () => {
-    expect(visualViewportFrame(800, 900, 0, 0)).toEqual({
-      heightPx: 800,
-      resetScroll: false,
-      translateY: 0,
-    });
+describe("keyboardOverlapPx", () => {
+  it("is the gap below the visual viewport", () => {
+    expect(keyboardOverlapPx(800, 500, 0)).toBe(300);
+    expect(keyboardOverlapPx(800, 520, 40)).toBe(240);
   });
 
-  it("falls back to innerHeight when visualHeight is null or non-positive", () => {
-    expect(visualViewportFrame(null, 900, 0, 0)).toEqual({
-      heightPx: 900,
-      resetScroll: false,
-      translateY: 0,
-    });
-    expect(visualViewportFrame(0, 900, 0, 0)).toEqual({
-      heightPx: 900,
-      resetScroll: false,
-      translateY: 0,
-    });
-    expect(visualViewportFrame(-1, 900, 0, 0)).toEqual({
-      heightPx: 900,
-      resetScroll: false,
-      translateY: 0,
-    });
+  it("is 0 when the visual viewport reaches the layout bottom", () => {
+    expect(keyboardOverlapPx(800, 800, 0)).toBe(0);
+    expect(keyboardOverlapPx(800, 820, 0)).toBe(0);
+    expect(keyboardOverlapPx(800, null, 10)).toBe(0);
+    expect(keyboardOverlapPx(800, 0, 10)).toBe(0);
+  });
+});
+
+describe("shellFrame", () => {
+  it("sets height on mount and orientation", () => {
+    expect(
+      shellFrame({
+        visualHeight: 700,
+        innerHeight: 800,
+        scrollY: 0,
+        textEntryFocused: false,
+        widthDelta: null,
+      }),
+    ).toEqual({ heightPx: 700, resetScroll: false });
   });
 
-  it("requests scroll reset when scrollY is not zero", () => {
-    expect(visualViewportFrame(800, 900, 0, 0).resetScroll).toBe(false);
-    expect(visualViewportFrame(800, 900, 12, 0).resetScroll).toBe(true);
-    expect(visualViewportFrame(null, 900, 1, 0).resetScroll).toBe(true);
+  it("resets scroll when the window is offset and the keyboard is closed", () => {
+    expect(
+      shellFrame({
+        visualHeight: 800,
+        innerHeight: 800,
+        scrollY: 12,
+        textEntryFocused: false,
+        widthDelta: 400,
+      }).resetScroll,
+    ).toBe(true);
   });
 
-  it("uses offsetTop as translateY when positive, else 0", () => {
-    expect(visualViewportFrame(800, 900, 0, 24).translateY).toBe(24);
-    expect(visualViewportFrame(800, 900, 0, 0).translateY).toBe(0);
-    expect(visualViewportFrame(800, 900, 0, -5).translateY).toBe(0);
+  it("does not move the shell while a text field is focused", () => {
+    expect(
+      shellFrame({
+        visualHeight: 400,
+        innerHeight: 800,
+        scrollY: 20,
+        textEntryFocused: true,
+        widthDelta: null,
+      }),
+    ).toEqual({ heightPx: null, resetScroll: false });
+  });
+
+  it("does not shrink the shell for a keyboard-sized height change", () => {
+    expect(
+      shellFrame({
+        visualHeight: 420,
+        innerHeight: 800,
+        scrollY: 0,
+        textEntryFocused: false,
+        widthDelta: 0,
+      }),
+    ).toEqual({ heightPx: null, resetScroll: false });
+  });
+
+  it("falls back to innerHeight when visual height is missing", () => {
+    expect(
+      shellFrame({
+        visualHeight: null,
+        innerHeight: 800,
+        scrollY: 0,
+        textEntryFocused: false,
+        widthDelta: null,
+      }).heightPx,
+    ).toBe(800);
+  });
+});
+
+describe("isTextEntryElement", () => {
+  it("treats text inputs and textareas as text entry", () => {
+    expect(isTextEntryElement("TEXTAREA", null, false)).toBe(true);
+    expect(isTextEntryElement("INPUT", "text", false)).toBe(true);
+    expect(isTextEntryElement("INPUT", null, false)).toBe(true);
+    expect(isTextEntryElement("DIV", null, true)).toBe(true);
+  });
+
+  it("ignores buttons and checkboxes", () => {
+    expect(isTextEntryElement("INPUT", "checkbox", false)).toBe(false);
+    expect(isTextEntryElement("INPUT", "button", false)).toBe(false);
+    expect(isTextEntryElement("BUTTON", null, false)).toBe(false);
   });
 });

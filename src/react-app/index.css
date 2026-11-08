@@ -4,6 +4,8 @@
 @import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant dialog-center (@media (min-width: 40rem) and (min-height: 40rem));
+@custom-variant dialog-sheet (@media (max-width: 39.999rem), (max-height: 39.999rem));
 
 :root {
   color-scheme: light;
@@ -68,7 +70,7 @@ body,
   background-color: var(--background);
 }
 
-/* body を見た目の高さで固定し、window のずれでヘッダー上端がぼけたり見切れたりしない。高さは px で更新するので回転のたびに使用値が変わりヒット領域を作り直す。詳細は docs/features/pwa.md */
+/* 初回と向きの変化だけで --app-height を更新する。キーボードでは縮めない。transform は付けない。詳細は docs/features/pwa.md */
 body {
   margin: 0;
   min-width: 320px;
@@ -114,15 +116,25 @@ body {
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-duration-badge-under1h: var(--duration-badge-under1h);
-  --color-duration-badge-under1h-foreground: var(--duration-badge-under1h-foreground);
+  --color-duration-badge-under1h-foreground: var(
+    --duration-badge-under1h-foreground
+  );
   --color-duration-badge-h1to3: var(--duration-badge-h1to3);
-  --color-duration-badge-h1to3-foreground: var(--duration-badge-h1to3-foreground);
+  --color-duration-badge-h1to3-foreground: var(
+    --duration-badge-h1to3-foreground
+  );
   --color-duration-badge-h3to5: var(--duration-badge-h3to5);
-  --color-duration-badge-h3to5-foreground: var(--duration-badge-h3to5-foreground);
+  --color-duration-badge-h3to5-foreground: var(
+    --duration-badge-h3to5-foreground
+  );
   --color-duration-badge-h5to10: var(--duration-badge-h5to10);
-  --color-duration-badge-h5to10-foreground: var(--duration-badge-h5to10-foreground);
+  --color-duration-badge-h5to10-foreground: var(
+    --duration-badge-h5to10-foreground
+  );
   --color-duration-badge-h10plus: var(--duration-badge-h10plus);
-  --color-duration-badge-h10plus-foreground: var(--duration-badge-h10plus-foreground);
+  --color-duration-badge-h10plus-foreground: var(
+    --duration-badge-h10plus-foreground
+  );
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

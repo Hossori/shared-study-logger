@@ -109,7 +109,7 @@ export default function EditProfileModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-md"
+        className="dialog-center:max-w-md"
         aria-labelledby="edit-profile-title"
       >
         <form

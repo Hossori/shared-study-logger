@@ -34,7 +34,7 @@ Atomic Design の 5 階層はコンポーネント数が少なく過剰で、`fe
 
 ### オーバーレイ: Dialog / Drawer / AlertDialog
 
-記録・プロフィール・パスワード・ConfirmDialog は `Dialog` の CSS 下端ボトムシート（`sm` 未満）。アプリ内通知だけモバイルで Base UI `Drawer`（スナップ 0.5 / 1）に分岐し、高さ変更をスワイプで行う。`AlertDialog` は常にビューポート中央。
+記録・プロフィール・パスワード・ConfirmDialog は `Dialog` の下端ボトムシート。幅と高さの両方が 640px 以上のときだけ中央に置く。キーボードでシートを上げる条件は [features/pwa.md](features/pwa.md)。アプリ内通知だけモバイルで Base UI `Drawer`（スナップ 0.5 / 1）に分岐し、高さ変更をスワイプで行う。`AlertDialog` は常にビューポート中央。
 
 ### テーマは `html.dark` + localStorage
 
