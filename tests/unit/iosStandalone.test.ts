@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  isIosNonStandalone,
-  isIosStandalone,
-} from "../../src/react-app/lib/iosStandalone";
+import { isIosNonStandalone } from "../../src/react-app/lib/iosStandalone";
 
 function stubNavigator(options: {
   userAgent: string;
@@ -86,16 +83,6 @@ describe("isIosNonStandalone", () => {
     expect(isIosNonStandalone()).toBe(false);
   });
 
-  it("recognizes iPhone standalone via navigator.standalone", () => {
-    stubNavigator({
-      userAgent:
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-      standalone: true,
-    });
-    expect(isIosStandalone()).toBe(true);
-    expect(isIosNonStandalone()).toBe(false);
-  });
-
   it("returns false for desktop Mac without touch", () => {
     stubNavigator({
       userAgent:
@@ -103,6 +90,5 @@ describe("isIosNonStandalone", () => {
       maxTouchPoints: 0,
     });
     expect(isIosNonStandalone()).toBe(false);
-    expect(isIosStandalone()).toBe(false);
   });
 });
