@@ -2,12 +2,18 @@ import { useLayoutEffect } from "react";
 import { visualViewportFrame } from "./visualViewportFrame";
 
 function applyVisualViewportFrame() {
-  const { heightPx, resetScroll } = visualViewportFrame(
+  const { heightPx, resetScroll, translateY } = visualViewportFrame(
     window.visualViewport?.height ?? null,
     window.innerHeight,
     window.scrollY,
+    window.visualViewport?.offsetTop ?? 0,
   );
   document.documentElement.style.setProperty("--app-height", `${heightPx}px`);
+  if (translateY === 0) {
+    document.body.style.removeProperty("transform");
+  } else {
+    document.body.style.transform = `translateY(${translateY}px)`;
+  }
   if (resetScroll) {
     window.scrollTo(0, 0);
   }

@@ -5,11 +5,13 @@ export function visualViewportFrame(
   visualHeight: number | null,
   innerHeight: number,
   scrollY: number,
-): { heightPx: number; resetScroll: boolean } {
+  offsetTop: number,
+): { heightPx: number; resetScroll: boolean; translateY: number } {
   const heightPx =
     visualHeight !== null && visualHeight > 0 ? visualHeight : innerHeight;
   return {
     heightPx,
     resetScroll: scrollY !== 0,
+    translateY: offsetTop > 0 ? offsetTop : 0,
   };
 }

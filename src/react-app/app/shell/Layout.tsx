@@ -66,7 +66,6 @@ export default function Layout({ user, children }: LayoutProps) {
         <div
           ref={setFabHost}
           className="pointer-events-none absolute inset-0 z-20"
-          aria-hidden
         />
       </div>
     </LayoutScrollContext.Provider>
