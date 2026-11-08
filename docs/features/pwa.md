@@ -7,9 +7,9 @@
 - `vite-plugin-pwa` は `injectManifest`（`public/sw.ts`）
 - `manifest.webmanifest` は `display: "standalone"`（iOS Push の前提）
 - オフライン編集は対象外。プリキャッシュは最小構成
-- 履歴の POP（画面端スワイプの進む・戻る）はキャンセルしない。端スワイプによる履歴移動を許可する（2026-11-08 時点で、ルータの blocker はジェスチャ本体を止められず WebKit が描画を出す）
-- 縦・横どちらの向きも許可する。`manifest.webmanifest` に `orientation` は置かない（Android だけ縦固定にしないため）。2026-11-08 時点では iOS は manifest の `orientation` を無視し、`screen.orientation.lock()` は iOS standalone で使えない
-- シェルは `position: fixed` の全画面にしない。ヘッダーに `backdrop-filter` を付けない。iPhone で横画面から縦に戻したあと、WebKit はビューポート変更だけでは固定レイヤのヒット領域を作り直さず、描画は新位置・ヒットは横画面の矩形のまま残ることがある。右へ動いたヘッダー操作や本文のボタンが押せなくなるのを避ける
+- 履歴の POP（画面端スワイプの進む・戻る）はキャンセルせず、iOSの端スワイプによる履歴移動を許可する（2026-11-08 時点で WebKit が描画を出してしまい、ルータの blocker ではジェスチャ本体を止められないため。）
+- 2026-11-08 時点では iOS は manifest の `orientation` を無視し、`screen.orientation.lock()` は iOS standalone で使えないため、縦・横どちらの向きも許可する。`manifest.webmanifest` に `orientation` は置かない（Android だけ縦固定にしないため）。
+- シェルは `position: fixed` の全画面にしない。ヘッダーに `backdrop-filter` を付けない。iPhone で横画面から縦に戻したあと、WebKit はビューポート変更だけでは固定レイヤのヒット領域を作り直さず、描画は新位置・ヒットは横画面の矩形のまま残ることがあるため。右へ動いたヘッダー操作や本文のボタンが押せなくなるのを避ける
 - API 非互換時は `shared/client-api-version.ts` の `CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を揃え、Worker が 426 `client_update_required` でハンドラ前に拒否する。ブリッジリリースだけ最小版を `null`
 
 ## ビルドと更新
