@@ -1,9 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  isIosNonStandalone,
-  isIosStandalone,
-  shouldBlockIosStandalonePop,
-} from "../../src/react-app/lib/iosStandalone";
+import { isIosNonStandalone } from "../../src/react-app/lib/iosStandalone";
 
 function stubNavigator(options: {
   userAgent: string;
@@ -87,18 +83,6 @@ describe("isIosNonStandalone", () => {
     expect(isIosNonStandalone()).toBe(false);
   });
 
-  it("blocks history POP only while iPhone is standalone", () => {
-    stubNavigator({
-      userAgent:
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-      standalone: true,
-    });
-    expect(isIosStandalone()).toBe(true);
-    expect(shouldBlockIosStandalonePop("POP")).toBe(true);
-    expect(shouldBlockIosStandalonePop("PUSH")).toBe(false);
-    expect(shouldBlockIosStandalonePop("REPLACE")).toBe(false);
-  });
-
   it("returns false for desktop Mac without touch", () => {
     stubNavigator({
       userAgent:
@@ -106,7 +90,5 @@ describe("isIosNonStandalone", () => {
       maxTouchPoints: 0,
     });
     expect(isIosNonStandalone()).toBe(false);
-    expect(isIosStandalone()).toBe(false);
-    expect(shouldBlockIosStandalonePop("POP")).toBe(false);
   });
 });
