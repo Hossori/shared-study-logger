@@ -54,6 +54,7 @@
   "private": true,
   "scripts": {
     "build": "tsc -b && vite build",
+    "build:preview": "node scripts/build-preview.mjs",
     "cf-typegen": "wrangler types",
     "check": "pnpm typecheck && vite build && wrangler deploy --dry-run",
     "check:d1-migrations": "node scripts/check-d1-migrations.mjs",
@@ -67,6 +68,7 @@
     "format": "prettier --write \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",
     "format:check": "prettier --check \"src/react-app/**/*.{ts,tsx}\" \"shared/**/*.ts\"",
     "lint": "eslint .",
+    "migrate:preview": "wrangler d1 migrations apply shared-study-logger-db-preview --remote --env preview",
     "prepare": "simple-git-hooks",
     "preview": "pnpm build && vite preview",
     "seed": "node scripts/seed-users.mjs",
