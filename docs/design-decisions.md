@@ -36,6 +36,14 @@ Atomic Design の 5 階層はコンポーネント数が少なく過剰で、`fe
 
 記録・プロフィール・パスワード・ConfirmDialog は `Dialog` の CSS 下端ボトムシート（`sm` 未満）。アプリ内通知だけモバイルで Base UI `Drawer`（スナップ 0.5 / 1）に分岐し、高さ変更をスワイプで行う。`AlertDialog` は常にビューポート中央。
 
+### iOS の履歴ジェスチャと画面の向き（2026-11-08）
+
+端スワイプによる履歴の進む・戻るは止めない。2026-11-08 に `useBlocker` で POP をキャンセルすると、遷移が起きてから元の画面に戻った。WebKit のジェスチャ自体を止める手段は、この時点でない。
+
+画面の向きは固定しない。`manifest.orientation` は `any`。iOS はマニフェストの `orientation` と `screen.orientation.lock` を実装していない。横向きも操作対象にする。
+
+回転後に layout viewport の幅が横向きのまま残ると、`sm` の判定と `position: fixed` の当たり判定が画面とずれ、一部のボタンが押せなくなる。回転を検知したら viewport meta を一度書き換えて戻し、`window` のスクロールを 0 に戻す。これは当たり判定を戻す対処であり、向きの固定ではない。
+
 ### テーマは `html.dark` + localStorage
 
 shadcn / Tailwind のセマンティックカラー（`:root` と `.dark`）に合わせ、クラス戦略で切り替える。未保存時だけ `prefers-color-scheme` に追従し、トグル後は `localStorage` の明示値を優先する。FOUC 防止の初期化は `index.html` のインラインスクリプトと `src/react-app/lib/theme.ts` でキーを揃える。React 側の現在値は `stores/preferencesStore.ts` が同じ純関数で初期化する。
