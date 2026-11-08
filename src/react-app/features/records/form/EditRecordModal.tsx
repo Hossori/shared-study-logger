@@ -3,13 +3,14 @@
  * フォームUIは RecordFormFields / RecordModalShell を共有する。
  */
 import { useState, type FormEvent } from "react";
-import type { StudyRecord } from "../../../../../shared/schemas";
+import { type StudyRecord } from "@shared/schemas";
 import { useUpdateRecordMutation } from "../api/useRecords";
 import RecordFormFields from "./RecordFormFields";
 import RecordModalShell from "./RecordModalShell";
 import {
-  buildRecordRequestPayload,
+  buildRecordFormSource,
   toDatetimeLocalString,
+  UpdateRecordFormSchema,
   type RecordFormValues,
 } from "./recordFormUtils";
 
@@ -27,6 +28,7 @@ export default function EditRecordModal({
   onClose,
 }: EditRecordModalProps) {
   const updateRecordMutation = useUpdateRecordMutation(groupId);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   const [values, setValues] = useState<RecordFormValues>(() =>
     record
@@ -43,13 +45,21 @@ export default function EditRecordModal({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!record) return;
-    const payload = buildRecordRequestPayload(values);
-    if (!payload) return;
+    const parsed = UpdateRecordFormSchema.safeParse(
+      buildRecordFormSource(values),
+    );
+    if (!parsed.success) {
+      setClientError(
+        "更新に失敗しました。入力内容を確認してもう一度お試しください。",
+      );
+      return;
+    }
+    setClientError(null);
 
     try {
       await updateRecordMutation.mutateAsync({
         recordId: record.id,
-        input: payload,
+        input: parsed.data,
       });
       onClose();
     } catch {
@@ -64,9 +74,10 @@ export default function EditRecordModal({
       onClose={onClose}
       onSubmit={handleSubmit}
       errorMessage={
-        updateRecordMutation.isError
+        clientError ??
+        (updateRecordMutation.isError
           ? "更新に失敗しました。入力内容を確認してもう一度お試しください。"
-          : null
+          : null)
       }
       isPending={updateRecordMutation.isPending}
       submitLabel="保存する"

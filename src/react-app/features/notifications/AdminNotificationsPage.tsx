@@ -26,7 +26,7 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -48,8 +48,10 @@ import {
   useToggleNotificationMutation,
 } from "./api/useNotifications";
 import { ApiError } from "@/lib/api";
-import { CreateInAppNotificationRequestSchema } from "../../../../shared/schemas";
+import { resetMutationIfIdle } from "@/lib/resetMutationIfIdle";
+import { CreateInAppNotificationFormSchema } from "./notificationForm";
 import { insertMarkdownLinkSnippet } from "./notificationBodyLinks";
+import { resolveAdminNotificationPendingRowId } from "./adminNotificationPendingId";
 
 function mutationErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -58,13 +60,6 @@ function mutationErrorMessage(error: unknown): string {
     if (error.status === 404) return "通知が見つかりません。";
   }
   return "操作に失敗しました。しばらくしてから再度お試しください。";
-}
-
-function createFormErrorMessage(
-  parsed: ReturnType<typeof CreateInAppNotificationRequestSchema.safeParse>,
-): string {
-  if (parsed.success) return "";
-  return "タイトルと本文を入力してください。";
 }
 
 export default function AdminNotificationsPage() {
@@ -91,10 +86,10 @@ export default function AdminNotificationsPage() {
   }, [body]);
 
   const notifications = listQuery.data?.notifications ?? [];
-  const pendingId =
-    toggleMutation.isPending || deleteMutation.isPending
-      ? (toggleMutation.variables?.id ?? deleteMutation.variables)
-      : undefined;
+  const pendingId = resolveAdminNotificationPendingRowId(
+    toggleMutation,
+    deleteMutation,
+  );
 
   const rememberBodySelection = () => {
     const el = bodyRef.current;
@@ -117,15 +112,17 @@ export default function AdminNotificationsPage() {
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = CreateInAppNotificationRequestSchema.safeParse({
+    const parsed = CreateInAppNotificationFormSchema.safeParse({
       title,
       body,
     });
     if (!parsed.success) {
-      setFormError(createFormErrorMessage(parsed));
+      setFormError("タイトルと本文を入力してください。");
       return;
     }
     setFormError(null);
+    resetMutationIfIdle(toggleMutation);
+    resetMutationIfIdle(deleteMutation);
     createMutation.mutate(parsed.data, {
       onSuccess: () => {
         setTitle("");
@@ -136,6 +133,8 @@ export default function AdminNotificationsPage() {
   };
 
   const handleToggle = (id: string, enabled: boolean) => {
+    resetMutationIfIdle(createMutation);
+    resetMutationIfIdle(deleteMutation);
     toggleMutation.mutate({ id, enabled });
   };
 
@@ -147,6 +146,8 @@ export default function AdminNotificationsPage() {
       variant: "danger",
     });
     if (!ok) return;
+    resetMutationIfIdle(createMutation);
+    resetMutationIfIdle(toggleMutation);
     deleteMutation.mutate(id);
   };
 
@@ -178,23 +179,24 @@ export default function AdminNotificationsPage() {
             <form onSubmit={handleCreate}>
               <FieldGroup>
                 <Field data-invalid={formError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-notification-title" required>
+                  <FieldTitle id="admin-notification-title-label" required>
                     タイトル
-                  </FieldLabel>
+                  </FieldTitle>
                   <Input
                     id="admin-notification-title"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     maxLength={200}
                     required
+                    aria-labelledby="admin-notification-title-label"
                     aria-invalid={formError ? true : undefined}
                   />
                 </Field>
                 <Field data-invalid={formError ? true : undefined}>
                   <div className="flex items-center justify-between gap-2">
-                    <FieldLabel htmlFor="admin-notification-body" required>
+                    <FieldTitle id="admin-notification-body-label" required>
                       本文
-                    </FieldLabel>
+                    </FieldTitle>
                     <Button
                       type="button"
                       variant="ghost"
@@ -212,6 +214,7 @@ export default function AdminNotificationsPage() {
                   <Textarea
                     id="admin-notification-body"
                     ref={bodyRef}
+                    aria-labelledby="admin-notification-body-label"
                     value={body}
                     onChange={(event) => {
                       setBody(event.target.value);

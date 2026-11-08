@@ -10,6 +10,10 @@
 
 新しいサーバー状態は、その feature の `api/` に hook を足す。ミューテーション成功時は自分のクエリを `invalidateQueries` する。他 feature のキャッシュを無効化する処理は `pages` か `app` に置く。記録フィルタは一覧コンポーネントの state。
 
+グループ一覧（`GET /api/groups`）の query key と `queryOptions` は `src/react-app/lib/groupsListQuery.ts` に置く。groups と records が同じキャッシュを使うためで、hook は `features/groups/api/useGroups.ts` に残す。
+
+セッション終了（ログアウト・401 失効・未ログイン判定）時は `app/session/resetSessionState` が me 以外の Query と選択グループ（URL 正本はホームだが store / localStorage の残留を防ぐ）を破棄する。
+
 HTTP の集約は `src/react-app/lib/api.ts`。
 
 ## 入口
@@ -17,4 +21,5 @@ HTTP の集約は `src/react-app/lib/api.ts`。
 - `src/react-app/stores/preferencesStore.ts`
 - `src/react-app/lib/theme.ts`
 - `src/react-app/lib/api.ts`
+- `src/react-app/lib/groupsListQuery.ts`
 - `src/react-app/features/groups/selectedGroup.ts`

@@ -25,7 +25,7 @@ import {
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,6 +35,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useConfirm } from "@/components/useConfirm";
 import { ApiError } from "@/lib/api";
+import { resetMutationIfIdle } from "@/lib/resetMutationIfIdle";
 import {
   useAddGroupMemberMutation,
   useAdminGroupsQuery,
@@ -44,9 +45,10 @@ import {
   useRemoveGroupMemberMutation,
 } from "./api/useAdminDirectory";
 import {
-  CreateAdminGroupRequestSchema,
-  CreateAdminUserRequestSchema,
-} from "../../../../shared/schemas";
+  AddGroupMemberFormSchema,
+  CreateAdminGroupFormSchema,
+  CreateAdminUserFormSchema,
+} from "./adminDirectoryForm";
 
 function mutationErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -101,12 +103,15 @@ export default function AdminDirectoryPage() {
 
   const handleCreateGroup = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = CreateAdminGroupRequestSchema.safeParse({ name: groupName });
+    const parsed = CreateAdminGroupFormSchema.safeParse({ name: groupName });
     if (!parsed.success) {
       setGroupFormError("グループ名を入力してください。");
       return;
     }
     setGroupFormError(null);
+    resetMutationIfIdle(createUserMutation);
+    resetMutationIfIdle(addMemberMutation);
+    resetMutationIfIdle(removeMemberMutation);
     createGroupMutation.mutate(parsed.data, {
       onSuccess: (result) => {
         setGroupName("");
@@ -118,7 +123,7 @@ export default function AdminDirectoryPage() {
 
   const handleCreateUser = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsed = CreateAdminUserRequestSchema.safeParse({
+    const parsed = CreateAdminUserFormSchema.safeParse({
       email,
       password,
       displayName,
@@ -130,6 +135,9 @@ export default function AdminDirectoryPage() {
       return;
     }
     setUserFormError(null);
+    resetMutationIfIdle(createGroupMutation);
+    resetMutationIfIdle(addMemberMutation);
+    resetMutationIfIdle(removeMemberMutation);
     createUserMutation.mutate(parsed.data, {
       onSuccess: () => {
         setEmail("");
@@ -142,8 +150,15 @@ export default function AdminDirectoryPage() {
   const handleAddMember = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!effectiveGroupId || !selectedUserId) return;
+    const parsed = AddGroupMemberFormSchema.safeParse({
+      userId: selectedUserId,
+    });
+    if (!parsed.success) return;
+    resetMutationIfIdle(createGroupMutation);
+    resetMutationIfIdle(createUserMutation);
+    resetMutationIfIdle(removeMemberMutation);
     addMemberMutation.mutate(
-      { groupId: effectiveGroupId, userId: selectedUserId },
+      { groupId: effectiveGroupId, userId: parsed.data.userId },
       {
         onSuccess: () => {
           setSelectedUserId("");
@@ -164,6 +179,9 @@ export default function AdminDirectoryPage() {
       variant: "danger",
     });
     if (!ok) return;
+    resetMutationIfIdle(createGroupMutation);
+    resetMutationIfIdle(createUserMutation);
+    resetMutationIfIdle(addMemberMutation);
     removeMemberMutation.mutate({ groupId: effectiveGroupId, userId });
   };
 
@@ -202,15 +220,16 @@ export default function AdminDirectoryPage() {
             <form onSubmit={handleCreateGroup}>
               <FieldGroup>
                 <Field data-invalid={groupFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-group-name" required>
+                  <FieldTitle id="admin-group-name-label" required>
                     グループ名
-                  </FieldLabel>
+                  </FieldTitle>
                   <Input
                     id="admin-group-name"
                     value={groupName}
                     onChange={(event) => setGroupName(event.target.value)}
                     maxLength={100}
                     required
+                    aria-labelledby="admin-group-name-label"
                     aria-invalid={groupFormError ? true : undefined}
                   />
                   {groupFormError ? (
@@ -243,9 +262,9 @@ export default function AdminDirectoryPage() {
             <form onSubmit={handleCreateUser}>
               <FieldGroup>
                 <Field data-invalid={userFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-user-email" required>
+                  <FieldTitle id="admin-user-email-label" required>
                     メールアドレス
-                  </FieldLabel>
+                  </FieldTitle>
                   <Input
                     id="admin-user-email"
                     type="email"
@@ -253,26 +272,28 @@ export default function AdminDirectoryPage() {
                     onChange={(event) => setEmail(event.target.value)}
                     required
                     autoComplete="off"
+                    aria-labelledby="admin-user-email-label"
                     aria-invalid={userFormError ? true : undefined}
                   />
                 </Field>
                 <Field data-invalid={userFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-user-display-name" required>
+                  <FieldTitle id="admin-user-display-name-label" required>
                     表示名
-                  </FieldLabel>
+                  </FieldTitle>
                   <Input
                     id="admin-user-display-name"
                     value={displayName}
                     onChange={(event) => setDisplayName(event.target.value)}
                     maxLength={50}
                     required
+                    aria-labelledby="admin-user-display-name-label"
                     aria-invalid={userFormError ? true : undefined}
                   />
                 </Field>
                 <Field data-invalid={userFormError ? true : undefined}>
-                  <FieldLabel htmlFor="admin-user-password" required>
+                  <FieldTitle id="admin-user-password-label" required>
                     パスワード
-                  </FieldLabel>
+                  </FieldTitle>
                   <Input
                     id="admin-user-password"
                     type="password"
@@ -282,6 +303,7 @@ export default function AdminDirectoryPage() {
                     maxLength={128}
                     required
                     autoComplete="new-password"
+                    aria-labelledby="admin-user-password-label"
                     aria-invalid={userFormError ? true : undefined}
                   />
                   {userFormError ? (
@@ -344,10 +366,13 @@ export default function AdminDirectoryPage() {
             ) : (
               <div className="flex flex-col gap-5">
                 <Field>
-                  <FieldLabel htmlFor="admin-group-select">グループ</FieldLabel>
+                  <FieldTitle id="admin-group-select-label">
+                    グループ
+                  </FieldTitle>
                   <NativeSelect
                     id="admin-group-select"
                     className="w-full"
+                    aria-labelledby="admin-group-select-label"
                     value={effectiveGroupId}
                     onChange={(event) => {
                       setSelectedGroupId(event.target.value);
@@ -425,9 +450,9 @@ export default function AdminDirectoryPage() {
                   <form onSubmit={handleAddMember}>
                     <FieldGroup>
                       <Field>
-                        <FieldLabel htmlFor="admin-member-user" required>
+                        <FieldTitle id="admin-member-user-label" required>
                           未所属のユーザー
-                        </FieldLabel>
+                        </FieldTitle>
                         <NativeSelect
                           id="admin-member-user"
                           className="w-full"
@@ -436,6 +461,7 @@ export default function AdminDirectoryPage() {
                             setSelectedUserId(event.target.value)
                           }
                           required
+                          aria-labelledby="admin-member-user-label"
                         >
                           <NativeSelectOption value="">
                             ユーザーを選択

@@ -27,14 +27,19 @@ function encodeLegacyCursor(
 
 describe("parseStudyRecordsCursor", () => {
 	it("parses a valid 2-part cursor", () => {
-		const cursor = encodeCursor(
+		const cursor = encodeCursor("2026-08-01 12:00:00", "record-1");
+		expect(parseStudyRecordsCursor(cursor)).toEqual({
+			sortKey: "2026-08-01 12:00:00",
+			id: "record-1",
+		});
+	});
+
+	it("returns null when sortKey is not SQLite datetime format", () => {
+		const isoSortKey = encodeCursor(
 			"2026-08-01T12:00:00.000Z",
 			"record-1",
 		);
-		expect(parseStudyRecordsCursor(cursor)).toEqual({
-			sortKey: "2026-08-01T12:00:00.000Z",
-			id: "record-1",
-		});
+		expect(parseStudyRecordsCursor(isoSortKey)).toBeNull();
 	});
 
 	it("returns null for invalid base64 or shape", () => {

@@ -3,14 +3,38 @@
  * Cookie認証を常に送信する。非2xxレスポンスはレスポンスインターセプターで`ApiError`に変換する。
  */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { ZodError, type ZodType } from "zod";
 import {
   CLIENT_API_VERSION,
   CLIENT_API_VERSION_HEADER,
-} from "../../../shared/client-api-version";
+} from "@shared/client-api-version";
 import {
   getClientApiUpdateRequiredEvent,
   notifyClientApiUpdateRequired,
 } from "./clientApiUpdateRequired";
+
+function apiErrorBodyField(body: unknown, field: string): unknown {
+  if (typeof body === "object" && body !== null && field in body) {
+    return (body as Record<string, unknown>)[field];
+  }
+  return undefined;
+}
+
+export function isInvalidCredentialsError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    apiErrorBodyField(error.body, "error") === "invalid_credentials"
+  );
+}
+
+export function isSessionExpiredError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    apiErrorBodyField(error.body, "error") !== "invalid_credentials"
+  );
+}
 
 export class ApiError extends Error {
   status: number;
@@ -95,18 +119,49 @@ apiClient.interceptors.response.use(
   },
 );
 
-export function apiGet<T>(path: string): Promise<T> {
-  return apiClient.get<T>(path).then((response) => response.data);
+function parseApiData<T>(schema: ZodType<T>, data: unknown): T {
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new ApiError(0, { error: "invalid_response" });
+    }
+    throw error;
+  }
 }
 
-export function apiPost<T>(path: string, data?: unknown): Promise<T> {
-  return apiClient.post<T>(path, data).then((response) => response.data);
+export function apiGet<T>(path: string, schema: ZodType<T>): Promise<T> {
+  return apiClient
+    .get(path)
+    .then((response) => parseApiData(schema, response.data));
 }
 
-export function apiPatch<T>(path: string, data?: unknown): Promise<T> {
-  return apiClient.patch<T>(path, data).then((response) => response.data);
+export function apiPost<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .post(path, data)
+    .then((response) => parseApiData(schema, response.data));
 }
 
-export function apiDelete<T>(path: string, data?: unknown): Promise<T> {
-  return apiClient.delete<T>(path, { data }).then((response) => response.data);
+export function apiPatch<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .patch(path, data)
+    .then((response) => parseApiData(schema, response.data));
+}
+
+export function apiDelete<T>(
+  path: string,
+  schema: ZodType<T>,
+  data?: unknown,
+): Promise<T> {
+  return apiClient
+    .delete(path, { data })
+    .then((response) => parseApiData(schema, response.data));
 }

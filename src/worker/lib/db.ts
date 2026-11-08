@@ -15,13 +15,9 @@ import type {
   RecordReactionEntry,
   StudyRecord,
   User,
-} from "../../../shared/schemas";
-import {
-  AvatarKeySchema,
-  parseUserRole,
-  REACTION_STAMPS,
-  ReactionStampSchema,
-} from "../../../shared/schemas";
+  UserRole,
+} from "@shared/schemas";
+import { REACTION_STAMPS } from "@shared/schemas";
 
 export interface UserRow {
   id: string;
@@ -97,20 +93,31 @@ export async function getUserById(
   return row ?? null;
 }
 
-function parseAvatarKey(value: string | null | undefined): AvatarKey | null {
-  const parsed = AvatarKeySchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
+interface UserDisplayRow {
+  display_name: string;
+  avatar_key: string | null;
 }
 
-/** UserRow を API レスポンス用の User に変換する。未知の avatar_key は null 扱い。未知の role は USER。 */
+async function getUserDisplayById(
+  db: D1Database,
+  id: string,
+): Promise<UserDisplayRow | null> {
+  const row = await db
+    .prepare("SELECT display_name, avatar_key FROM users WHERE id = ?")
+    .bind(id)
+    .first<UserDisplayRow>();
+  return row ?? null;
+}
+
+/** UserRow を API レスポンスの形に移す。値の合否は応答の jsonParsed が判定する。 */
 export function toUser(row: UserRow): User {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
-    role: parseUserRole(row.role),
+    role: row.role as UserRole,
     bio: row.bio ?? null,
-    avatarKey: parseAvatarKey(row.avatar_key),
+    avatarKey: row.avatar_key as AvatarKey | null,
     createdAt: row.created_at,
   };
 }
@@ -121,7 +128,7 @@ export function toPublicUser(row: UserRow): PublicUser {
     id: row.id,
     displayName: row.display_name,
     bio: row.bio ?? null,
-    avatarKey: parseAvatarKey(row.avatar_key),
+    avatarKey: row.avatar_key as AvatarKey | null,
     createdAt: row.created_at,
   };
 }
@@ -238,7 +245,7 @@ export async function getGroupsForUser(
       `SELECT g.* FROM groups g
        INNER JOIN group_members gm ON gm.group_id = g.id
        WHERE gm.user_id = ?
-       ORDER BY g.created_at ASC`,
+       ORDER BY g.created_at ASC, g.id ASC`,
     )
     .bind(userId)
     .all<GroupRow>();
@@ -278,7 +285,7 @@ export async function listGroupMembers(
   return (results ?? []).map((row) => ({
     id: row.id,
     displayName: row.display_name,
-    avatarKey: parseAvatarKey(row.avatar_key),
+    avatarKey: row.avatar_key as AvatarKey | null,
   }));
 }
 
@@ -427,6 +434,9 @@ function encodeCursor(sortKey: string, id: string): string {
   return btoa(binary);
 }
 
+const STUDY_RECORD_CURSOR_SORT_KEY_PATTERN =
+  /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
 function decodeCursor(
   cursor: string,
 ): { sortKey: string; id: string } | null {
@@ -438,6 +448,7 @@ function decodeCursor(
     if (parts.length !== 2) return null;
     const [sortKey, id] = parts;
     if (!sortKey || !id) return null;
+    if (!STUDY_RECORD_CURSOR_SORT_KEY_PATTERN.test(sortKey)) return null;
     return { sortKey, id };
   } catch {
     return null;
@@ -464,7 +475,7 @@ function toStudyRecord(
     groupId: row.group_id,
     userId: row.user_id,
     authorDisplayName: row.author_display_name,
-    authorAvatarKey: parseAvatarKey(row.author_avatar_key),
+    authorAvatarKey: row.author_avatar_key as AvatarKey | null,
     studyDatetime: row.study_datetime,
     title: row.title,
     durationMinutes: row.duration_minutes ?? null,
@@ -509,29 +520,41 @@ async function listReactionSummariesByRecordIds(
     return byRecord;
   }
 
-  const placeholders = recordIds.map(() => "?").join(", ");
-  const { results } = await db
-    .prepare(
-      `SELECT record_id, stamp,
-              COUNT(*) AS count,
-              SUM(user_id = ?) AS reacted_by_me
-       FROM record_reactions
-       WHERE record_id IN (${placeholders})
-       GROUP BY record_id, stamp`,
-    )
-    .bind(currentUserId, ...recordIds)
-    .all<ReactionAggregateRow>();
+  const REACTION_SUMMARY_RECORD_ID_CHUNK = 99;
 
-  for (const row of results ?? []) {
-    const stampParsed = ReactionStampSchema.safeParse(row.stamp);
-    if (!stampParsed.success) continue;
-    const list = byRecord.get(row.record_id);
-    if (!list) continue;
-    list.push({
-      stamp: stampParsed.data,
-      count: Number(row.count),
-      reactedByMe: Number(row.reacted_by_me) > 0,
-    });
+  const fetchChunk = async (ids: string[]): Promise<ReactionAggregateRow[]> => {
+    if (ids.length === 0) return [];
+    const placeholders = ids.map(() => "?").join(", ");
+    const { results } = await db
+      .prepare(
+        `SELECT record_id, stamp,
+                COUNT(*) AS count,
+                SUM(user_id = ?) AS reacted_by_me
+         FROM record_reactions
+         WHERE record_id IN (${placeholders})
+         GROUP BY record_id, stamp`,
+      )
+      .bind(currentUserId, ...ids)
+      .all<ReactionAggregateRow>();
+    return results ?? [];
+  };
+
+  const chunks: string[][] = [];
+  for (let i = 0; i < recordIds.length; i += REACTION_SUMMARY_RECORD_ID_CHUNK) {
+    chunks.push(recordIds.slice(i, i + REACTION_SUMMARY_RECORD_ID_CHUNK));
+  }
+  const chunkResults = await Promise.all(chunks.map((ids) => fetchChunk(ids)));
+
+  for (const rows of chunkResults) {
+    for (const row of rows) {
+      const list = byRecord.get(row.record_id);
+      if (!list) continue;
+      list.push({
+        stamp: row.stamp as ReactionStamp,
+        count: Number(row.count),
+        reactedByMe: Number(row.reacted_by_me) > 0,
+      });
+    }
   }
 
   for (const [id, list] of byRecord) {
@@ -651,14 +674,14 @@ export async function createStudyRecord(
     )
     .run();
 
-  const author = await getUserById(db, input.userId);
+  const author = await getUserDisplayById(db, input.userId);
 
   return {
     id: input.id,
     groupId: input.groupId,
     userId: input.userId,
     authorDisplayName: author?.display_name,
-    authorAvatarKey: parseAvatarKey(author?.avatar_key),
+    authorAvatarKey: (author?.avatar_key ?? null) as AvatarKey | null,
     studyDatetime,
     title: input.title,
     durationMinutes: input.durationMinutes ?? null,
@@ -726,7 +749,7 @@ export async function updateStudyRecord(
     .prepare(
       `UPDATE study_records
        SET study_datetime = ?, title = ?, duration_minutes = ?, memo = ?, updated_at = ?
-       WHERE group_id = ? AND id = ?`,
+       WHERE group_id = ? AND id = ? AND user_id = ?`,
     )
     .bind(
       studyDatetime,
@@ -736,6 +759,7 @@ export async function updateStudyRecord(
       now,
       groupId,
       recordId,
+      currentUserId,
     )
     .run();
 
@@ -757,10 +781,13 @@ export async function deleteStudyRecord(
   db: D1Database,
   groupId: string,
   recordId: string,
+  userId: string,
 ): Promise<boolean> {
   const result = await db
-    .prepare("DELETE FROM study_records WHERE group_id = ? AND id = ?")
-    .bind(groupId, recordId)
+    .prepare(
+      "DELETE FROM study_records WHERE group_id = ? AND id = ? AND user_id = ?",
+    )
+    .bind(groupId, recordId, userId)
     .run();
   return (result.meta.changes ?? 0) > 0;
 }
@@ -777,25 +804,18 @@ export async function addRecordReaction(
   db: D1Database,
   input: AddRecordReactionInput,
 ): Promise<RecordReactionEntry | null> {
-  const existing = await db
-    .prepare(
-      `SELECT id FROM record_reactions
-       WHERE record_id = ? AND user_id = ? AND stamp = ?`,
-    )
-    .bind(input.recordId, input.userId, input.stamp)
-    .first<{ id: string }>();
-  if (existing) return null;
-
   const now = new Date().toISOString();
-  await db
+  const result = await db
     .prepare(
       `INSERT INTO record_reactions (id, record_id, user_id, stamp, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(record_id, user_id, stamp) DO NOTHING`,
     )
     .bind(input.id, input.recordId, input.userId, input.stamp, now)
     .run();
+  if ((result.meta.changes ?? 0) === 0) return null;
 
-  const user = await getUserById(db, input.userId);
+  const user = await getUserDisplayById(db, input.userId);
   return {
     stamp: input.stamp,
     userId: input.userId,
@@ -837,17 +857,11 @@ export async function listRecordReactions(
     .bind(recordId)
     .all<{ stamp: string; user_id: string; display_name: string }>();
 
-  const entries: RecordReactionEntry[] = [];
-  for (const row of results ?? []) {
-    const stampParsed = ReactionStampSchema.safeParse(row.stamp);
-    if (!stampParsed.success) continue;
-    entries.push({
-      stamp: stampParsed.data,
-      userId: row.user_id,
-      displayName: row.display_name,
-    });
-  }
-  return entries;
+  return (results ?? []).map((row) => ({
+    stamp: row.stamp as ReactionStamp,
+    userId: row.user_id,
+    displayName: row.display_name,
+  }));
 }
 
 // ---- push_subscriptions -----------------------------------------------
@@ -877,10 +891,11 @@ export async function upsertPushSubscription(
   db: D1Database,
   input: UpsertPushSubscriptionInput,
 ): Promise<void> {
+  const now = new Date().toISOString();
   await db
     .prepare(
-      `INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth_key, user_agent)
-       VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth_key, user_agent, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(endpoint) DO UPDATE SET
          user_id = excluded.user_id,
          p256dh = excluded.p256dh,
@@ -894,6 +909,7 @@ export async function upsertPushSubscription(
       input.p256dh,
       input.authKey,
       input.userAgent ?? null,
+      now,
     )
     .run();
 }

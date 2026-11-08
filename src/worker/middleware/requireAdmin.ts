@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { isAdmin } from "../../../shared/schemas";
+import { isAdmin } from "@shared/schemas";
 import type { AuthVariables } from "./requireAuth";
 
 /**

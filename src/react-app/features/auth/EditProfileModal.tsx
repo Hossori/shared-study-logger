@@ -2,7 +2,8 @@
  * プロフィール編集モーダル（アバター・表示名・自己紹介）。
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { AVATAR_KEYS, type AvatarKey } from "../../../../shared/schemas";
+import { AVATAR_KEYS, type AvatarKey } from "@shared/schemas";
+import { EditProfileFormSchema } from "./editProfileForm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +16,7 @@ import {
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
@@ -77,18 +78,25 @@ export default function EditProfileModal({
   const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDisplayNameError(null);
-    const trimmedName = displayName.trim();
-    if (!trimmedName) {
-      setDisplayNameError("表示名を入力してください。");
+    const parsed = EditProfileFormSchema.safeParse({
+      displayName,
+      bio,
+      avatarKey,
+    });
+    if (!parsed.success) {
+      const displayNameIssue = parsed.error.issues.some(
+        (issue) => issue.path[0] === "displayName",
+      );
+      setDisplayNameError(
+        displayNameIssue
+          ? "表示名を入力してください。"
+          : "入力内容を確認してください。",
+      );
       return;
     }
 
     try {
-      await updateProfileMutation.mutateAsync({
-        displayName: trimmedName,
-        bio: bio.trim() ? bio.trim() : null,
-        avatarKey,
-      });
+      await updateProfileMutation.mutateAsync(parsed.data);
       onSaved?.();
       onClose();
     } catch {
@@ -101,7 +109,7 @@ export default function EditProfileModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-md"
+        className="dialog-center:max-w-md"
         aria-labelledby="edit-profile-title"
       >
         <form
@@ -163,13 +171,14 @@ export default function EditProfileModal({
             </FieldSet>
 
             <Field data-invalid={displayNameInvalid || undefined}>
-              <FieldLabel htmlFor="edit-displayName" required>
+              <FieldTitle id="edit-displayName-label" required>
                 表示名
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="edit-displayName"
                 required
                 maxLength={50}
+                aria-labelledby="edit-displayName-label"
                 value={displayName}
                 onChange={(e) => {
                   setDisplayName(e.target.value);
@@ -187,10 +196,11 @@ export default function EditProfileModal({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="edit-bio">自己紹介</FieldLabel>
+              <FieldTitle id="edit-bio-label">自己紹介</FieldTitle>
               <Textarea
                 id="edit-bio"
                 rows={4}
+                aria-labelledby="edit-bio-label"
                 maxLength={500}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}

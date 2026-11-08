@@ -1,27 +1,30 @@
-/**
- * 公開ユーザープロフィール（`GET /api/users/:userId`）を取得するフック。
- */
 import { useQuery } from "@tanstack/react-query";
-import type { PublicUser } from "../../../../../shared/schemas";
+import { PublicUserResponseSchema, type PublicUser } from "@shared/schemas";
 import { apiGet, ApiError } from "../../../lib/api";
 
 export const userQueryKeys = {
   detail: (userId: string) => ["users", userId] as const,
 };
 
-export function useUserQuery(userId: string | undefined) {
+/**
+ * 公開ユーザープロフィール（`GET /api/users/:userId`）を取得するフック。
+ * ログインユーザーの場合はログイン時に情報を取得しているため、クエリを実行しない。
+ * @param userId - ユーザーID
+ * @param isSelf - ログインユーザーかどうか（デフォルトは`false`）
+ */
+export function useUserQuery(userId: string, isSelf = false) {
   return useQuery({
-    queryKey: userQueryKeys.detail(userId ?? ""),
-    enabled: Boolean(userId),
+    queryKey: userQueryKeys.detail(userId),
+    enabled: !isSelf,
     queryFn: async (): Promise<PublicUser> => {
       if (!userId) {
-        throw new ApiError(400, { error: "missing_user_id" });
+        throw new ApiError(400, { error: "user_id_is_required" });
       }
-      const { user } = await apiGet<{ user: PublicUser }>(
-        `/api/users/${userId}`,
+      const { user } = await apiGet(
+        `/api/users/${encodeURIComponent(userId)}`,
+        PublicUserResponseSchema,
       );
       return user;
     },
-    retry: false,
   });
 }

@@ -1,5 +1,5 @@
 import { UserRound } from "lucide-react";
-import { getAvatarUrl } from "../../../shared/schemas";
+import { getAvatarUrl } from "@shared/schemas";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 

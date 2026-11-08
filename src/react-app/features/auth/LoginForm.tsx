@@ -2,6 +2,7 @@
  * ログインフォーム。画面の枠とテーマ切替は `pages/LoginPage` が持つ。
  */
 import { useState, type FormEvent } from "react";
+import { LoginFormSchema } from "./loginFormSchema";
 import { useLoginMutation } from "./api/useAuth";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "@/components/ui/ErrorMessage";
@@ -28,11 +29,18 @@ function loginErrorMessage(error: unknown): string {
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [clientError, setClientError] = useState<string | null>(null);
   const loginMutation = useLoginMutation();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    loginMutation.mutate({ email, password });
+    const parsed = LoginFormSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setClientError("入力内容を確認してください。");
+      return;
+    }
+    setClientError(null);
+    loginMutation.mutate(parsed.data);
   };
 
   return (
@@ -45,13 +53,14 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="email" required>
+              <FieldTitle id="email-label" required>
                 メールアドレス
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
+                aria-labelledby="email-label"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -60,13 +69,14 @@ export default function LoginForm() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="password" required>
+              <FieldTitle id="password-label" required>
                 パスワード
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
+                aria-labelledby="password-label"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -74,9 +84,9 @@ export default function LoginForm() {
               />
             </Field>
 
-            {loginMutation.isError && (
+            {(clientError || loginMutation.isError) && (
               <ErrorMessage>
-                {loginErrorMessage(loginMutation.error)}
+                {clientError ?? loginErrorMessage(loginMutation.error)}
               </ErrorMessage>
             )}
 

@@ -13,6 +13,8 @@
 
 `GET /api/groups/:groupId/members` は所属チェック後に `id` / `displayName` / `avatarKey`。非所属は 403。
 
+ホームの記録一覧で選択グループが未確定（`groupId === null`）のとき: 所属取得中、または所属が 1 件以上あるが GroupSwitcher が `selectedGroupId` を設定するまでの一瞬はスケルトン。所属取得エラーはメッセージと再試行。所属 0 件は管理者への依頼メッセージ。
+
 ## 変更するとき
 
 所属チェックと [api.md](../api.md) の管理者 API を揃える。

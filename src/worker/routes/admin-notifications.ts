@@ -1,8 +1,12 @@
 import { Hono } from "hono";
 import {
   CreateInAppNotificationRequestSchema,
+  InAppNotificationResponseSchema,
+  InAppNotificationsResponseSchema,
+  OkResponseSchema,
   UpdateInAppNotificationRequestSchema,
-} from "../../../shared/schemas";
+} from "@shared/schemas";
+import { jsonParsed, parseResourceId } from "../lib/httpSchema";
 import {
   createAppNotification,
   deleteAppNotification,
@@ -31,7 +35,7 @@ adminNotificationsRoutes.use(requireAdmin);
 
 adminNotificationsRoutes.get("/", async (c) => {
   const notifications = await listAppNotifications(c.env.DB);
-  return c.json({ notifications });
+  return jsonParsed(c, InAppNotificationsResponseSchema, { notifications });
 });
 
 adminNotificationsRoutes.post("/", async (c) => {
@@ -53,11 +57,19 @@ adminNotificationsRoutes.post("/", async (c) => {
     createdBy: user.id,
   });
 
-  return c.json({ notification }, 201);
+  return jsonParsed(
+    c,
+    InAppNotificationResponseSchema,
+    { notification },
+    201,
+  );
 });
 
 adminNotificationsRoutes.patch("/:id", async (c) => {
-  const id = c.req.param("id");
+  const id = parseResourceId(c.req.param("id"));
+  if (!id) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
   const existing = await getAppNotification(c.env.DB, id);
   if (!existing) {
     return c.json({ error: "not_found" }, 404);
@@ -81,14 +93,17 @@ adminNotificationsRoutes.patch("/:id", async (c) => {
     return c.json({ error: "not_found" }, 404);
   }
 
-  return c.json({ notification });
+  return jsonParsed(c, InAppNotificationResponseSchema, { notification });
 });
 
 adminNotificationsRoutes.delete("/:id", async (c) => {
-  const id = c.req.param("id");
+  const id = parseResourceId(c.req.param("id"));
+  if (!id) {
+    return c.json({ error: "invalid_request" }, 400);
+  }
   const deleted = await deleteAppNotification(c.env.DB, id);
   if (!deleted) {
     return c.json({ error: "not_found" }, 404);
   }
-  return c.json({ ok: true });
+  return jsonParsed(c, OkResponseSchema, { ok: true });
 });

@@ -10,7 +10,7 @@
                 └─→ Queue(PUSH_QUEUE) ─→ queue() ─→ Web Push (VAPID)
 ```
 
-同一オリジンの Cookie 認証。Push は Queue 経由で非同期。バリデーションは各ルートで `schema.safeParse`。
+同一オリジンの Cookie 認証。Push は Queue 経由で非同期。HTTP の形は `openapi/api.yaml`、Zod の使い分け（UX / リクエスト / レスポンス）は [design-decisions.md](design-decisions.md) の Orval 節を参照。
 
 作業対象の機能ドキュメントだけ読む。
 
@@ -19,7 +19,8 @@
 ```
 src/worker/       # Hono: index.ts, routes/, lib/, middleware/
 src/react-app/    # app/, pages/, features/, stores/, components/, hooks/, lib/
-shared/           # schemas.ts, avatars.ts
+openapi/          # api.yaml（HTTP 契約の正本）
+shared/           # schemas.ts（ファサード）, generated/（Orval 出力）, avatars.ts
 migrations/
 public/           # sw.ts, manifest, icons/, avatars/
 ```

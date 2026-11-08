@@ -13,8 +13,7 @@ import { createBrowserRouter } from "react-router";
 import AdminRoute from "@/app/guards/AdminRoute";
 import GuestRoute from "@/app/guards/GuestRoute";
 import ProtectedRoute from "@/app/guards/ProtectedRoute";
-import AdminDirectoryPage from "@/pages/AdminDirectoryPage";
-import AdminNotificationsPage from "@/pages/AdminNotificationsPage";
+import LoadingScreen from "@/app/shell/LoadingScreen";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import MyPage from "@/pages/MyPage";
@@ -37,11 +36,21 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/admin/notifications",
-            element: <AdminNotificationsPage />,
+            HydrateFallback: LoadingScreen,
+            lazy: async () => {
+              const { default: Component } =
+                await import("@/pages/AdminNotificationsPage");
+              return { Component };
+            },
           },
           {
             path: "/admin/groups",
-            element: <AdminDirectoryPage />,
+            HydrateFallback: LoadingScreen,
+            lazy: async () => {
+              const { default: Component } =
+                await import("@/pages/AdminDirectoryPage");
+              return { Component };
+            },
           },
         ],
       },

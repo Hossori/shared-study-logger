@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAvatarUrl } from "../../shared/avatars";
+import { getAvatarUrl } from "@shared/avatars";
 
 describe("getAvatarUrl", () => {
 	it("returns numbered preset path for known key", () => {

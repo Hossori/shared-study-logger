@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldTitle } from "@/components/ui/field";
 import {
   Popover,
   PopoverContent,
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, CircleHelp, Clock, ClockPlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { ja } from "react-day-picker/locale";
-import { DURATION_MINUTES_MAX } from "../../../../../shared/schemas";
+import { DURATION_MINUTES_MAX } from "@shared/schemas";
 import AnalogClock from "./AnalogClock";
 import PickerComboboxTrigger from "./PickerComboboxTrigger";
 import {
@@ -250,7 +250,7 @@ export default function StudyDatetimeField({
     <Field ref={fieldRef}>
       <div className="flex flex-col items-start gap-2">
         <div className="flex items-center gap-1">
-          <FieldLabel>学習日時</FieldLabel>
+          <FieldTitle>学習日時</FieldTitle>
           <Popover open={unsetHelpOpen} onOpenChange={setUnsetHelpOpen}>
             <PopoverTrigger
               render={
@@ -290,7 +290,10 @@ export default function StudyDatetimeField({
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-lg" overlay={{ forceRender: true }}>
+        <DialogContent
+          className="dialog-center:max-w-lg"
+          overlay={{ forceRender: true }}
+        >
           <DialogHeader>
             <DialogTitle>学習日時を設定</DialogTitle>
           </DialogHeader>
@@ -463,32 +466,30 @@ export default function StudyDatetimeField({
                         idPrefix={`${idPrefix}-end`}
                         hour={draft.endClockHour}
                         minute={draft.endClockMinute}
-                        onHourChange={(hour) => {
-                          const duration = durationFromStartAndEndClock(
-                            draft.startHour,
-                            draft.startMinute,
-                            hour,
-                            draft.endClockMinute,
-                          );
+                        onHourChange={(hour) =>
                           setDraft((current) =>
                             withEndFromDuration(current, {
-                              durationMinutes: duration,
+                              durationMinutes: durationFromStartAndEndClock(
+                                current.startHour,
+                                current.startMinute,
+                                hour,
+                                current.endClockMinute,
+                              ),
                             }),
-                          );
-                        }}
-                        onMinuteChange={(minute) => {
-                          const duration = durationFromStartAndEndClock(
-                            draft.startHour,
-                            draft.startMinute,
-                            draft.endClockHour,
-                            minute,
-                          );
+                          )
+                        }
+                        onMinuteChange={(minute) =>
                           setDraft((current) =>
                             withEndFromDuration(current, {
-                              durationMinutes: duration,
+                              durationMinutes: durationFromStartAndEndClock(
+                                current.startHour,
+                                current.startMinute,
+                                current.endClockHour,
+                                minute,
+                              ),
                             }),
-                          );
-                        }}
+                          )
+                        }
                         onMinuteCommit={() => setOpenPicker(null)}
                       />
                     </PopoverContent>

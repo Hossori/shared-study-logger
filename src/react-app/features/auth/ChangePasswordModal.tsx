@@ -2,6 +2,11 @@
  * パスワード変更モーダル。
  */
 import { useEffect, useState, type FormEvent } from "react";
+import {
+  changePasswordFieldErrors,
+  ChangePasswordFormSchema,
+  type ChangePasswordFieldErrors,
+} from "./changePasswordForm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,29 +19,25 @@ import {
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorMessage from "@/components/ui/ErrorMessage";
 import { useUnsavedCloseGuard } from "@/hooks/useUnsavedCloseGuard";
 import { useChangePasswordMutation } from "./api/useAuth";
-import { ApiError } from "@/lib/api";
+import { ApiError, isInvalidCredentialsError } from "@/lib/api";
 
 function passwordApiErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 401) return "現在のパスワードが正しくありません。";
+    if (error.status === 401 && isInvalidCredentialsError(error)) {
+      return "現在のパスワードが正しくありません。";
+    }
     if (error.status === 400)
       return "新しいパスワードは8文字以上で入力してください。";
   }
   return "パスワードの変更に失敗しました。しばらくしてから再度お試しください。";
 }
-
-type PasswordFieldErrors = {
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-};
 
 interface ChangePasswordModalProps {
   open: boolean;
@@ -52,7 +53,7 @@ export default function ChangePasswordModal({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<PasswordFieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<ChangePasswordFieldErrors>({});
   const { requestClose, handleOpenChange, formGuardProps, confirmNode } =
     useUnsavedCloseGuard(open, onClose);
 
@@ -61,7 +62,7 @@ export default function ChangePasswordModal({
     resetChangePassword();
   }, [resetChangePassword]);
 
-  const clearFieldError = (key: keyof PasswordFieldErrors) => {
+  const clearFieldError = (key: keyof ChangePasswordFieldErrors) => {
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -75,47 +76,39 @@ export default function ChangePasswordModal({
 
   const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextErrors: PasswordFieldErrors = {};
-
-    if (newPassword.length < 8) {
-      nextErrors.newPassword =
-        "新しいパスワードは8文字以上で入力してください。";
-    }
-    if (newPassword !== confirmPassword) {
-      nextErrors.confirmPassword = "新しいパスワード（確認）が一致しません。";
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setFieldErrors(nextErrors);
+    const parsed = ChangePasswordFormSchema.safeParse({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+    if (!parsed.success) {
+      setFieldErrors(changePasswordFieldErrors(parsed.error));
       return;
     }
 
     setFieldErrors({});
-    changePasswordMutation.mutate(
-      { currentPassword, newPassword },
-      {
-        onSuccess: () => {
-          setCurrentPassword("");
-          setNewPassword("");
-          setConfirmPassword("");
-          setFieldErrors({});
-          onClose();
-        },
-        onError: (error) => {
-          if (error instanceof ApiError && error.status === 401) {
-            setFieldErrors({
-              currentPassword: "現在のパスワードが正しくありません。",
-            });
-            return;
-          }
-          if (error instanceof ApiError && error.status === 400) {
-            setFieldErrors({
-              newPassword: "新しいパスワードは8文字以上で入力してください。",
-            });
-          }
-        },
+    changePasswordMutation.mutate(parsed.data, {
+      onSuccess: () => {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setFieldErrors({});
+        onClose();
       },
-    );
+      onError: (error) => {
+        if (isInvalidCredentialsError(error)) {
+          setFieldErrors({
+            currentPassword: "現在のパスワードが正しくありません。",
+          });
+          return;
+        }
+        if (error instanceof ApiError && error.status === 400) {
+          setFieldErrors({
+            newPassword: "新しいパスワードは8文字以上で入力してください。",
+          });
+        }
+      },
+    });
   };
 
   const showFormLevelApiError =
@@ -127,7 +120,7 @@ export default function ChangePasswordModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-md"
+        className="dialog-center:max-w-md"
         aria-labelledby="change-password-title"
       >
         <form
@@ -143,14 +136,15 @@ export default function ChangePasswordModal({
             <Field
               data-invalid={Boolean(fieldErrors.currentPassword) || undefined}
             >
-              <FieldLabel htmlFor="modal-currentPassword" required>
+              <FieldTitle id="modal-currentPassword-label" required>
                 現在のパスワード
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="modal-currentPassword"
                 type="password"
                 required
                 autoComplete="current-password"
+                aria-labelledby="modal-currentPassword-label"
                 value={currentPassword}
                 onChange={(e) => {
                   setCurrentPassword(e.target.value);
@@ -169,15 +163,16 @@ export default function ChangePasswordModal({
             </Field>
 
             <Field data-invalid={Boolean(fieldErrors.newPassword) || undefined}>
-              <FieldLabel htmlFor="modal-newPassword" required>
+              <FieldTitle id="modal-newPassword-label" required>
                 新しいパスワード
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="modal-newPassword"
                 type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
+                aria-labelledby="modal-newPassword-label"
                 value={newPassword}
                 onChange={(e) => {
                   setNewPassword(e.target.value);
@@ -199,15 +194,16 @@ export default function ChangePasswordModal({
             <Field
               data-invalid={Boolean(fieldErrors.confirmPassword) || undefined}
             >
-              <FieldLabel htmlFor="modal-confirmPassword" required>
+              <FieldTitle id="modal-confirmPassword-label" required>
                 新しいパスワード（確認）
-              </FieldLabel>
+              </FieldTitle>
               <Input
                 id="modal-confirmPassword"
                 type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
+                aria-labelledby="modal-confirmPassword-label"
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);

@@ -5,7 +5,7 @@ import {
   REACTION_STAMPS,
   type ReactionStamp,
   type ReactionSummary,
-} from "../../../../../shared/schemas";
+} from "@shared/schemas";
 
 const STAMP_ORDER = new Map(
   REACTION_STAMPS.map((stamp, index) => [stamp, index]),

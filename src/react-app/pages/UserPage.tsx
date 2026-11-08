@@ -29,7 +29,7 @@ export default function UserPage() {
     data: fetchedUser,
     isLoading,
     isError,
-  } = useUserQuery(isSelf ? undefined : userId);
+  } = useUserQuery(userId ?? "", isSelf);
   const queryClient = useQueryClient();
 
   const [editOpen, setEditOpen] = useState(false);

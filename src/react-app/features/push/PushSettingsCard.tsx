@@ -50,6 +50,19 @@ export default function PushSettingsCard() {
           </Alert>
         ) : null}
 
+        {status === "denied" ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-muted-foreground text-sm">
+              ブラウザの設定から通知を許可してください
+            </p>
+            <Switch
+              checked={false}
+              disabled
+              aria-label="Push 通知は拒否されています"
+            />
+          </div>
+        ) : null}
+
         {status === "subscribed" || status === "unsubscribed" ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm">

@@ -1,5 +1,3 @@
-import { toSafeHttpHttpsUrl } from "../../../../shared/schemas";
-
 export const MARKDOWN_LINK_SNIPPET = "[]()";
 export const MARKDOWN_LINK_CURSOR_OFFSET = 1;
 
@@ -11,6 +9,19 @@ export type NotificationBodyPart =
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/** 表示用: http/https のみ許可。それ以外は null。 */
+function toSafeHttpHttpsUrl(value: string): string | null {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**

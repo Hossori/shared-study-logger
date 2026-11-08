@@ -10,7 +10,8 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["./src/react-app/*"]
+      "@/*": ["./src/react-app/*"],
+      "@shared/*": ["./shared/*"]
     },
     "allowImportingTsExtensions": true,
     "isolatedModules": true,

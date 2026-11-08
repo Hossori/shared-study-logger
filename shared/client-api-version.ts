@@ -19,7 +19,13 @@ export type ClientApiVersionParts = readonly [
   patch: number,
 ];
 
-const CLIENT_API_VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+/** OAS `X-Client-Api-Version` の pattern と同じ文字列。 */
+export const CLIENT_API_VERSION_PATTERN_SOURCE =
+  "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$";
+
+const CLIENT_API_VERSION_PATTERN = new RegExp(
+  CLIENT_API_VERSION_PATTERN_SOURCE,
+);
 
 /**
  * API 契約用の `major.minor.patch` を数値要素へ変換する。

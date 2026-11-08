@@ -13,15 +13,23 @@ API のペア規則・カーソルは [api.md](../api.md)。
 
 ## 流れ
 
-一覧: `GET .../records?cursor&limit&userIds` → 所属チェック → `listStudyRecords`。カーソルは base64 の `sortKey|id`。同じページのリアクションを集計して返す。フロントは `useInfiniteQuery`。フィルタはコンポーネント state（全員 / 自分のみ / 指定する）。
+一覧: `GET .../records?cursor&limit&userIds` → 所属チェック → `listStudyRecords`。カーソルは base64 の `sortKey|id`。同じページのリアクションを集計して返す。フロントは `useInfiniteQuery`。フィルタはコンポーネント state（全員 / 自分のみ / 指定する）。3択はパネルを開いた時点で出す。メンバー一覧の取得待ち、失敗、空はポップオーバー内に出す。
 
 投稿: `POST` → INSERT → 他メンバーへ `PUSH_QUEUE` を 1 人 1 メッセージ（失敗しても 201）。フロントは一覧を invalidate。
 
 編集・削除: 所属 + 投稿者チェック。削除時 `record_reactions` は CASCADE。Push は出さない。
 
-スタンプ: POST で付与（重複 409 `already_reacted`）、DELETE で取消。一覧キャッシュを楽観更新し、`onSettled` で invalidate。長押しでユーザー一覧（`created_at, id` 昇順）。
+スタンプ: POST で付与（重複 409 `already_reacted`）、DELETE で取消。一覧キャッシュを楽観更新し、`onSettled` で invalidate。長押しでユーザー一覧（`created_at, id` 昇順）。`mutationKey` ごとに `isMutating` を見て、同じスタンプ操作が他に進行中の間は invalidate しない（invalidate は await しない）。
+
+一覧の再取得・追加ページ: 初回取得のみ失敗したときは全面エラーと再試行。既に `data` があるときは一覧を残し、追加ページ失敗はフッターにメッセージと再試行、Pull 等の更新失敗は一覧下に控えめな再試行を出す。
 
 PTR: ホーム画面の `PullToRefresh` が `recordsQueryKeys.list(groupId)` を invalidate。ジェスチャの純関数は `src/react-app/app/shell/pullRefresh.ts` / `pullGesture.ts`。
+
+## 記録フォーム
+
+- 時計面は常時 `touch-none` で、タッチ・ペンのドラッグ選択に対応する。`pointercancel` では確定せず、主ボタン以外とマルチタッチは無視する。`setPointerCapture` が失敗してもタップ選択は続行する。
+- 送信中（投稿・保存）は Escape・オーバーレイ・キャンセルでモーダルを閉じられない。
+- 投稿モーダルは開くたびに内側を再マウントし、入力値とエラー表示を初期化する。
 
 ## 変更するとき
 
