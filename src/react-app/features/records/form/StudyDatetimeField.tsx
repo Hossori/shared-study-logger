@@ -290,7 +290,10 @@ export default function StudyDatetimeField({
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-lg" overlay={{ forceRender: true }}>
+        <DialogContent
+          className="dialog-center:max-w-lg"
+          overlay={{ forceRender: true }}
+        >
           <DialogHeader>
             <DialogTitle>学習日時を設定</DialogTitle>
           </DialogHeader>

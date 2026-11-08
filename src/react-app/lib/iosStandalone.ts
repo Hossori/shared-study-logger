@@ -11,22 +11,10 @@ function isIosDevice(userAgent: string): boolean {
   return /Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1;
 }
 
-function isStandaloneDisplay(): boolean {
-  return (
-    window.matchMedia?.("(display-mode: standalone)").matches === true ||
-    (navigator as NavigatorStandalone).standalone === true
-  );
-}
-
-export function isIosStandalone(): boolean {
-  return isIosDevice(navigator.userAgent) && isStandaloneDisplay();
-}
-
-/** iOS standalone の端スワイプは履歴の POP。進むも戻るもここを止める。 */
-export function shouldBlockIosStandalonePop(historyAction: string): boolean {
-  return isIosStandalone() && historyAction === "POP";
-}
-
 export function isIosNonStandalone(): boolean {
-  return isIosDevice(navigator.userAgent) && !isStandaloneDisplay();
+  const isIos = isIosDevice(navigator.userAgent);
+  const isStandalone =
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (navigator as NavigatorStandalone).standalone === true;
+  return isIos && !isStandalone;
 }

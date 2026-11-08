@@ -7,7 +7,11 @@
 - `vite-plugin-pwa` は `injectManifest`（`public/sw.ts`）
 - `manifest.webmanifest` は `display: "standalone"`（iOS Push の前提）
 - オフライン編集は対象外。プリキャッシュは最小構成
-- iOS standalone では履歴の POP（画面端スワイプの進む・戻る）をキャンセルし、今の画面に留める。画面遷移は `Link` などの PUSH / REPLACE のまま。WebKit がジェスチャの描画自体を出すことは残る。同じ条件で `html` に `touch-action: pan-y` を付ける
+- 履歴の POP（画面端スワイプの進む・戻る）はキャンセルせず、iOSの端スワイプによる履歴移動を許可する（2026-11-08 時点で WebKit が描画を出してしまい、ルータの blocker ではジェスチャ本体を止められないため。）
+- 2026-11-08 時点では iOS は manifest の `orientation` を無視し、`screen.orientation.lock()` は iOS standalone で使えないため、縦・横どちらの向きも許可する。`manifest.webmanifest` に `orientation` は置かない（Android だけ縦固定にしないため）。
+- シェルの高さ（`--app-height`）は初回と向きの変化のときだけ `visualViewport.height` にする。文字入力中や、幅が変わらず高さがキーボード分だけ短いときは変えない。`body` に `transform` を付けない。付けると `position: fixed` のダイアログの基準が `body` になり、記録追加でキーボードを出すと下端シートが崩れる。キーボードがレイアウト下端にかぶる量は `--keyboard-overlap`（`innerHeight - visualHeight - offsetTop`）にし、モバイルの Dialog の `bottom` をその分上げ、`max-height` は `--visual-height` にする。幅が 640px 以上でも高さが 640px 未満（iPhone の横画面）は中央ダイアログにしない。
+- 記録追加ボタン（モバイル FAB）はシェル内の `absolute` にし、`document` への `position: fixed` にしない。回転後に fixed だけヒットが外れるため。
+- シェルは `position: fixed` の全画面にしない。ヘッダーに `backdrop-filter` を付けない。iPhone で横画面から縦に戻したあと、WebKit はビューポート変更だけでは固定レイヤのヒット領域を作り直さず、描画は新位置・ヒットは横画面の矩形のまま残ることがあるため。右へ動いたヘッダー操作や本文のボタンが押せなくなるのを避ける
 - API 非互換時は `shared/client-api-version.ts` の `CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を揃え、Worker が 426 `client_update_required` でハンドラ前に拒否する。ブリッジリリースだけ最小版を `null`
 
 ## ビルドと更新
@@ -30,7 +34,7 @@
 - `public/sw.ts`
 - `public/manifest.webmanifest`
 - `src/react-app/main.tsx`
-- `src/react-app/app/effects/IosStandaloneHistoryLock.tsx`
 - `src/react-app/lib/iosStandalone.ts`
 - `shared/client-api-version.ts`
 - `shared/sw-lifecycle.ts`
+- `src/react-app/app/shell/visualViewportFrame.ts`

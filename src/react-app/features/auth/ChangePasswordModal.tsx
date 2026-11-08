@@ -120,7 +120,7 @@ export default function ChangePasswordModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-md"
+        className="dialog-center:max-w-md"
         aria-labelledby="change-password-title"
       >
         <form

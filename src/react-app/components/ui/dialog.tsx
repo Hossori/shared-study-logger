@@ -62,8 +62,9 @@ function DialogContent({
           data-slot="dialog-content"
           className={cn(
             "bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fill-mode-forwards pointer-events-auto grid w-full min-w-0 gap-4 overflow-x-hidden overflow-y-auto p-4 pb-[max(1rem,var(--safe-area-inset-bottom))] text-sm outline-none *:min-w-0",
-            "max-sm:data-open:slide-in-from-bottom max-sm:data-closed:slide-out-to-bottom fixed inset-x-0 bottom-0 max-h-[calc(100dvh-1rem-var(--safe-area-inset-top))] rounded-t-2xl rounded-b-none shadow-lg duration-200",
-            "sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[calc(100dvh-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] sm:max-w-[min(24rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-none sm:ring-1 sm:duration-100",
+            "fixed inset-x-0 bottom-[var(--keyboard-overlap,0px)] max-h-[calc(var(--visual-height,100dvh)-1rem-var(--safe-area-inset-top))] rounded-t-2xl rounded-b-none shadow-lg duration-200",
+            "dialog-sheet:data-open:slide-in-from-bottom dialog-sheet:data-closed:slide-out-to-bottom",
+            "dialog-center:data-open:zoom-in-95 dialog-center:data-closed:zoom-out-95 dialog-center:inset-auto dialog-center:top-1/2 dialog-center:bottom-auto dialog-center:left-1/2 dialog-center:max-h-[calc(var(--visual-height,100dvh)-2rem-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] dialog-center:max-w-[min(24rem,calc(100%-2rem-var(--safe-area-inset-left)-var(--safe-area-inset-right)))] dialog-center:-translate-x-1/2 dialog-center:-translate-y-1/2 dialog-center:rounded-xl dialog-center:shadow-none dialog-center:ring-1 dialog-center:duration-100",
             className,
           )}
           {...props}
@@ -110,7 +111,7 @@ function DialogButtonArea({
       data-slot="dialog-button-area"
       className={cn(
         "-mx-4 -mb-4 flex flex-row gap-2 rounded-b-xl p-4",
-        "max-sm:-mb-[max(1rem,var(--safe-area-inset-bottom))] max-sm:rounded-none max-sm:pb-[max(1rem,var(--safe-area-inset-bottom))]",
+        "dialog-sheet:-mb-[max(1rem,var(--safe-area-inset-bottom))] dialog-sheet:rounded-none dialog-sheet:pb-[max(1rem,var(--safe-area-inset-bottom))]",
         "*:data-[slot=button]:min-w-0 *:data-[slot=button]:flex-1",
         className,
       )}
