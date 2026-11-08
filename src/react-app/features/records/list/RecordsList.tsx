@@ -547,10 +547,12 @@ export default function RecordsList({
   groupId,
   currentUserId,
   toolbarStart,
+  fabHost = null,
 }: {
   groupId: string | null;
   currentUserId: string;
   toolbarStart?: ReactNode;
+  fabHost?: HTMLElement | null;
 }) {
   const [postOpen, setPostOpen] = useState(false);
   const openPost = () => setPostOpen(true);
@@ -587,17 +589,19 @@ export default function RecordsList({
             open={postOpen}
             onClose={closePost}
           />
-          {createPortal(
-            <Button
-              size="icon-lg"
-              onClick={openPost}
-              aria-label="記録を追加"
-              className="fixed right-[max(1.25rem,calc(1.25rem+var(--safe-area-inset-right)))] bottom-[max(1.25rem,calc(1.25rem+var(--safe-area-inset-bottom)))] z-20 size-14 rounded-full sm:hidden"
-            >
-              <Plus aria-hidden />
-            </Button>,
-            document.body,
-          )}
+          {fabHost
+            ? createPortal(
+                <Button
+                  size="icon-lg"
+                  onClick={openPost}
+                  aria-label="記録を追加"
+                  className="pointer-events-auto absolute right-[max(1.25rem,calc(1.25rem+var(--safe-area-inset-right)))] bottom-[max(1.25rem,calc(1.25rem+var(--safe-area-inset-bottom)))] z-20 size-14 rounded-full sm:hidden"
+                >
+                  <Plus aria-hidden />
+                </Button>,
+                fabHost,
+              )
+            : null}
         </>
       ) : null}
     </>

@@ -6,6 +6,7 @@ import { createContext, useContext, type RefObject } from "react";
 export type LayoutScrollContextValue = {
   scrollRef: RefObject<HTMLElement | null>;
   setPullToRefreshActive: (active: boolean) => void;
+  fabHost: HTMLElement | null;
 };
 
 export const LayoutScrollContext =
