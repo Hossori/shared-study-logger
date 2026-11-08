@@ -177,8 +177,6 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    /* 画面のスクロールは各 fixed シェルの内側だけ。window がずれると fixed の当たり判定が残る。 */
-    overflow: hidden;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {

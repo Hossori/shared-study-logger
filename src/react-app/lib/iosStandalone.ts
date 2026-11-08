@@ -18,10 +18,6 @@ function isStandaloneDisplay(): boolean {
   );
 }
 
-export function isIosClient(): boolean {
-  return isIosDevice(navigator.userAgent);
-}
-
 export function isIosNonStandalone(): boolean {
   return isIosDevice(navigator.userAgent) && !isStandaloneDisplay();
 }

@@ -8,7 +8,7 @@
 - `manifest.webmanifest` は `display: "standalone"`（iOS Push の前提）
 - オフライン編集は対象外。プリキャッシュは最小構成
 - 端スワイプによる履歴の進む・戻るは許可する。止めない。2026-11-08 時点の理由は [design-decisions.md](../design-decisions.md)
-- `manifest.orientation` は `any`。横向きも操作できる。回転後は viewport を再設定する。向きを固定しない理由は同じ
+- `manifest.orientation` は `any`。横向きも操作できる。向きを固定しない理由は同じ
 - API 非互換時は `shared/client-api-version.ts` の `CLIENT_API_VERSION` と `MIN_SUPPORTED_CLIENT_API_VERSION` を揃え、Worker が 426 `client_update_required` でハンドラ前に拒否する。ブリッジリリースだけ最小版を `null`
 
 ## ビルドと更新
@@ -31,8 +31,6 @@
 - `public/sw.ts`
 - `public/manifest.webmanifest`
 - `src/react-app/main.tsx`
-- `src/react-app/app/effects/useIosOrientationViewport.ts`
-- `src/react-app/lib/orientationViewport.ts`
 - `src/react-app/lib/iosStandalone.ts`
 - `shared/client-api-version.ts`
 - `shared/sw-lifecycle.ts`

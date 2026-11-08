@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  isIosClient,
-  isIosNonStandalone,
-} from "../../src/react-app/lib/iosStandalone";
+import { isIosNonStandalone } from "../../src/react-app/lib/iosStandalone";
 
 function stubNavigator(options: {
   userAgent: string;
@@ -39,7 +36,6 @@ describe("isIosNonStandalone", () => {
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
     });
     expect(isIosNonStandalone()).toBe(true);
-    expect(isIosClient()).toBe(true);
   });
 
   it("returns true for iPad UA (non-standalone)", () => {
@@ -94,6 +90,5 @@ describe("isIosNonStandalone", () => {
       maxTouchPoints: 0,
     });
     expect(isIosNonStandalone()).toBe(false);
-    expect(isIosClient()).toBe(false);
   });
 });
